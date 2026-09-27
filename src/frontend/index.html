@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen-DB - Biological Network Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            border: 1px solid #e1e8ed;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #34495e;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d8dd;
+            border-radius: 3px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background-color: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            min-height: 80px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 11px 24px;
+            border-radius: 3px;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            background-color: #21618c;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .matrix-input {
+            display: grid;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .matrix-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .matrix-cell {
+            width: 38px;
+            height: 38px;
+            text-align: center;
+            padding: 0;
+            font-weight: 500;
+        }
+
+        .networks-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .network-item {
+            background: #f8f9fa;
+            padding: 18px;
+            border-radius: 3px;
+            margin-bottom: 12px;
+            border-left: 3px solid #3498db;
+            transition: box-shadow 0.2s;
+        }
+
+        .network-item:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .network-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .network-name {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .network-type {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .network-details {
+            color: #5a6c7d;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+
+        .network-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 7px 14px;
+            font-size: 0.85em;
+            width: auto;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-info {
+            background-color: #16a085;
+        }
+
+        .btn-info:hover {
+            background-color: #138d75;
+        }
+
+        .search-results {
+            margin-top: 20px;
+        }
+
+        .match-item {
+            background: #eafaf1;
+            border-left-color: #27ae60;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .error {
+            background: #fadbd8;
+            color: #943126;
+            padding: 12px;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            border-left: 3px solid #e74c3c;
+        }
+
+        .success {
+            background: #d5f4e6;
+            color: #0e6655;
+            padding: 12px;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            border-left: 3px solid #27ae60;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #5a6c7d;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #2c3e50;
+        }
+
+        .tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 10px 12px;
+            background-color: #ecf0f1;
+            border: 2px dashed #95a5a6;
+            border-radius: 3px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-input-label:hover {
+            background-color: #d5dbdb;
+            border-color: #7f8c8d;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            font-weight: bold;
+            color: #95a5a6;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            color: #5a6c7d;
+            line-height: 1.8;
+        }
+
+        .modal-body pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>Gen-DB - Biological Network Database</h1>
+            <p class="subtitle">Effiziente Analyse biologischer Netzwerke mittels Subgraph Algorithmus</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-grid">
+            <!-- Linke Spalte: Netzwerk erstellen -->
+            <div class="card">
+                <h2>Neues Netzwerk erstellen</h2>
+                <div id="createMessage"></div>
+
+                <div class="form-group">
+                    <label>JSON-Datei importieren</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="jsonFile" accept=".json" onchange="importFromJSON()">
+                        <label class="file-input-label" for="jsonFile">
+                            📁 JSON-Datei auswählen
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Netzwerk-Name</label>
+                    <input type="text" id="networkName" placeholder="z.B. Glycolysis">
+                </div>
+
+                <div class="form-group">
+                    <label>Netzwerk-Typ</label>
+                    <select id="networkType">
+                        <option value="metabolic">Metabolic Pathway</option>
+                        <option value="protein">Protein Interaction</option>
+                        <option value="gene_regulation">Gene Regulation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Organismus</label>
+                    <input type="text" id="organism" placeholder="z.B. Homo sapiens">
+                </div>
+
+                <div class="form-group">
+                    <label>Beschreibung (optional)</label>
+                    <textarea id="description" placeholder="Beschreibung des biologischen Netzwerks..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Knoten (komma-getrennt)</label>
+                    <input type="text" id="nodeLabels" placeholder="z.B. Glucose, G6P, F6P"
+                        onchange="generateMatrixInput()">
+                </div>
+
+                <div class="form-group">
+                    <label>Adjacency Matrix</label>
+                    <div id="matrixInput"></div>
+                </div>
+
+                <button onclick="createNetwork()">Netzwerk erstellen</button>
+            </div>
+
+            <!-- Rechte Spalte: Durchsuchen & Suchen -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab(event, 'browse')">Durchsuchen</button>
+                    <button class="tab" onclick="switchTab(event, 'search')">Subgraph-Suche</button>
+                </div>
+
+                <div id="browseTab" class="tab-content active">
+                    <h2>Gespeicherte Netzwerke</h2>
+                    <div id="networksList" class="networks-list">
+                        <div class="loading">Lade Netzwerke...</div>
+                    </div>
+                </div>
+
+                <div id="searchTab" class="tab-content">
+                    <h2>Subgraph-Suche</h2>
+                    <div id="searchMessage"></div>
+
+                    <div class="form-group">
+                        <label>Vorlage aus bestehendem Netzwerk laden</label>
+                        <select id="searchTemplate" onchange="loadSearchTemplate()">
+                            <option value="">-- Netzwerk als Vorlage wählen --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Such-Knoten (komma-getrennt)</label>
+                        <input type="text" id="searchLabels" placeholder="z.B. Glucose, G6P"
+                            onchange="generateSearchMatrixInput()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Such-Matrix</label>
+                        <div id="searchMatrixInput"></div>
+                        <small style="color: #7f8c8d; margin-top: 5px; display: block;">
+                            💡 Tipp: Matrix muss für Suche ausgefüllt sein (1 = Kante, 0 = keine Kante)
+                        </small>
+                    </div>
+
+                    <button onclick="searchSubgraph()">Subgraph suchen</button>
+
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Details -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Netzwerk Details</h3>
+                <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal für Bestätigung -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bestätigung erforderlich</h3>
+                <button class="modal-close" onclick="closeModal('confirmModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="confirmBody"></div>
+            <div class="modal-footer">
+                <button class="btn-danger" style="width: auto; margin-right: 10px;" onclick="confirmAction()">Ja,
+                    löschen</button>
+                <button class="btn-secondary" style="width: auto;"
+                    onclick="closeModal('confirmModal')">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentTab = 'browse';
+        let deleteNetworkId = null;
+
+        // Modal-Funktionen
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            if (modalId === 'confirmModal') deleteNetworkId = null;
+        }
+
+        // Schließe Modal bei Klick außerhalb
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Tab-Wechsel (korrigiert)
+        function switchTab(event, tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        // JSON Import
+        function importFromJSON() {
+            const fileInput = document.getElementById('jsonFile');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Validierung
+                    if (!data.nodes || !data.edges) {
+                        throw new Error('JSON muss "nodes" und "edges" enthalten');
+                    }
+
+                    // Extrahiere Labels
+                    const nodeLabels = data.nodes.map(n => n.label || `Node_${n.id}`);
+
+                    // Erstelle Adjacency Matrix
+                    const n = data.nodes.length;
+                    const adjacencyMatrix = Array(n).fill(0).map(() => Array(n).fill(0));
+
+                    data.edges.forEach(edge => {
+                        const from = edge.from;
+                        const to = edge.to;
+                        if (from >= 0 && from < n && to >= 0 && to < n) {
+                            adjacencyMatrix[from][to] = 1;
+                        }
+                    });
+
+                    // Fülle Formular
+                    document.getElementById('nodeLabels').value = nodeLabels.join(', ');
+                    generateMatrixInput();
+
+                    // Setze Matrix-Werte
+                    for (let i = 0; i < n; i++) {
+                        for (let j = 0; j < n; j++) {
+                            const cell = document.getElementById(`cell_${i}_${j}`);
+                            if (cell) {
+                                cell.value = adjacencyMatrix[i][j];
+                            }
+                        }
+                    }
+
+                    // Setze sinnvolle Defaults
+                    if (!document.getElementById('networkName').value) {
+                        document.getElementById('networkName').value = file.name.replace('.json', '');
+                    }
+
+                    showMessage('createMessage', 'JSON erfolgreich importiert!', 'success');
+                } catch (error) {
+                    showMessage('createMessage', 'Fehler beim Importieren: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Matrix-Input generieren (n×n quadratische Matrix)
+        function generateMatrixInput() {
+            const labels = document.getElementById('nodeLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+            const n = labels.length;
+
+            if (n === 0) {
+                document.getElementById('matrixInput').innerHTML = '';
+                return;
+            }
+
+            // Header mit Spalten-Labels
+            let html = `
+                <div style="margin-bottom: 10px; color: #7f8c8d; font-size: 0.85em;">
+                    <strong>${n}×${n} Adjacency Matrix</strong> (Zeile = Von, Spalte = Nach)
+                </div>
+                <div style="display: grid; grid-template-columns: 60px repeat(${n}, 38px); gap: 4px; align-items: center;">
+            `;
+
+            // Erste Zeile: Spalten-Header (max. 3 Zeichen, voller Name als Tooltip)
+            html += '<div></div>'; // Ecke oben links leer
+            for (let j = 0; j < n; j++) {
+                html += `<div style="font-size: 0.75em; text-align: center; font-weight: 600; color: #3498db; width: 38px; max-width: 38px; overflow: hidden; white-space: nowrap; box-sizing: border-box;" title="${labels[j]}">${labels[j].substring(0, 3)}</div>`;
+            }
+
+            // Matrix-Zeilen mit Zeilen-Labels
+            for (let i = 0; i < n; i++) {
+                // Zeilen-Label (voller Name)
+                html += `<div style="font-size: 0.75em; text-align: right; padding-right: 8px; font-weight: 600; color: #3498db; white-space: nowrap;">${labels[i]}</div>`;
+
+                // Matrix-Zellen
+                for (let j = 0; j < n; j++) {
+                    html += `<input type="number" class="matrix-cell" min="0" max="1" value="0" 
+                             id="cell_${i}_${j}" title="${labels[i]} → ${labels[j]}">`;
+                }
+            }
+
+            html += '</div>';
+            document.getElementById('matrixInput').innerHTML = html;
+        }
+
+        // Such-Matrix-Input generieren (n×n quadratische Matrix)
+        function generateSearchMatrixInput() {
+            const labels = document.getElementById('searchLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+            const n = labels.length;
+
+            if (n === 0) {
+                document.getElementById('searchMatrixInput').innerHTML = '';
+                return;
+            }
+
+            // Header mit Spalten-Labels
+            let html = `
+                <div style="margin-bottom: 10px; color: #7f8c8d; font-size: 0.85em;">
+                    <strong>${n}×${n} Adjacency Matrix</strong> (Zeile = Von, Spalte = Nach)
+                </div>
+                <div style="display: grid; grid-template-columns: 60px repeat(${n}, 38px); gap: 4px; align-items: center;">
+            `;
+
+            // Erste Zeile: Spalten-Header (max. 3 Zeichen, voller Name als Tooltip)
+            html += '<div></div>'; // Ecke oben links leer
+            for (let j = 0; j < n; j++) {
+                html += `<div style="font-size: 0.75em; text-align: center; font-weight: 600; color: #3498db; width: 38px; max-width: 38px; overflow: hidden; white-space: nowrap; box-sizing: border-box;" title="${labels[j]}">${labels[j].substring(0, 3)}</div>`;
+            }
+
+            // Matrix-Zeilen mit Zeilen-Labels
+            for (let i = 0; i < n; i++) {
+                // Zeilen-Label (voller Name)
+                html += `<div style="font-size: 0.75em; text-align: right; padding-right: 8px; font-weight: 600; color: #3498db; white-space: nowrap;">${labels[i]}</div>`;
+
+                // Matrix-Zellen
+                for (let j = 0; j < n; j++) {
+                    html += `<input type="number" class="matrix-cell" min="0" max="1" value="0" 
+                             id="search_cell_${i}_${j}" title="${labels[i]} → ${labels[j]}">`;
+                }
+            }
+
+            html += '</div>';
+            document.getElementById('searchMatrixInput').innerHTML = html;
+        }
+
+        // Matrix aus Inputs extrahieren
+        function getMatrixFromInputs(prefix = 'cell') {
+            const labels = prefix === 'cell' ?
+                document.getElementById('nodeLabels').value.split(',').map(s => s.trim()).filter(Boolean) :
+                document.getElementById('searchLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+            const n = labels.length;
+            const matrix = [];
+
+            for (let i = 0; i < n; i++) {
+                const row = [];
+                for (let j = 0; j < n; j++) {
+                    const cell = document.getElementById(`${prefix}_${i}_${j}`);
+                    row.push(cell ? parseInt(cell.value) || 0 : 0);
+                }
+                matrix.push(row);
+            }
+
+            return matrix;
+        }
+
+        // Netzwerk erstellen
+        async function createNetwork() {
+            const name = document.getElementById('networkName').value;
+            const networkType = document.getElementById('networkType').value;
+            const organism = document.getElementById('organism').value;
+            const description = document.getElementById('description').value;
+            const nodeLabels = document.getElementById('nodeLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+            const adjacencyMatrix = getMatrixFromInputs();
+
+            if (!name || nodeLabels.length === 0) {
+                showMessage('createMessage', 'Bitte Namen und Knoten angeben', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/networks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, network_type: networkType, organism, description,
+                        node_labels: nodeLabels, adjacency_matrix: adjacencyMatrix
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('createMessage', 'Netzwerk erfolgreich erstellt', 'success');
+                    // Formular zurücksetzen
+                    document.getElementById('networkName').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('nodeLabels').value = '';
+                    document.getElementById('matrixInput').innerHTML = '';
+                    document.getElementById('jsonFile').value = '';
+                    // Netzwerkliste aktualisieren
+                    loadNetworks();
+                } else {
+                    showMessage('createMessage', 'Fehler beim Erstellen', 'error');
+                }
+            } catch (error) {
+                showMessage('createMessage', 'Verbindungsfehler: ' + error.message, 'error');
+            }
+        }
+
+        // Netzwerke laden (nur 33 zufällige)
+        async function loadNetworks() {
+            try {
+                // Lade nur 33 zufällige Netzwerke
+                const response = await fetch(`${API_BASE}/networks?limit=33&random=true`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    // Zeige Info über Anzahl geladener Netzwerke
+                    const infoHtml = `
+                        <div style="background: #e8f5e9; padding: 10px; border-radius: 3px; margin-bottom: 15px; font-size: 0.9em;">
+                            📊 <strong>${data.count}</strong> zufällige Netzwerke geladen. 
+                            <a href="#" onclick="loadNetworks(); return false;" style="color: #27ae60; text-decoration: underline;">
+                                Neu laden
+                            </a>
+                        </div>
+                    `;
+
+                    const networksHtml = data.data.map(network => `
+                        <div class="network-item">
+                            <div class="network-header">
+                                <span class="network-name">${network.name}</span>
+                                <span class="network-type">${network.network_type}</span>
+                            </div>
+                            <div class="network-details">
+                                <strong>Organismus:</strong> ${network.organism || 'N/A'}<br>
+                                <strong>Knoten:</strong> ${network.node_count} | 
+                                <strong>Kanten:</strong> ${network.edge_count}<br>
+                                <strong>Labels:</strong> ${network.node_labels ? network.node_labels.join(', ') : 'N/A'}<br>
+                                ${network.description ? `<strong>Beschreibung:</strong> ${network.description}<br>` : ''}
+                                <strong>Erstellt:</strong> ${new Date(network.created_at).toLocaleString('de-DE')}
+                            </div>
+                            <div class="network-actions">
+                                <button class="btn-small btn-info" onclick="viewNetwork(${network.network_id})">
+                                    Details anzeigen
+                                </button>
+                                <button class="btn-small btn-danger" onclick="deleteNetwork(${network.network_id})">
+                                    Löschen
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('networksList').innerHTML = infoHtml + networksHtml;
+
+                    // Update Search Template Dropdown (auch nur 33)
+                    updateSearchTemplateDropdown(data.data);
+                } else {
+                    document.getElementById('networksList').innerHTML =
+                        '<div class="loading">Keine Netzwerke vorhanden. Erstellen Sie Ihr erstes Netzwerk!</div>';
+                    updateSearchTemplateDropdown([]);
+                }
+            } catch (error) {
+                document.getElementById('networksList').innerHTML =
+                    '<div class="error">Fehler beim Laden: ' + error.message + '</div>';
+            }
+        }
+
+        // Update Search Template Dropdown
+        function updateSearchTemplateDropdown(networks) {
+            const dropdown = document.getElementById('searchTemplate');
+            const options = networks.map(n =>
+                `<option value="${n.network_id}">${n.name} (${n.node_count} Knoten)</option>`
+            ).join('');
+            dropdown.innerHTML = '<option value="">-- Netzwerk als Vorlage wählen --</option>' + options;
+        }
+
+        // Load Search Template from existing network
+        async function loadSearchTemplate() {
+            const networkId = document.getElementById('searchTemplate').value;
+            if (!networkId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/networks/${networkId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const network = data.data;
+
+                    // Set labels
+                    document.getElementById('searchLabels').value = network.node_labels.join(', ');
+
+                    // Generate matrix input
+                    generateSearchMatrixInput();
+
+                    // Fill matrix with values
+                    const matrix = network.adjacency_matrix;
+                    for (let i = 0; i < matrix.length; i++) {
+                        for (let j = 0; j < matrix[i].length; j++) {
+                            const cell = document.getElementById(`search_cell_${i}_${j}`);
+                            if (cell) {
+                                cell.value = matrix[i][j];
+                            }
+                        }
+                    }
+
+                    showMessage('searchMessage', `Vorlage "${network.name}" geladen!`, 'success');
+                }
+            } catch (error) {
+                showMessage('searchMessage', 'Fehler beim Laden der Vorlage: ' + error.message, 'error');
+            }
+        }
+
+        // Netzwerk-Details anzeigen
+        async function viewNetwork(networkId) {
+            try {
+                const response = await fetch(`${API_BASE}/networks/${networkId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const network = data.data;
+                    const matrixStr = network.adjacency_matrix.map(row => row.join(' ')).join('\n');
+
+                    document.getElementById('modalTitle').textContent = `Netzwerk: ${network.name}`;
+                    document.getElementById('modalBody').innerHTML = `
+                        <p><strong>Typ:</strong> ${network.network_type}</p>
+                        <p><strong>Organismus:</strong> ${network.organism || 'N/A'}</p>
+                        <p><strong>Knoten (${network.node_count}):</strong> ${network.node_labels.join(', ')}</p>
+                        <p><strong>Kanten:</strong> ${network.edge_count}</p>
+                        ${network.description ? `<p><strong>Beschreibung:</strong> ${network.description}</p>` : ''}
+                        <p><strong>Adjacency Matrix:</strong></p>
+                        <pre>${matrixStr}</pre>
+                        <p><strong>Signaturen:</strong> ${network.signature_array.join(', ')}</p>
+                    `;
+                    openModal('detailsModal');
+                }
+            } catch (error) {
+                showMessage('createMessage', 'Fehler beim Laden: ' + error.message, 'error');
+            }
+        }
+
+        // Netzwerk löschen
+        async function deleteNetwork(networkId) {
+            deleteNetworkId = networkId;
+            document.getElementById('confirmBody').innerHTML =
+                '<p>Möchten Sie dieses Netzwerk wirklich unwiderruflich löschen?</p>';
+            openModal('confirmModal');
+        }
+
+        async function confirmAction() {
+            if (!deleteNetworkId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/networks/${deleteNetworkId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    closeModal('confirmModal');
+                    loadNetworks();
+                    showMessage('createMessage', 'Netzwerk erfolgreich gelöscht', 'success');
+                }
+            } catch (error) {
+                showMessage('createMessage', 'Fehler beim Löschen: ' + error.message, 'error');
+            }
+        }
+
+        // Subgraph-Suche (korrigiert)
+        async function searchSubgraph() {
+            const searchLabels = document.getElementById('searchLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+            const searchMatrix = getMatrixFromInputs('search_cell');
+
+            if (searchLabels.length === 0) {
+                showMessage('searchMessage', 'Bitte Such-Knoten angeben', 'error');
+                return;
+            }
+
+            // Validiere dass Matrix nicht leer ist
+            const hasEdges = searchMatrix.some(row => row.some(val => val > 0));
+            if (!hasEdges) {
+                showMessage('searchMessage', '⚠️ Warnung: Such-Matrix enthält keine Kanten (alle Werte sind 0). Bitte Matrix ausfüllen oder Vorlage laden.', 'error');
+                return;
+            }
+
+            // Debug-Ausgabe
+            console.log('Suche nach:', {
+                labels: searchLabels,
+                matrix: searchMatrix,
+                node_count: searchLabels.length,
+                edge_count: searchMatrix.reduce((sum, row) => sum + row.reduce((a, b) => a + b, 0), 0)
+            });
+
+            // Zeige Loading-Status
+            document.getElementById('searchResults').innerHTML = '<div class="loading">🔍 Suche läuft...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/networks/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        node_labels: searchLabels,
+                        adjacency_matrix: searchMatrix
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Suchergebnis:', data);
+
+                if (data.success) {
+                    const matches = data.data;
+
+                    if (matches.length === 0) {
+                        document.getElementById('searchResults').innerHTML =
+                            '<div class="loading">❌ Keine Übereinstimmungen gefunden.</div>';
+                        showMessage('searchMessage', 'Suche abgeschlossen - keine Matches', 'success');
+                    } else {
+                        const html = `
+                            <h3 style="margin-top:20px;color:#27ae60;font-size:1.1em;">
+                                ✅ ${matches.length} Übereinstimmung(en) gefunden
+                            </h3>
+                            ${matches.map(match => `
+                                <div class="network-item match-item">
+                                    <div class="network-header">
+                                        <span class="network-name">${match.name}</span>
+                                        <span class="network-type">${match.network_type}</span>
+                                    </div>
+                                    <div class="network-details">
+                                        <strong>Organismus:</strong> ${match.organism || 'N/A'}<br>
+                                        <strong>Match-Typ:</strong> ${match.match_type === 'exact' ? '🎯 Exakt' : '🔍 Subgraph'}<br>
+                                        <strong>Knoten:</strong> ${match.node_count} | <strong>Kanten:</strong> ${match.edge_count}<br>
+                                        <strong>Labels:</strong> ${match.node_labels.join(', ')}<br>
+                                        <strong>Algorithmus-Ergebnis:</strong> ${match.subgraph_result}
+                                    </div>
+                                    <div class="network-actions">
+                                        <button class="btn-small btn-info" onclick="viewNetwork(${match.network_id})">
+                                            Details anzeigen
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        `;
+                        document.getElementById('searchResults').innerHTML = html;
+                        showMessage('searchMessage', `✅ Suche erfolgreich - ${matches.length} Match(es) gefunden!`, 'success');
+                    }
+                } else {
+                    showMessage('searchMessage', 'Fehler bei der Suche: ' + (data.message || 'Unbekannter Fehler'), 'error');
+                    document.getElementById('searchResults').innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Suchfehler:', error);
+                showMessage('searchMessage', '❌ Verbindungsfehler: ' + error.message, 'error');
+                document.getElementById('searchResults').innerHTML =
+                    '<div class="error">Verbindungsfehler. Ist das Backend gestartet?<br>Fehler: ' + error.message + '</div>';
+            }
+        }
+
+        // Hilfsfunktion für Nachrichten
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => element.innerHTML = '', 5000);
+        }
+
+        // Beim Laden der Seite Netzwerke laden
+        window.onload = () => {
+            loadNetworks();
+        };
+    </script>
+</body>
+
+</html>

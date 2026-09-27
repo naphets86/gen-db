@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.coverage
+build/
+src/biological_network_database.egg-info/

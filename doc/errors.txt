@@ -1,0 +1,1910 @@
+PS C:\Users\sepp5\Git\gen-db> $env:SUBGRAPH_CLI_PATH = "C:\Users\sepp5\Git\csubgraph\build\subgraph-cli.exe"
+PS C:\Users\sepp5\Git\gen-db> $env:DATABASE_HOST = "localhost"
+PS C:\Users\sepp5\Git\gen-db> $env:DATABASE_USER = "postgres"
+PS C:\Users\sepp5\Git\gen-db> $env:DATABASE_PASSWORD = "postgres"
+PS C:\Users\sepp5\Git\gen-db> $env:DATABASE_NAME = "gendb"
+PS C:\Users\sepp5\Git\gen-db> python -m uvicorn src.backend.app:app --reload
+INFO:     Will watch for changes in these directories: ['C:\\Users\\sepp5\\Git\\gen-db']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [18760] using WatchFiles
+INFO:     Started server process [24636]
+INFO:     Waiting for application startup.
+2026-07-16 08:54:39 [INFO] Starting up Gen API with C++-based Subgraph Executor
+INFO:     Application startup complete.
+2026-07-16 08:54:55 [INFO] GET / - Serving frontend
+INFO:     127.0.0.1:57854 - "GET / HTTP/1.1" 200 OK
+2026-07-16 08:54:55 [INFO] GET /api/networks limit=33 random=True
+2026-07-16 08:54:55 [INFO] get_all_networks: limit=33 random_sample=True
+2026-07-16 08:54:56 [INFO] get_all_networks: Fetched 33 records
+2026-07-16 08:54:56 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:60030 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+2026-07-16 08:55:01 [INFO] GET /api/networks/247791
+2026-07-16 08:55:01 [INFO] get_network_by_id: network_id=247791
+2026-07-16 08:55:01 [INFO] get_network_by_id: Found network 'gene_regulation_D._melanogaster_247791'
+2026-07-16 08:55:01 [INFO] GET /api/networks/247791 - Found: gene_regulation_D._melanogaster_247791
+INFO:     127.0.0.1:60030 - "GET /api/networks/247791 HTTP/1.1" 200 OK
+2026-07-16 08:55:03 [INFO] POST /api/networks/search - nodes=14
+2026-07-16 08:55:20 [INFO] search_subgraph: 365004 candidates for query (n=14, e=53)
+2026-07-16 08:55:20 [INFO] ProcessPoolExecutor initialized with 14 workers
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 36522: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 36475: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 36461: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 35056: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 34857: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 34827: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 34681: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 34625: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 34564: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 33359: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 33227: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 33134: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 33018: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 32994: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 31560: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 31524: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 31487: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 30090: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 29893: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 29867: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 29851: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 29734: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 174990: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 174884: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:20 [WARNING] search_subgraph: Comparison error for network 16068: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 173401: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 173371: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 173330: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 29139: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 16149: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 29101: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 173077: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 29034: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 2476: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 28999: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 28831: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 26906: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 17850: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 17854: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 17860: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 26848: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 17865: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 26600: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 25900: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 173089: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 25778: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 25678: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 25478: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 24048: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 23835: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 171673: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 22621: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 17992: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 18022: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 22609: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 22410: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 20917: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 20809: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 18122: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 20680: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 19230: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 18213: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 19167: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 18286: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 18855: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 170170: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 169959: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 169834: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 169821: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 169793: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 168604: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 168595: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 198407: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:21 [WARNING] search_subgraph: Comparison error for network 168581: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 263: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 204636: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 168363: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 165367: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 165263: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 2784: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 163728: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 204362: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 163603: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 161789: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 201441: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 161630: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 160421: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 160418: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 160403: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 160264: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 160084: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 159387: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 2974: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 159036: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 158929: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 201392: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156762: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156155: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 204504: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 198300: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156139: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156108: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156089: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 156041: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 155818: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 155676: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 154442: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 154255: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 154170: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 198134: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 154036: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 152879: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 152790: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 4589: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 152694: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 151008: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 146047: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 145906: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 144558: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 144553: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 201339: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 198041: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 197929: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:22 [WARNING] search_subgraph: Comparison error for network 144465: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 142817: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 142766: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 196090: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 141435: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 4800: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 141233: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 141196: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 141084: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 140922: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 139518: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 139420: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 196083: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 137428: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 137389: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 137371: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 136376: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 194917: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 136278: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 134367: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 134174: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 193147: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 134118: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 134036: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 133920: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 191376: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 191239: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 132218: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 132079: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 130232: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 191206: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 128946: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 191108: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 190946: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 128551: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 199778: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 125171: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 124085: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 122293: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 122210: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 122087: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 199579: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 122043: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 122030: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:23 [WARNING] search_subgraph: Comparison error for network 118860: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 6617: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 118096: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 117922: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 116310: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 6667: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 6689: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 114857: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 114798: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 112659: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 112572: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 112275: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 110864: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 110607: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189635: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 6873: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 110588: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 109414: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 109401: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 109048: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 8089: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 107692: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189515: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 105741: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 105728: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189485: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189475: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 102943: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 102843: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 102705: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 8225: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 8256: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 102589: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 101018: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 100976: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 100883: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 99538: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 97945: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 97861: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189443: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 97788: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 97574: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 1958: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 8492: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 189321: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 1939: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 96307: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 96298: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 94527: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 94474: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 94400: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 93191: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 91548: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 188382: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 91442: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:24 [WARNING] search_subgraph: Comparison error for network 186978: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 91318: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 89596: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 186781: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 87829: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 87810: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 86522: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 86124: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 84665: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 10045: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 84656: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 184506: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 84609: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 83189: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 83085: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 82950: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 183217: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 182909: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 78413: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 78306: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 78086: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 182854: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 78055: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 77999: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 76634: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 75099: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 73475: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 73217: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 73124: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 73049: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 71861: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 11058: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 71607: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 71524: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 71466: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 70078: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 68085: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 67018: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 11149: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 11183: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 66816: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 181181: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 11248: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 66690: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 66664: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 65194: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:25 [WARNING] search_subgraph: Comparison error for network 181175: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 12510: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 65027: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 64998: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 64908: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 61999: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 61977: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 61709: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 61704: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 179778: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 60523: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 60339: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 60316: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 58913: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 58602: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 56626: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 55592: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 55427: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 55177: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 55138: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 52811: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 52775: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 52726: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 51032: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 176540: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 50940: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 176395: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 49554: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 49544: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 49525: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 48028: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 176327: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 47845: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 176289: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 47773: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 46029: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 46028: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 45950: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 43680: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 41859: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 14460: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 41637: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 38186: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 14489: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 38139: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 38057: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 36597: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 273880: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 273874: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 342863: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 294538: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:26 [WARNING] search_subgraph: Comparison error for network 401470: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 391999: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 234787: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 280087: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 353401: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 325546: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 325578: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 381782: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 272686: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 280069: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 381786: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 370541: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 338793: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 221790: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 401463: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 395053: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 250795: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 353283: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 207795: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 223450: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 249232: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 249222: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 335141: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 359419: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 279785: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 398361: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 334768: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 217033: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 272468: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 210602: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 249069: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 249049: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 235086: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 334651: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 391973: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 248884: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 307063: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 248835: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 247296: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 294821: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 351788: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 272319: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 272296: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 207848: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 333505: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 382267: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 294873: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:27 [WARNING] search_subgraph: Comparison error for network 246552: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 294925: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 382292: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 399972: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 246494: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 351605: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 294995: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 207791: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 288071: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 270393: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 223707: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 383469: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 383546: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 296145: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 351486: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 339629: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 325635: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 366407: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 351480: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 246144: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 383712: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 309560: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 351437: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 403553: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 401616: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 311312: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 383766: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 244938: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 244912: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 364363: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 244881: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 339762: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 316953: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 385429: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 296200: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 320566: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 403658: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 401346: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 217260: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 349533: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 212254: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 296271: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 406634: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 367824: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 342790: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 231604: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 359179: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 339816: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 345151: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 386828: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:28 [WARNING] search_subgraph: Comparison error for network 359101: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 311717: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 270084: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 349457: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 311806: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 242855: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 242817: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 387203: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 327260: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 228602: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 388320: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 349274: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 399821: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 296362: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 312998: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 241594: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 349228: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 296397: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 208761: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 285178: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 268747: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 296433: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 296439: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 268728: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 241593: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 241444: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 241316: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 358992: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 327198: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 223249: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 388644: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 327183: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 278823: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 283181: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 236510: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 268598: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 313475: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 398094: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 348022: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 216754: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 373524: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 314074: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 223345: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 388667: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 345396: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:29 [WARNING] search_subgraph: Comparison error for network 364711: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 339939: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 267687: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 314184: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 231718: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 211973: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 336356: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 347859: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 319313: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 236610: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 240080: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 389979: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 236674: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 236676: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 297760: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 207578: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 325852: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 314459: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 358233: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 374753: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 321010: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 347728: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 265439: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 399786: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 238081: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 238016: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 237995: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 231802: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 358102: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 341351: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 226723: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 319233: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 236832: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 346411: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 265431: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 282248: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 393317: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 398249: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 210357: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 406322: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 364780: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 216188: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 265241: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 226705: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 331803: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 299436: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 225228: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:30 [WARNING] search_subgraph: Comparison error for network 216093: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 396749: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 376521: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 404491: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 376562: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 401278: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 299564: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 367963: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 262168: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 217176: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 260756: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 299616: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 226685: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 330208: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 341587: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 368010: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 260536: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 366065: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 319126: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 319128: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 406309: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 260511: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 217148: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 368129: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 364645: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 276736: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 260346: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 377795: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 226633: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 283476: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 258238: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 330069: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 399649: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 257426: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 257386: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 301136: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 257314: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 346264: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 257282: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 329961: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 257074: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 276586: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 276502: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 366172: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 401582: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 329927: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 286274: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 275306: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:31 [WARNING] search_subgraph: Comparison error for network 338668: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 221640: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 255314: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 301474: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 233916: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 302685: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 404758: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 226504: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 302770: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 230150: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 286389: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 364665: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 361365: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 361342: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 355010: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 275107: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 329898: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 253562: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 407733: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 379475: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 274966: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 354780: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 230184: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 274117: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 274063: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 403430: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 293341: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 253493: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 253326: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 303122: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 380346: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 273885: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 354734: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 253211: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 225018: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 354691: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 380442: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 366181: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 396912: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 208023: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 287990: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 252285: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 288426: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 380614: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 685397: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 612396: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 720604: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 678440: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 669983: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:32 [WARNING] search_subgraph: Comparison error for network 771386: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 678407: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 796200: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 802852: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 778604: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 756183: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 735353: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 805983: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 804193: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 736534: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 801365: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 759456: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 771155: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 725518: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 796031: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 666470: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 733664: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 759481: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 722067: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 622234: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 688497: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 617259: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 748913: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 756217: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 738246: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 671309: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 625521: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 671361: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 812511: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 731688: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 643579: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 713852: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 661366: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 736815: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 807910: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 736836: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 663243: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 718812: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 725554: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 713794: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 794626: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 663255: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 722333: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 740092: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 718958: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 736960: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 768263: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 658326: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 661465: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:33 [WARNING] search_subgraph: Comparison error for network 723601: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 715385: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 776494: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 720640: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 643984: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 663338: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 698249: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 775283: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 616988: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 801174: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 726801: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 783245: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 784777: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 631842: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 658553: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 761422: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 761441: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 631869: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 645535: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 687273: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 645586: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 775116: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 712537: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 792939: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 761464: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 623656: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 810993: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 661603: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 623652: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 744648: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 806220: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 801068: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 685165: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 780078: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 632105: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 679547: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 784871: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 633246: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 646950: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 647008: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 685162: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 685690: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 633261: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 715795: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 688584: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 633294: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 633298: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:34 [WARNING] search_subgraph: Comparison error for network 741638: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 757871: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 812651: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 647213: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 688557: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 633311: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 751007: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 761590: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 673248: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 611998: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 648439: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 751045: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 702460: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 696511: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 738614: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 696470: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 702450: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 800955: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 761785: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 746352: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 761862: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 813991: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 648734: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 717385: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 633487: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 620240: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 648780: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 791511: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 791494: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 799787: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 609166: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 774928: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 633606: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 694994: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 633654: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 694906: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 807605: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 694858: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 751139: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 727223: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 650735: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 618602: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 809481: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 679345: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 807612: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 727264: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 757946: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 634960: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 707368: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:35 [WARNING] search_subgraph: Comparison error for network 651029: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 791414: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 763280: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 799644: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 630366: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 687111: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 734942: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 718732: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 635025: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 730515: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 732030: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 772976: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 783466: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 807932: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 635177: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 807716: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 749135: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 789930: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 635316: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 630084: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 722229: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 636478: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 693598: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 748048: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 652659: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 751484: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 747836: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 610522: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 720503: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 763365: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 700882: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 763394: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 735007: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 721933: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 807608: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 708917: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 802600: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 636636: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 778206: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 693495: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 653585: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 661886: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 772895: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 763444: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 810947: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 693441: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 700856: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 724049: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 636773: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 676567: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 700833: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:36 [WARNING] search_subgraph: Comparison error for network 636814: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 764173: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 618940: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 728736: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 788319: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 758066: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 654963: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 709037: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 735137: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 612253: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 610408: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 655141: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 626996: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 692070: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 692049: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 621849: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 778134: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 655218: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 639227: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 788158: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 664977: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 788069: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 658509: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 665023: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 691998: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 661913: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 743413: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 621818: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 655424: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 655427: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 639511: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 708860: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 741497: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 656016: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 743274: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 700754: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 786732: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 608778: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 752913: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 786731: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 687097: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 656122: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:37 [WARNING] search_subgraph: Comparison error for network 691890: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 676836: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 752943: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 735195: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 718586: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 676899: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 771294: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 665087: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 705955: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 656371: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 686933: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 659846: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 752971: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 656431: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 804460: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 656448: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 656506: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 779881: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 710535: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 786335: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 741420: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 640938: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 691735: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 657125: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 688846: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 743148: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 705943: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 690543: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 785121: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 812501: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 610301: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 745010: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 663113: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 641042: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 657404: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 715668: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 801440: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 805967: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 690033: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 688936: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 688926: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 699229: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 797706: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 765967: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 685549: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 784937: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:38 [WARNING] search_subgraph: Comparison error for network 658129: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 784848: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 685483: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 658215: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 765984: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 510235: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 445806: CLI error: Unknown error
+subgraph-cli failed: Unknown error
+2026-07-16 08:55:39 [WARNING] search_subgraph: Comparison error for network 554376: CLI error: Unknown error
+ERROR:    Exception in ASGI application
+concurrent.futures.process._RemoteTraceback:
+"""
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\concurrent\futures\process.py", line 264, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\Git\gen-db\src\backend\subgraph_executor.py", line 130, in execute_subgraph_comparison
+    result = subprocess.run(
+             ^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 992, in __init__
+    errread, errwrite) = self._get_handles(stdin, stdout, stderr)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1346, in _get_handles
+    with self._on_error_fd_closer() as err_close_fds:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1311, in _on_error_fd_closer
+    @contextlib.contextmanager
+
+KeyboardInterrupt
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\middleware\cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\starlette\routing.py", line 66, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\fastapi\routing.py", line 274, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\AppData\Roaming\Python\Python312\site-packages\fastapi\routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\Git\gen-db\src\backend\app.py", line 121, in search_networks
+    matches = crud.search_subgraph(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\Git\gen-db\src\backend\crud.py", line 151, in search_subgraph
+    result, error = compare_graphs_async(query_matrix, candidate_matrix)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sepp5\Git\gen-db\src\backend\subgraph_executor.py", line 193, in compare_graphs_async
+    return future.result()  # Wartet auf Ergebnis
+           ^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+KeyboardInterrupt
+INFO:     127.0.0.1:60030 - "POST /api/networks/search HTTP/1.1" 500 Internal Server Error
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-07-16 08:55:39 [INFO] Shutting down Gen API and Subgraph Executor
+2026-07-16 08:55:39 [INFO] Shutting down ProcessPoolExecutor...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [24636]
+INFO:     Stopping reloader process [18760]
+PS C:\Users\sepp5\Git\gen-db>
