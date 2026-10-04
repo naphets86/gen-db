@@ -5,13 +5,13 @@
     <title>Coverage report</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_0853b3de.css" type="text/css">
-    <script src="coverage_html_cb_188fc9a4.js" defer></script>
+    <script src="coverage_html_cb_c6c441fc.js" defer></script>
 </head>
 <body class="indexfile">
 <header>
     <div class="content">
         <h1>Coverage report:
-            <span class="pc_cov">69%</span>
+            <span class="pc_cov">92%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -27,6 +27,8 @@
                         <kbd>s</kbd>
                         <kbd>m</kbd>
                         <kbd>x</kbd>
+                        <kbd>b</kbd>
+                        <kbd>p</kbd>
                         <kbd>c</kbd>
                         &nbsp; change column sorting
                     </p>
@@ -54,21 +56,36 @@
                 <a class="button current">Classes</a>
         </h2>
         <p class="text">
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-23 09:10 +0200
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
+            created at 2026-10-04 12:28 +0200
         </p>
     </div>
 </header>
 <main id="index">
     <table class="index" data-sortable>
         <thead>
+            <tr class="tablehead grouphead">
+                <th class="spacer">&nbsp;</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="left" colspan="4">Statements</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="left" colspan="3">Branches</th>
+                <th class="spacer">&nbsp;</th>
+                <th>Total</th>
+            </tr>
             <tr class="tablehead" title="Click to sort">
                 <th id="file" class="name" aria-sort="none" data-shortcut="f">File<span class="arrows"></span></th>
                 <th id="region" class="name" aria-sort="none" data-default-sort-order="ascending" data-shortcut="n">class<span class="arrows"></span></th>
                 <th class="spacer">&nbsp;</th>
+                <th id="statements_coverage" aria-sort="none" data-default-sort-order="descending">coverage<span class="arrows"></span></th>
                 <th id="statements" aria-sort="none" data-default-sort-order="descending" data-shortcut="s">statements<span class="arrows"></span></th>
                 <th id="missing" aria-sort="none" data-default-sort-order="descending" data-shortcut="m">missing<span class="arrows"></span></th>
                 <th id="excluded" aria-sort="none" data-default-sort-order="descending" data-shortcut="x">excluded<span class="arrows"></span></th>
+                <th class="spacer">&nbsp;</th>
+                <th id="branches_coverage" aria-sort="none" data-default-sort-order="descending">coverage<span class="arrows"></span></th>
+                <th id="branches" aria-sort="none" data-default-sort-order="descending" data-shortcut="b">branches<span class="arrows"></span></th>
+                <th id="partial" aria-sort="none" data-default-sort-order="descending" data-shortcut="p">partial<span class="arrows"></span></th>
                 <th class="spacer">&nbsp;</th>
                 <th id="coverage" aria-sort="none" data-shortcut="c">coverage<span class="arrows"></span></th>
             </tr>
@@ -78,7 +95,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7___init___py.html">src<span class="sep">\</span>backend<span class="sep">\</span>__init__.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7___init___py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -88,77 +110,117 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="84 108">78%</td>
                 <td>108</td>
-                <td>64</td>
+                <td>24</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="44 108">41%</td>
+                <td data-ratio="5 6">83%</td>
+                <td>6</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="89 114">78%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t20">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t20"><data value='ConfigError'>ConfigError</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t14">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t14"><data value='SubgraphConfig'>SubgraphConfig</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="0 0">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t25">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t25"><data value='SubgraphConfig'>SubgraphConfig</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t20">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t20"><data value='Config'>Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>5</td>
-                <td>5</td>
+                <td data-ratio="0 4">0%</td>
+                <td>4</td>
+                <td>4</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 5">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 4">0%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t47">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t47"><data value='Config'>Config</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t205">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t205"><data value='ConfigError'>ConfigError</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>26</td>
-                <td>14</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="12 26">46%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>75</td>
-                <td>3</td>
+                <td data-ratio="59 63">94%</td>
+                <td>63</td>
+                <td>4</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="72 75">96%</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="61 65">94%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>87</td>
-                <td>50</td>
+                <td data-ratio="90 91">99%</td>
+                <td>91</td>
+                <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="37 87">43%</td>
+                <td data-ratio="15 16">94%</td>
+                <td>16</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="105 107">98%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>24</td>
+                <td data-ratio="20 22">91%</td>
+                <td>22</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="24 24">100%</td>
+                <td data-ratio="20 22">91%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t17">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t17"><data value='Network'>Network</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -168,7 +230,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t50">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t50"><data value='NetworkSummary'>NetworkSummary</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -178,7 +245,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t78">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t78"><data value='SearchMatch'>SearchMatch</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -188,7 +260,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t105">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html#t105"><data value='NetworkCreationResult'>NetworkCreationResult</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -198,17 +275,27 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>48</td>
+                <td data-ratio="16 16">100%</td>
+                <td>16</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="48 48">100%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="16 16">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t23">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t23"><data value='NetworkCreate'>NetworkCreate</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -218,7 +305,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t48">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t48"><data value='Config'>NetworkCreate.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -228,7 +320,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t61">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t61"><data value='NetworkSearch'>NetworkSearch</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -238,7 +335,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t77">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t77"><data value='Config'>NetworkSearch.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -248,7 +350,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t90">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t90"><data value='NetworkResponse'>NetworkResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -258,7 +365,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t108">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t108"><data value='Config'>NetworkResponse.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -268,7 +380,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t125">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t125"><data value='NetworkSummaryResponse'>NetworkSummaryResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -278,7 +395,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t140">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t140"><data value='Config'>NetworkSummaryResponse.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -288,7 +410,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t154">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t154"><data value='SearchMatchResponse'>SearchMatchResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -298,7 +425,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t172">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t172"><data value='Config'>SearchMatchResponse.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -308,7 +440,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t187">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t187"><data value='NetworkCreationResponse'>NetworkCreationResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -318,7 +455,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t201">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t201"><data value='Config'>NetworkCreationResponse.Config</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -328,7 +470,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t219">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t219"><data value='ListResponse'>ListResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -338,7 +485,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t226">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t226"><data value='SingleResponse'>SingleResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -348,7 +500,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t232">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t232"><data value='SearchResponse'>SearchResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -358,7 +515,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t238">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t238"><data value='CreationResponse'>CreationResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -368,7 +530,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t244">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t244"><data value='DeleteResponse'>DeleteResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -378,7 +545,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t250">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t250"><data value='HealthResponse'>HealthResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -388,7 +560,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t256">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html#t256"><data value='ErrorResponse'>ErrorResponse</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -398,7 +575,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="82 82">100%</td>
                 <td>82</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -408,11 +590,16 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html"><data value=''><span class='no-noun'>(no class)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>97</td>
-                <td>37</td>
+                <td data-ratio="67 68">99%</td>
+                <td>68</td>
+                <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="60 97">62%</td>
+                <td data-ratio="17 18">94%</td>
+                <td>18</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="84 86">98%</td>
             </tr>
         </tbody>
         <tfoot>
@@ -420,11 +607,16 @@
                 <td class="name">Total</td>
                 <td class="name">&nbsp;</td>
                 <td class="spacer">&nbsp;</td>
-                <td>552</td>
-                <td>173</td>
+                <td data-ratio="418 454">92%</td>
+                <td>454</td>
+                <td>36</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="379 552">69%</td>
+                <td data-ratio="39 42">93%</td>
+                <td>42</td>
+                <td>3</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="457 496">92%</td>
             </tr>
         </tfoot>
     </table>
@@ -435,8 +627,8 @@
 <footer>
     <div class="content">
         <p>
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-23 09:10 +0200
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
+            created at 2026-10-04 12:28 +0200
         </p>
     </div>
     <aside class="hidden">

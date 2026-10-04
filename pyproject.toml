@@ -43,3 +43,9 @@ omit = [
 testpaths = ["tests"]
 pythonpath = [".", "src"]
 addopts = "--cov=src --cov-report=html:doc/coverage --cov-report=term-missing"
+markers = [
+    "db: requires the isolated PostgreSQL test database",
+    "unit: unit test",
+    "integration: API or component integration test",
+    "slow: computationally expensive test",
+]

@@ -105,6 +105,8 @@ INFO:     127.0.0.1:52597 - "POST /api/networks/search HTTP/1.1" 200 OK
 (venv) PS C:\Users\sepp5\Git\gen-db> pytest
 ```
 
+Die Tests verwenden standardmäßig eine separate PostgreSQL-Datenbank `gen_test`. Sie brechen ab, wenn `TEST_DATABASE_NAME` mit `DATABASE_NAME` übereinstimmt; `TEST_DATABASE_*` kann in `.env` für eine separate Testinstanz gesetzt werden.
+
 Coverage-Report: `doc/coverage/index.html`
 
 ## Erwerb

@@ -65,8 +65,7 @@ class TestSubgraphAlgorithmAllCases:
             query_labels=['X', 'Y']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert isinstance(matches, list)
+        assert isinstance(matches, list)
 
     def test_subgraph_case_keep_both_circle_vs_line(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
@@ -86,8 +85,7 @@ class TestSubgraphAlgorithmAllCases:
             query_labels=['X', 'Y', 'Z']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert all(m.get('subgraph_result') != 'keep_both' for m in matches)
+        assert all(m.get('subgraph_result') != 'keep_both' for m in matches)
 
     def test_subgraph_case_keep_both_different_densities(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
@@ -260,8 +258,7 @@ class TestSubgraphEdgeCases:
             query_labels=['A', 'B']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) == 0
+        assert len(matches) == 0
 
     @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_large_matrix(self, clean_database, monkeypatch):
@@ -399,9 +396,8 @@ class TestSubgraphPrintStatements:
                 query_labels=['A', 'B']
             )
 
-        if SUBGRAPH_AVAILABLE:
-            assert any('candidates' in r.message.lower() or 'kandidaten' in r.message.lower()
-                       for r in caplog.records)
+        assert any('candidates' in r.message.lower() or 'kandidaten' in r.message.lower()
+                   for r in caplog.records)
 
 
 @pytest.mark.unit

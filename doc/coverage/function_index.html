@@ -5,13 +5,13 @@
     <title>Coverage report</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_0853b3de.css" type="text/css">
-    <script src="coverage_html_cb_188fc9a4.js" defer></script>
+    <script src="coverage_html_cb_c6c441fc.js" defer></script>
 </head>
 <body class="indexfile">
 <header>
     <div class="content">
         <h1>Coverage report:
-            <span class="pc_cov">69%</span>
+            <span class="pc_cov">92%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -27,6 +27,8 @@
                         <kbd>s</kbd>
                         <kbd>m</kbd>
                         <kbd>x</kbd>
+                        <kbd>b</kbd>
+                        <kbd>p</kbd>
                         <kbd>c</kbd>
                         &nbsp; change column sorting
                     </p>
@@ -54,21 +56,36 @@
                 <a class="button" href="class_index.html">Classes</a>
         </h2>
         <p class="text">
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-23 09:10 +0200
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
+            created at 2026-10-04 12:28 +0200
         </p>
     </div>
 </header>
 <main id="index">
     <table class="index" data-sortable>
         <thead>
+            <tr class="tablehead grouphead">
+                <th class="spacer">&nbsp;</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="left" colspan="4">Statements</th>
+                <th class="spacer">&nbsp;</th>
+                <th class="left" colspan="3">Branches</th>
+                <th class="spacer">&nbsp;</th>
+                <th>Total</th>
+            </tr>
             <tr class="tablehead" title="Click to sort">
                 <th id="file" class="name" aria-sort="none" data-shortcut="f">File<span class="arrows"></span></th>
                 <th id="region" class="name" aria-sort="none" data-default-sort-order="ascending" data-shortcut="n">function<span class="arrows"></span></th>
                 <th class="spacer">&nbsp;</th>
+                <th id="statements_coverage" aria-sort="none" data-default-sort-order="descending">coverage<span class="arrows"></span></th>
                 <th id="statements" aria-sort="none" data-default-sort-order="descending" data-shortcut="s">statements<span class="arrows"></span></th>
                 <th id="missing" aria-sort="none" data-default-sort-order="descending" data-shortcut="m">missing<span class="arrows"></span></th>
                 <th id="excluded" aria-sort="none" data-default-sort-order="descending" data-shortcut="x">excluded<span class="arrows"></span></th>
+                <th class="spacer">&nbsp;</th>
+                <th id="branches_coverage" aria-sort="none" data-default-sort-order="descending">coverage<span class="arrows"></span></th>
+                <th id="branches" aria-sort="none" data-default-sort-order="descending" data-shortcut="b">branches<span class="arrows"></span></th>
+                <th id="partial" aria-sort="none" data-default-sort-order="descending" data-shortcut="p">partial<span class="arrows"></span></th>
                 <th class="spacer">&nbsp;</th>
                 <th id="coverage" aria-sort="none" data-shortcut="c">coverage<span class="arrows"></span></th>
             </tr>
@@ -78,7 +95,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7___init___py.html">src<span class="sep">\</span>backend<span class="sep">\</span>__init__.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7___init___py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -88,8 +110,13 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t64">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t64"><data value='lifespan'>lifespan</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 7">0%</td>
                 <td>7</td>
                 <td>7</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="0 7">0%</td>
@@ -98,48 +125,73 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t109">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t109"><data value='network_summary_to_response'>network_summary_to_response</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>1</td>
+                <td data-ratio="1 1">100%</td>
                 <td>1</td>
                 <td>0</td>
+                <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 1">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t122">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t122"><data value='network_to_response'>network_to_response</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>1</td>
+                <td data-ratio="1 1">100%</td>
                 <td>1</td>
                 <td>0</td>
+                <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 1">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t139">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t139"><data value='search_match_to_response'>search_match_to_response</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>1</td>
+                <td data-ratio="1 1">100%</td>
                 <td>1</td>
                 <td>0</td>
+                <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 1">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t153">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t153"><data value='creation_result_to_response'>creation_result_to_response</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>1</td>
+                <td data-ratio="1 1">100%</td>
                 <td>1</td>
                 <td>0</td>
+                <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 1">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t175">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t175"><data value='root'>root</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 2">0%</td>
                 <td>2</td>
                 <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="0 2">0%</td>
@@ -148,38 +200,58 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t190">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t190"><data value='get_networks'>get_networks</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 9">67%</td>
                 <td>9</td>
-                <td>9</td>
+                <td>3</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 9">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 9">67%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t230">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t230"><data value='get_network'>get_network</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="11 14">79%</td>
                 <td>14</td>
-                <td>14</td>
+                <td>3</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 14">0%</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="13 16">81%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t269">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t269"><data value='create_network'>create_network</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>9</td>
+                <td data-ratio="9 9">100%</td>
                 <td>9</td>
                 <td>0</td>
+                <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 9">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 9">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t312">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t312"><data value='search_networks'>search_networks</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 9">67%</td>
                 <td>9</td>
                 <td>3</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="6 9">67%</td>
@@ -188,17 +260,27 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t348">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t348"><data value='delete_network'>delete_network</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="10 13">77%</td>
                 <td>13</td>
-                <td>13</td>
+                <td>3</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 13">0%</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="12 15">80%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t384">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html#t384"><data value='health_check'>health_check</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
                 <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -208,237 +290,282 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>app.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_app_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="36 39">92%</td>
                 <td>39</td>
                 <td>3</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="36 39">92%</td>
+                <td data-ratio="1 2">50%</td>
+                <td>2</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="37 41">90%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t38">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t38"><data value='init__'>SubgraphConfig.__init__</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t96">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t96"><data value='get_database_url'>Config.get_database_url</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>5</td>
-                <td>5</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 5">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t124">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t124"><data value='validate_log_level'>Config.validate_log_level</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>5</td>
+                <td data-ratio="0 1">0%</td>
+                <td>1</td>
                 <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="4 5">80%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 1">0%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t134">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t134"><data value='validate_database_ssl_mode'>Config.validate_database_ssl_mode</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t107">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t107"><data value='get_test_database_config'>Config.get_test_database_config</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>4</td>
+                <td data-ratio="0 1">0%</td>
+                <td>1</td>
                 <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="3 4">75%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 1">0%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t132">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t132"><data value='get_subgraph_config'>Config.get_subgraph_config</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 1">0%</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 1">0%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t143">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t143"><data value='validate_container_env'>Config.validate_container_env</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t143"><data value='to_dict'>Config.to_dict</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>4</td>
+                <td data-ratio="0 1">0%</td>
+                <td>1</td>
                 <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="3 4">75%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t152">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t152"><data value='validate_secret_key'>Config.validate_secret_key</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>4</td>
-                <td>2</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="2 4">50%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t159">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t159"><data value='get_database_url'>Config.get_database_url</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>2</td>
-                <td>2</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 2">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t172">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t172"><data value='get_subgraph_config'>Config.get_subgraph_config</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>1</td>
-                <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="0 1">0%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t185">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t185"><data value='to_dict'>Config.to_dict</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t155">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t155"><data value='get_config'>get_config</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>1</td>
-                <td>1</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 1">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t189">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t189"><data value='repr__'>Config.__repr__</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>5</td>
-                <td>5</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 5">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t204">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t204"><data value='get_config'>get_config</data></a></td>
-                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 8">75%</td>
                 <td>8</td>
-                <td>3</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="5 8">62%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t224">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t224"><data value='reload_config'>reload_config</data></a></td>
-                <td class="spacer">&nbsp;</td>
                 <td>2</td>
-                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="8 10">80%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t183">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html#t183"><data value='reload_config'>reload_config</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="4 6">67%</td>
+                <td>6</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="4 6">67%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>config.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_config_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>65</td>
+                <td data-ratio="49 49">100%</td>
+                <td>49</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="65 65">100%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="49 49">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t25">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t25"><data value='compute_signatures'>compute_signatures</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t28">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t28"><data value='compute_signatures'>compute_signatures</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="7 7">100%</td>
                 <td>7</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="7 7">100%</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 9">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t36">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t36"><data value='compute_signature_hash'>compute_signature_hash</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t39">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t39"><data value='compute_signature_hash'>compute_signature_hash</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
                 <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="2 2">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t42">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t42"><data value='create_network'>create_network</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t45">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t45"><data value='create_network'>create_network</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="13 13">100%</td>
                 <td>13</td>
-                <td>13</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 13">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="13 13">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t109">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t109"><data value='get_all_networks'>get_all_networks</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t112">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t112"><data value='get_all_networks'>get_all_networks</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="8 9">89%</td>
                 <td>9</td>
-                <td>9</td>
+                <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 9">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t164">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t164"><data value='get_network_by_id'>get_network_by_id</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>10</td>
-                <td>10</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 10">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t212">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t212"><data value='search_subgraph'>search_subgraph</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>22</td>
-                <td>9</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="13 22">59%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t293">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t293"><data value='delete_network'>delete_network</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>9</td>
-                <td>9</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 9">0%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>15</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="15 15">100%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t10">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t10"><data value='get_database_config'>get_database_config</data></a></td>
-                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 2">50%</td>
                 <td>2</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 11">82%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t167">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t167"><data value='get_network_by_id'>get_network_by_id</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="10 10">100%</td>
+                <td>10</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="12 12">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t28">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t28"><data value='get_db_connection'>get_db_connection</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t215">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t215"><data value='search_subgraph'>search_subgraph</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>11</td>
+                <td data-ratio="25 25">100%</td>
+                <td>25</td>
                 <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="8 8">100%</td>
+                <td>8</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="33 33">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t300">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html#t300"><data value='delete_network'>delete_network</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 9">100%</td>
+                <td>9</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="11 11">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t45">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t45"><data value='get_db_cursor'>get_db_cursor</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>crud.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_crud_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="16 16">100%</td>
+                <td>16</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="16 16">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t10">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t10"><data value='get_database_config'>get_database_config</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 2">0%</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 2">0%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t28">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t28"><data value='get_db_connection'>get_db_connection</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 9">100%</td>
+                <td>9</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="9 9">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t53">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html#t53"><data value='get_db_cursor'>get_db_cursor</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
                 <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -448,7 +575,12 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>database.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_database_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="10 10">100%</td>
                 <td>10</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
@@ -458,111 +590,181 @@
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>models.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_models_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>48</td>
+                <td data-ratio="16 16">100%</td>
+                <td>16</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="48 48">100%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="16 16">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>schemas.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_schemas_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="82 82">100%</td>
                 <td>82</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="82 82">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t35">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t35"><data value='get_config_safe'>_get_config_safe</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t52">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t52"><data value='get_config_safe'>_get_config_safe</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 6">100%</td>
                 <td>6</td>
-                <td>3</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="3 6">50%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 6">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t50">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t50"><data value='get_executor'>get_executor</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t67">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t67"><data value='get_executor'>get_executor</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="11 11">100%</td>
                 <td>11</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="7 8">88%</td>
+                <td>8</td>
+                <td>1</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="18 19">95%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t100">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t100"><data value='execute_subgraph_comparison'>execute_subgraph_comparison</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="12 12">100%</td>
+                <td>12</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 6">100%</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="18 18">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t135">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t135"><data value='compare_to_query'>_compare_to_query</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 1">0%</td>
+                <td>1</td>
                 <td>1</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="10 11">91%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t83">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t83"><data value='get_cli_path'>get_cli_path</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>22</td>
-                <td>8</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="14 22">64%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t144">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t144"><data value='execute_subgraph_comparison'>execute_subgraph_comparison</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>25</td>
-                <td>22</td>
-                <td>0</td>
-                <td class="spacer">&nbsp;</td>
-                <td data-ratio="3 25">12%</td>
-            </tr>
-            <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t216">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t216"><data value='submit_comparison'>submit_comparison</data></a></td>
-                <td class="spacer">&nbsp;</td>
-                <td>3</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="3 3">100%</td>
+                <td data-ratio="0 1">0%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t234">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t234"><data value='compare_graphs_async'>compare_graphs_async</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t140">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t140"><data value='submit_comparison'>submit_comparison</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
                 <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
                 <td data-ratio="2 2">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t252">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t252"><data value='compare_graphs_async_await'>compare_graphs_async_await</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t157">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t157"><data value='compare_graphs_async'>compare_graphs_async</data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>3</td>
-                <td>3</td>
+                <td data-ratio="1 1">100%</td>
+                <td>1</td>
+                <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="0 3">0%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="1 1">100%</td>
             </tr>
             <tr class="region">
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t278">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
-                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t278"><data value='shutdown_executor'>shutdown_executor</data></a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t171">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t171"><data value='compare_many'>compare_many</data></a></td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="4 4">100%</td>
                 <td>4</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 6">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t204">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t204"><data value='compare_graphs_async_await'>compare_graphs_async_await</data></a></td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="3 3">100%</td>
+                <td>3</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="3 3">100%</td>
+            </tr>
+            <tr class="region">
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t226">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
+                <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html#t226"><data value='shutdown_executor'>shutdown_executor</data></a></td>
+                <td class="spacer">&nbsp;</td>
                 <td data-ratio="4 4">100%</td>
+                <td>4</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="2 2">100%</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="6 6">100%</td>
             </tr>
             <tr class="region">
                 <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html">src<span class="sep">\</span>backend<span class="sep">\</span>subgraph_executor.py</a></td>
                 <td class="name"><a href="z_798a2b81d00ca5b7_subgraph_executor_py.html"><data value=''><span class='no-noun'>(no function)</span></data></a></td>
                 <td class="spacer">&nbsp;</td>
-                <td>21</td>
+                <td data-ratio="24 24">100%</td>
+                <td>24</td>
                 <td>0</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="21 21">100%</td>
+                <td data-ratio="0 0">100%</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="24 24">100%</td>
             </tr>
         </tbody>
         <tfoot>
@@ -570,11 +772,16 @@
                 <td class="name">Total</td>
                 <td class="name">&nbsp;</td>
                 <td class="spacer">&nbsp;</td>
-                <td>552</td>
-                <td>173</td>
+                <td data-ratio="418 454">92%</td>
+                <td>454</td>
+                <td>36</td>
                 <td>0</td>
                 <td class="spacer">&nbsp;</td>
-                <td data-ratio="379 552">69%</td>
+                <td data-ratio="39 42">93%</td>
+                <td>42</td>
+                <td>3</td>
+                <td class="spacer">&nbsp;</td>
+                <td data-ratio="457 496">92%</td>
             </tr>
         </tfoot>
     </table>
@@ -585,8 +792,8 @@
 <footer>
     <div class="content">
         <p>
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-23 09:10 +0200
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
+            created at 2026-10-04 12:28 +0200
         </p>
     </div>
     <aside class="hidden">
