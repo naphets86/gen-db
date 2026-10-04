@@ -40,6 +40,7 @@ omit = [
     "tests/*",
     "venv/*",
     "doc/*",
+    "src/experiment_search_workers.py",
 ]
 
 [tool.pytest.ini_options]
