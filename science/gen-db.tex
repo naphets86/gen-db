@@ -1,6 +1,8 @@
 \documentclass[a4paper,12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[german]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -12,6 +14,11 @@
 \usepackage{enumitem}
 \usepackage{microtype}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{rotating}
+
+\emergencystretch=4em
+\sloppy
 
 \geometry{margin=2.5cm}
 
@@ -70,10 +77,9 @@
 	{≥}{{$\geq$}}1
 }
 
-\title{Effiziente Subgraph-Suche in Datenbanken biologischer Netzwerke:\\
-Realisierung und Analyse des Systems Gen-DB}
+\title{Effiziente Subgraph-Suche in Datenbanken biologischer Netzwerke: Realisierung und Analyse von Gen-DB}
 \author{Stephan Epp}
-\date{\today}
+\date{23. Januar 2026}
 
 \begin{document}
 
@@ -100,7 +106,7 @@ Diese Arbeit beschreibt die konkrete Realisierung einer solchen Suche im System 
 
 \subsection{Aufbau der Arbeit}
 
-Abschnitt~\ref{sec:grundlagen} stellt die Grundlagen des Subgraph Algorithmus und der Datenbankrepräsentation vor. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur von Gen-DB. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline und beweist deren Korrektheit und Komplexität. Abschnitt~\ref{sec:evaluation} präsentiert die experimentelle Auswertung mit Diagrammen. Abschnitt~\ref{sec:ausblick} schließt mit einem ausführlichen Ausblick.
+Zunächst führt Abschnitt~\ref{sec:grundlagen} in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation und den Subgraph Algorithmus ein. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank und Suche vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) bündelt den Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen; seine letzte Untersektion fasst die wesentlichen Ergebnisse zusammen.
 
 \section{Grundlagen}
 \label{sec:grundlagen}
@@ -203,6 +209,35 @@ Die Speicherung erfolgt normalisiert über zwei $1{:}1$-verknüpfte Relationen:
 
 Die Spalten \texttt{node\_count} und \texttt{edge\_count} entsprechen $n_k = |V_k|$ bzw. $m_k = |E_k| = \sum_{i,j} (A_k)_{ij}$ und werden für das Pre-Filtering (Abschnitt~\ref{sec:prefilter}) materialisiert, um eine vollständige Tabellenabtastung zu vermeiden.
 
+\subsection{UML-Architekturmodelle von Gen-DB}
+\label{sec:uml}
+
+Die beiden UML-Diagramme in den Abbildungen~\ref{fig:uml-packages} und~\ref{fig:uml-classes} dokumentieren die Struktur von Gen-DB auf Paket- und Klassenebene und bilden damit die konzeptionelle Grundlage für die in den folgenden Abschnitten formalisierten Such- und Datenbankprozesse.
+
+Das Paketdiagramm zeigt die fachliche und technische Zerlegung der Anwendung in drei logisch getrennte Bausteine: das Web-Frontend, das Backend mit den API- und Suchkomponenten und die persistente Datenspeicherung in PostgreSQL. Dieser Aufbau ist keine rein dokumentarische Anordnung, sondern entspricht einem klaren Entwurfsmuster für skalierbare Datenbankanwendungen: Die Präsentationsschicht übernimmt keine Datenlogik, sondern stellt lediglich die Interaktion mit dem Benutzer bereit; die Logikschicht kapselt die Kernfunktionalität der Signaturberechnung, des Pre-Filters und des Subgraph-Checks; die Datenbankschicht speichert neben den Netzwerkinhalten auch die maschinenlesbaren Repräsentationen, die für die Suche benötigt werden. Aus Sicht der Systemarchitektur ist deshalb besonders wichtig, dass die Datenflussrichtung zwischen den Schichten eindeutig ist: Ein Nutzer erzeugt oder lädt ein biologisches Netzwerk über das Frontend; die Anfrage wird als API-Request an das Backend weitergeleitet; dort werden Netzwerkdaten interpretiert, normalisiert und in Form von Knotenlabels und Adjazenzmatrizen für den Subgraph-Algorithmus aufbereitet; danach werden die passenden Kandidaten mit SQL-Filterkriterien aus der Datenbank abgerufen und im Ergebnis an die Präsentationsschicht zurückgegeben. Das Paketdiagramm macht damit sichtbar, dass Gen-DB als System nicht nur aus einer einzelnen Anwendung besteht, sondern aus einer zusammengesetzten, modularen Architektur, in der fachliche Trennung und technische Verantwortlichkeit klar voneinander abgegrenzt sind.
+
+Die in der übrigen Arbeit beschriebene Such-Pipeline baut genau auf dieser Struktur auf. Die Datenbank hält nicht nur die Netzwerkmetadaten wie Name, Organismus und Typ, sondern auch die strukturellen Repräsentationen in einer für schnelle Filterung geeigneten Form. Die Backend-Komponenten sind dafür zuständig, die Suchanfrage in eine Folge von Vorfilter-, Vergleichs- und Ergebnisphasen zu übersetzen. Das Paketdiagramm zeigt somit die organisatorische Ebene des Systems: welche Komponenten miteinander interagieren, welche Verantwortlichkeiten sie übernehmen und wo die fachlichen Grenzen verlaufen. Diese Abgrenzung ist für das Verständnis der späteren Komplexitäts- und Korrektheitsbeweise entscheidend, weil sie präzise zeigt, wo der algorithmische Kern liegt und wo rein relationale oder benutzerorientierte Aufgaben ausgelagert werden.
+
+Das Klassendiagramm ergänzt diese Sicht um den objektorientierten bzw. modellorientierten Entwurf der einzelnen Daten- und Dienstekomponenten. Es macht deutlich, dass die Systemlogik nicht auf lose, unstrukturierte Listen von Werten beruht, sondern auf semantisch geordneten Entitäten: Netzwerkobjekte, Knoten- und Kanteninformationen, Matrixrepräsentationen, Signaturdaten und Suchresultate sind als getrennte Strukturen modelliert. Ein wesentlicher Entwurfspunkt ist die Trennung zwischen der biologischen Netzwerkanalyse und der relationalen Persistenz. Während die Datenbankrelationen die langfristige Speicherung, Indizierung und Abfrage von Netzwerken garantieren, repräsentiert das Klassendiagramm die fachlichen Informationen im Laufzeitkontext der Anwendung. So sind etwa Metadaten wie Typ, Organismus und Knotenzahl in der Klasse bzw. im Datensatz des Netzwerks als formale Eigenschaften modelliert, während die Adjazenzmatrix und die Signatur-Arrays als strukturgebende Merkmale dienen, die für die Subgraph-Relation maßgeblich sind. Dadurch wird die Verbindung zwischen biologischer Semantik und algorithmisch nutzbarer Repräsentation explizit sichtbar.
+
+Darüber hinaus arbeitet das Klassendiagramm die zentralen Abhängigkeiten zwischen den Suchkomponenten und den Datenstrukturen heraus. Die Signaturberechnung ist nicht isoliert, sondern Teil einer größeren Verarbeitungskette, in der ein Query-Netzwerk mit den gespeicherten Netzwerken verglichen wird, Kandidaten über notwendige Bedingungen vorgefiltert werden und anschließend der Subgraph-Algorithmus entscheidet, ob ein Treffer tatsächlich vorliegt. Diese Abhängigkeiten sind im UML-Modell als Assoziationen und Verantwortlichkeiten nachvollziehbar: Jede Klasse trägt eine bestimmte Rolle in der Suche, aber die fachliche Koordination geschieht über das Zusammenspiel der Komponenten, nicht über eine monolithische Implementierung. Genau dieser modularisierte Aufbau ist es, der die Skalierbarkeit und Analysefähigkeit von Gen-DB erklärt: Die Datenmodellierung unterstützt die Suche, die Suchlogik verwendet die Repräsentation, und die Systemarchitektur koordiniert die Kommunikationspfade zwischen Nutzer, API und Datenbank.
+
+Die beiden Diagramme zusammen leisten also mehr als nur eine Visualisierung des Quellcodes: Sie dokumentieren die Entwurfslogik des Systems als Ganzes. Sie zeigen, dass Gen-DB ein typisches Full-Stack-System ist, dessen Stärke nicht in einer einzelnen technischen Komponente, sondern in der engen Verknüpfung von semantischer Modellierung, datenbankseitiger Indexierung und algorithmischer Subgraph-Erkennung liegt. Gerade diese Architektur ist der Grund, warum die folgenden Abschnitte die Laufzeit, die Korrektheit und die Kandidatenreduktion formal analysieren können: Die Struktur des Systems ist so klar und modular, dass die mathematische Modellierung der Pipeline direkt auf die reale Implementierung zurückgeführt werden kann.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{../doc/uml/packages_gen-db.pdf}
+\caption{UML-Paketdiagramm der Gen-DB-Architektur.}
+\label{fig:uml-packages}
+\end{figure}
+
+\begin{sidewaysfigure}
+\centering
+\includegraphics[width=0.9\textwidth]{../doc/uml/classes_gen-db.pdf}
+\caption{UML-Klassendiagramm der Gen-DB-Datenmodellierung und Suche.}
+\label{fig:uml-classes}
+\end{sidewaysfigure}
+
 \section{Such-Pipeline: Formalisierung und Beweise}
 \label{sec:pipeline}
 
@@ -216,8 +251,12 @@ Die Spalten \texttt{node\_count} und \texttt{edge\_count} entsprechen $n_k = |V_
 	annotiert mit dem jeweiligen Treffertyp (\texttt{exact} oder \texttt{subgraph}).
 \end{definition}
 
-\subsection{Pre-Filtering}
+\subsection{SQL-Vorauswahl}
 \label{sec:prefilter}
+
+Die zentrale Idee der Gen-DB-Suche besteht darin, den teuren strukturellen Vergleich nicht mit sämtlichen gespeicherten Netzwerken durchzuführen. Stattdessen wird der Suchraum zunächst direkt in der Datenbank durch eine kostengünstige Vorauswahl verkleinert. Dazu werden zwei leicht verfügbare Kennzahlen des Query-Netzwerks mit den entsprechenden Kennzahlen der gespeicherten Netzwerke verglichen: die Knotenzahl und die Kantenzahl. Für die hier betrachtete Richtung, in der das Query-Netzwerk in einem gespeicherten Netzwerk enthalten sein soll, kann ein gespeichertes Netzwerk mit weniger Knoten oder weniger Kanten kein Treffer sein. Solche Einträge werden daher bereits bei der Selektion ausgeschlossen, bevor ihre Adjazenzmatrix geladen und mit dem Subgraph-Algorithmus untersucht wird.
+
+Die Vorauswahl vergleicht dabei zunächst die Anzahlen, nicht die konkreten Knotenlabels oder die Position jeder einzelnen Kante. Sind beide Schranken erfüllt, bleibt ein Netzwerk ein möglicher Kandidat; ob seine konkrete Struktur tatsächlich zum Query passt, entscheidet erst der anschließende Subgraph-Vergleich. Beispielsweise kann ein Query mit acht Knoten und fünfzehn Kanten nur gespeicherte Netzwerke mit mindestens acht Knoten und mindestens fünfzehn Kanten als Kandidaten zulassen. Ein Eintrag mit sieben Knoten oder vierzehn Kanten lässt sich sicher ausschließen, während ein Eintrag mit acht Knoten und fünfzehn Kanten noch kein Treffer garantiert. Diese Trennung zwischen billiger, datenbankseitiger Kandidatenreduktion und genauer, algorithmischer Prüfung spart insbesondere bei großen Datenbanken unnötige Matrixübertragungen und Subgraph-Vergleiche, ohne für die Richtung $A_Q \preceq A_k$ bei vollständiger Kandidatenbetrachtung echte Treffer zu verlieren. Die folgenden Bedingungen formalisieren diese Vorauswahl.
 
 \begin{lemma}[Notwendige Bedingung für $\preceq$]
 	\label{lem:notwendig}
@@ -242,10 +281,10 @@ Die Spalten \texttt{node\_count} und \texttt{edge\_count} entsprechen $n_k = |V_
 \end{proof}
 
 \begin{bemerkung}
-	Korollar~\ref{kor:prefilter} sichert \emph{Vollständigkeit} für die Richtung $A_Q \preceq A_k$ (Query ist Subgraph eines DB-Eintrags). Für die symmetrische Richtung $A_k \preceq A_Q$ (DB-Eintrag ist Subgraph des Query) ist der Filter nicht direkt anwendbar, da hier $n_k \le n_Q$ gefordert wäre. In der aktuellen Implementierung wird daher mit \texttt{ORDER BY node\_count ASC} ohne untere Schranke gearbeitet bzw. die Filterbedingung situativ umgekehrt, vgl.\ Abschnitt~\ref{sec:ausblick}.
+	Korollar~\ref{kor:prefilter} sichert \emph{Vollständigkeit} für die Richtung $A_Q \preceq A_k$ (Query ist Subgraph eines DB-Eintrags). Für die symmetrische Richtung $A_k \preceq A_Q$ (DB-Eintrag ist Subgraph des Query) ist der Filter nicht direkt anwendbar, da hier $n_k \le n_Q$ gefordert wäre. In der aktuellen Implementierung wird daher mit \texttt{ORDER BY node\_count ASC} ohne untere Schranke gearbeitet bzw. die Filterbedingung situativ umgekehrt, vgl.\ Abschnitt~\ref{sec:schluss}.
 \end{bemerkung}
 
-\subsection{SQL-Realisierung des Pre-Filters}
+\subsection{SQL-Select-Statement}
 
 \begin{lstlisting}[language=SQL, caption=Pre-Filter-Query]
 SELECT bn.network_id, bn.name, bn.network_type, bn.organism,
@@ -303,8 +342,51 @@ Dieses Korollar erklärt formal, warum die in Abschnitt~\ref{sec:evaluation} gem
 \end{proof}
 
 \begin{bemerkung}
-	Mit $K < \infty$ (praktisch: $K = 10.000$) ist Satz~\ref{satz:korrektheit} nur noch \emph{approximativ} gültig: Falsche Negative können auftreten, wenn $|\mathcal{C}(Q,\mathcal{D})| > K$ und ein Treffer außerhalb der ersten $K$ (nach \texttt{node\_count} sortierten) Zeilen liegt. Abschnitt~\ref{sec:ausblick} diskutiert hierfür ein geschichtetes Stichprobenverfahren.
+	Mit $K < \infty$ (praktisch: $K = 10.000$) ist Satz~\ref{satz:korrektheit} nur noch \emph{approximativ} gültig: Falsche Negative können auftreten, wenn $|\mathcal{C}(Q,\mathcal{D})| > K$ und ein Treffer außerhalb der ersten $K$ (nach \texttt{node\_count} sortierten) Zeilen liegt. Abschnitt~\ref{sec:schluss} diskutiert hierfür ein geschichtetes Stichprobenverfahren.
 \end{bemerkung}
+
+\subsection{Effiziente Suche}
+\label{sec:effiziente-suche}
+
+Das folgende Serverprotokoll aus der README dokumentiert den Betrieb der FastAPI-Anwendung und eine konkrete Suche über den Endpunkt \texttt{/api/networks/search}. Vor der Suche werden beispielhaft die Listen- und Detailendpunkte aufgerufen. Die Ausgabe ist hier unverändert wiedergegeben:
+
+\begin{lstlisting}[caption={Serverprotokoll zur Suche in Gen-DB}]
+(venv) PS C:\Users\sepp5\Git\gen-db> uvicorn backend.app:app --app-dir src --reload --port 8000
+INFO:     Will watch for changes in these directories: ['C:\\Users\\sepp5\\Git\\gen-db']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [11520] using WatchFiles
+INFO:     Started server process [20388]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-06-24 07:40:50 [INFO] GET /api/networks limit=33 random=True
+2026-06-24 07:40:50 [INFO] get_all_networks: limit=33 random_sample=True
+2026-06-24 07:40:51 [INFO] get_all_networks: Fetched 33 records
+2026-06-24 07:40:51 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:64651 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+2026-06-24 07:40:59 [INFO] GET /api/networks limit=33 random=True
+2026-06-24 07:40:59 [INFO] get_all_networks: limit=33 random_sample=True
+2026-06-24 07:41:01 [INFO] get_all_networks: Fetched 33 records
+2026-06-24 07:41:01 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:49775 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+2026-06-24 07:42:46 [INFO] GET /api/networks/820154
+2026-06-24 07:42:46 [INFO] get_network_by_id: network_id=820154
+2026-06-24 07:42:47 [INFO] get_network_by_id: Found network 'metabolic_C._elegans_820154'
+2026-06-24 07:42:47 [INFO] GET /api/networks/820154 - Found: metabolic_C._elegans_820154
+INFO:     127.0.0.1:51144 - "GET /api/networks/820154 HTTP/1.1" 200 OK
+2026-06-24 07:43:04 [INFO] POST /api/networks/search - nodes=15
+2026-06-24 07:43:27 [INFO] search_subgraph: 306261 candidates for query (n=15, e=62)
+2026-06-24 07:47:31 [INFO] search_subgraph: Found 306260 matches
+2026-06-24 07:47:31 [INFO] POST /api/networks/search - Found 306260 matches
+INFO:     127.0.0.1:52597 - "POST /api/networks/search HTTP/1.1" 200 OK
+\end{lstlisting}
+
+Das Protokoll zeigt zunächst, dass der Entwicklungsserver mit Uvicorn startet und seine Anwendung erfolgreich initialisiert. Zwei Anfragen an \texttt{GET /api/networks?limit=33\&random=true} liefern jeweils 33 zufällig ausgewählte Datensätze; beide enden mit dem HTTP-Status \texttt{200 OK}. Der spätere Aufruf von \texttt{GET /api/networks/820154} löst den Eintrag \texttt{metabolic\_C.\_elegans\_820154} auf und wird ebenfalls erfolgreich beantwortet. Diese Aufrufe belegen die Erreichbarkeit der Leseendpunkte, sind aber selbst kein Leistungstest der Subgraph-Suche.
+
+Der Suchaufruf wird um 07:43:04 protokolliert. Die Anfrage enthält ein Query-Netzwerk mit $15$ Knoten; bei der Kandidatenmeldung um 07:43:27 werden zusätzlich $62$ Kanten ausgewiesen. Zwischen dem Eingang der Anfrage und dieser Meldung liegen rund $23$ Sekunden. Anschließend meldet der Suchdienst um 07:47:31 insgesamt $306.261$ untersuchte Kandidaten und $306.260$ Treffer. Vom Kandidatenprotokoll bis zur Ergebnismeldung vergehen damit rund $4$ Minuten und $4$ Sekunden; vom Eingang der Anfrage bis zur abschließenden Erfolgsmeldung sind es rund $4$ Minuten und $27$ Sekunden. Die Zeitwerte sind aus den Zeitstempeln auf Sekundengenauigkeit abgeleitet und umfassen die protokollierten Phasen, nicht notwendigerweise ausschließlich die reine Rechenzeit des Vergleichsalgorithmus.
+
+In diesem Lauf wurde somit genau ein Kandidat nicht als Treffer gezählt; der Anteil der gemeldeten Treffer an den Kandidaten beträgt rund $99{,}9997\,\%$. Die hohe Quote ist eine Eigenschaft dieses konkreten Querys und der verwendeten Datenbank, keine allgemeine Aussage über die Trefferwahrscheinlichkeit. Ebenso lässt sich aus dem Protokoll allein keine Selektivität des Pre-Filters berechnen: Dafür müsste zusätzlich die Gesamtzahl der Datenbankeinträge vor der Vorauswahl bekannt sein. Es ist daher nicht belegt, welcher Anteil aller gespeicherten Netzwerke durch den Filter ausgeschlossen wurde.
+
+Für die Laufzeitinterpretation ist vor allem die große Kandidatenmenge relevant. Der protokollierte Aufruf liefert am Ende den Status \texttt{200 OK}, benötigt aber über vier Minuten bis zur Suchergebnismeldung. Dies veranschaulicht den in Satz~\ref{satz:pipeline} beschriebenen Einfluss der Kandidatenzahl $C$: Selbst wenn die Vorauswahl teure Vergleiche vermeidet, muss die verbleibende Menge strukturell geprüft werden. Das Beispiel belegt den erfolgreichen Ende-zu-Ende-Ablauf und die Verarbeitung einer umfangreichen Kandidatenmenge, nicht jedoch für sich allein eine allgemein kurze Antwortzeit oder eine Skalierung unabhängig von der Datenbankgröße. Für solche Aussagen sind kontrollierte Messreihen mit dokumentierter Datenbankgröße, Query-Struktur, Kandidatenzahl und Laufzeit erforderlich; diese werden in Abschnitt~\ref{sec:evaluation} separat betrachtet.
 
 \section{Empirische Evaluation}
 \label{sec:evaluation}
@@ -403,115 +485,11 @@ als untere Näherung dargestellt (die zusätzliche Kantenbedingung reduziert die
 
 \textbf{Beschreibung:} Für kleine $n_Q$ (z.\,B. $n_Q=2$) überwiegt der Treffertyp \texttt{subgraph} deutlich, da kleine Muster (einzelne Kanten) in vielen größeren Zufallsgraphen als Teilstruktur auftreten — dies folgt aus der Definition von $A_Q \preceq A_k$ und der hohen Kantendichte ($p=0{,}3$) der generierten Graphen. Für $n_Q \to n_{\max}=20$ sinkt die Trefferzahl insgesamt (Korollar zu Lemma~\ref{lem:notwendig}: weniger Kandidaten mit $n_k \ge n_Q$), und der Anteil von \texttt{exact}-Treffern (Übereinstimmung bis auf Rotation) bleibt verschwindend gering, da die Wahrscheinlichkeit zweier identischer Zufallsgraphen mit $n=20$ vernachlässigbar ist ($2^{-\binom{20}{2}\cdot p \cdot \ldots}$, kombinatorisch verschwindend).
 
-\subsection{Reproduzierbares Python-Skript für die Plots}
+\subsection{Diskussion}
 
-\begin{lstlisting}[language=Python, caption=Generierung aller vier Diagramme als einzelne PDFs]
-import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from scipy.stats import binom
+Die formalen Resultate aus Abschnitt~\ref{sec:pipeline} zeigen, dass die Kombination aus relationalem Pre-Filter (Lemma~\ref{lem:notwendig}, Korollar~\ref{kor:prefilter}) und dem $O(n^3)$-Subgraph Algorithmus \cite{epp2026subgraph} eine praktisch skalierbare Lösung für die Subgraph-Suche in Datenbanken mit $N=10^6$ Einträgen ermöglicht, \emph{sofern} eine Kandidatenobergrenze $K$ gewählt wird. Diese Obergrenze erkauft sich Konstantzeit-Verhalten (im Sinne von $N$) jedoch um den Preis einer potentiellen Unvollständigkeit (Verlust der Garantie aus Satz~\ref{satz:korrektheit}). Abschnitt~\ref{sec:schluss} adressiert dieses Spannungsfeld.
 
-rng = np.random.default_rng(42)
-N = 1_000_000
-MIN_N, MAX_N, P = 3, 20, 0.3
-
-# --- Plot 1: Knoten- und Kantenverteilung ---
-node_counts = rng.integers(MIN_N, MAX_N + 1, size=N)
-edge_counts = np.array([
-    binom.rvs(n * (n - 1), P, random_state=rng) for n in node_counts
-])
-
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-axes[0].hist(node_counts, bins=np.arange(MIN_N, MAX_N + 2) - 0.5,
-              color="#19468c", edgecolor="white")
-axes[0].set_xlabel(r"Knotenzahl $n_k$")
-axes[0].set_ylabel("Häufigkeit")
-axes[0].set_title("Verteilung der Knotenzahl")
-
-axes[1].hist(edge_counts, bins=40, color="#b4321e", edgecolor="white")
-axes[1].set_xlabel(r"Kantenzahl $m_k$")
-axes[1].set_ylabel("Häufigkeit")
-axes[1].set_title("Verteilung der Kantenzahl")
-
-fig.tight_layout()
-fig.savefig("plot1_node_edge_distribution.pdf")
-plt.close(fig)
-
-# --- Plot 2: Pre-Filter-Effektivität ---
-n_q_values = np.arange(MIN_N, MAX_N + 1)
-remaining = np.array([
-    N * np.mean(node_counts >= nq) for nq in n_q_values
-])
-
-fig, ax = plt.subplots(figsize=(7, 4.5))
-ax.plot(n_q_values, remaining, marker="o", color="#19468c")
-ax.set_yscale("log")
-ax.set_xlabel(r"Query-Knotenzahl $n_Q$")
-ax.set_ylabel(r"$|\mathcal{C}(Q,\mathcal{D})|$ (log-Skala)")
-ax.set_title("Pre-Filter-Effektivität nach Knotenzahl")
-ax.grid(True, which="both", linestyle=":", alpha=0.6)
-fig.tight_layout()
-fig.savefig("plot2_prefilter_effectiveness.pdf")
-plt.close(fig)
-
-# --- Plot 3: Skalierungsverhalten ---
-N_values = np.logspace(2, 7, 30)
-n_fixed = 12  # typische Knotenzahl
-K = 10_000
-
-# Modell: C ~ N * Pr[n_k >= n_Q] (hier Pr ~ 0.5 als Mittelwert)
-prob = 0.5
-C_unbounded = N_values * prob
-C_bounded = np.minimum(C_unbounded, K)
-
-T_unbounded = np.log2(N_values) + C_unbounded * n_fixed**3
-T_bounded = np.log2(N_values) + C_bounded * n_fixed**3
-
-fig, ax = plt.subplots(figsize=(7, 4.5))
-ax.plot(N_values, T_bounded, label=r"$K=10.000$ (begrenzt)", color="#1e6432")
-ax.plot(N_values, T_unbounded, label=r"$K=\infty$ (vollständig)", color="#b4321e")
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlabel(r"Datenbankgröße $N$")
-ax.set_ylabel(r"geschätzte Operationen $T_{\mathrm{Suche}}$")
-ax.set_title("Skalierungsverhalten der Suchzeit")
-ax.legend()
-ax.grid(True, which="both", linestyle=":", alpha=0.6)
-fig.tight_layout()
-fig.savefig("plot3_search_scaling.pdf")
-plt.close(fig)
-
-# --- Plot 4: Trefferverteilung nach Match-Typ ---
-query_sizes = np.arange(2, 11)
-# Modellannahme: subgraph-Treffer sinken mit wachsendem n_Q,
-# exact-Treffer bleiben nahe 0
-subgraph_hits = np.maximum(0, (11 - query_sizes) * 80).astype(int)
-exact_hits = np.where(query_sizes <= 3, 2, 0)
-
-fig, ax = plt.subplots(figsize=(8, 4.5))
-width = 0.4
-ax.bar(query_sizes - width/2, subgraph_hits, width,
-       label="subgraph", color="#19468c")
-ax.bar(query_sizes + width/2, exact_hits, width,
-       label="exact", color="#b4321e")
-ax.set_xlabel(r"Query-Knotenzahl $n_Q$")
-ax.set_ylabel("Anzahl Treffer")
-ax.set_title("Trefferverteilung nach Match-Typ")
-ax.set_xticks(query_sizes)
-ax.legend()
-fig.tight_layout()
-fig.savefig("plot4_match_distribution.pdf")
-plt.close(fig)
-
-print("Alle Plots wurden als einzelne PDF-Dateien gespeichert.")
-\end{lstlisting}
-
-\section{Diskussion}
-
-Die formalen Resultate aus Abschnitt~\ref{sec:pipeline} zeigen, dass die Kombination aus relationalem Pre-Filter (Lemma~\ref{lem:notwendig}, Korollar~\ref{kor:prefilter}) und dem $O(n^3)$-Subgraph Algorithmus \cite{epp2026subgraph} eine praktisch skalierbare Lösung für die Subgraph-Suche in Datenbanken mit $N=10^6$ Einträgen ermöglicht, \emph{sofern} eine Kandidatenobergrenze $K$ gewählt wird. Diese Obergrenze erkauft sich Konstantzeit-Verhalten (im Sinne von $N$) jedoch um den Preis einer potentiellen Unvollständigkeit (Verlust der Garantie aus Satz~\ref{satz:korrektheit}). Abschnitt~\ref{sec:ausblick} adressiert dieses Spannungsfeld.
-
-\section{Experimenteller Vergleich mit bekannten Subgraph-Isomorphie-Algorithmen}
+\section{Experimenteller Vergleich}
 \label{sec:vergleich}
 
 Die in Abschnitt~\ref{sec:evaluation} präsentierten Diagramme beruhen auf einem \emph{analytischen} Modell der Laufzeit gemäß Satz~\ref{satz:pipeline}. Um die praktische Relevanz dieses Modells zu untermauern, wird in diesem Abschnitt eine \emph{empirische} Messreihe durchgeführt, in der die Referenzimplementierung des Subgraph Algorithmus \cite{epp2026subgraph} direkt gegen eine etablierte Implementierung des VF2-Algorithmus \cite{cordella2004} (über die Bibliothek \texttt{networkx} \cite{networkx}) auf identischen Zufallsgraphen verglichen wird. Anschließend werden die gemessenen Größenordnungen mit publizierten Resultaten weiterer effizienter Subgraph-Isomorphie-Verfahren aus der Literatur kontextualisiert.
@@ -584,7 +562,7 @@ Für das erste Experiment wird $n_A=5$ fixiert und $A$ einmalig als Erdős–Ré
 
 Dieses Ergebnis bestätigt die in \cite{epp2026subgraph} formal bewiesene Schranke $O(n^3)$ für den Subgraph Algorithmus als \emph{worst-case-stabile, eingabeunabhängige} Garantie, zeigt aber auch, dass populationsbasierte Average-Case-Heuristiken wie VF2 für \emph{kleine, dichte} Instanzen ($n_B\gtrsim 14$ in diesem Setup) in der Praxis konkurrenzfähig oder sogar überlegen sein können. Für die in Gen-DB relevante Größenordnung $n\le 20$ (Abschnitt~\ref{sec:evaluation}) liegt das System also in einem Bereich, in dem \emph{beide} Verfahren praktisch im Mikrosekunden- bis Millisekundenbereich operieren; der entscheidende Vorteil des Subgraph Algorithmus liegt nicht primär in der absoluten Konstante, sondern in der \emph{Vorhersagbarkeit} (geringe Varianz, Tabelle~\ref{tab:runtime}) und in der \emph{formal bewiesenen} oberen Schranke, die für Systembudgetierung (Abschnitt~\ref{sec:pipeline}, Satz~\ref{satz:pipeline}) essentiell ist — VF2 besitzt hingegen \emph{keine} polynomielle Worst-Case-Schranke, was die $O(\log N)$-Garantie aus dem Korollar zu Satz~\ref{satz:pipeline} bei Verwendung von VF2 als Vergleichsoperator zunichtemachen würde.
 
-\subsection{Ursachenanalyse: Warum der Subgraph Algorithmus für $n_B\ge 14$ langsamer ist}
+\subsection{Der Subgraph Algorithmus für $n_B\ge 14$}
 \label{sec:ursachen}
 
 Die in Abbildung~\ref{fig:speedup} sichtbare Umkehrung des Speedup-Verhältnisses bei $n_B\approx 14$ erscheint auf den ersten Blick im Widerspruch zur in Satz~\ref{satz:laufzeit} bewiesenen $O(n^3)$-Schranke des Subgraph Algorithmus gegenüber der $O(n!\,n)$-Worst-Case-Schranke von VF2 \cite{cordella2004} zu stehen. Tatsächlich handelt es sich nicht um einen Widerspruch, sondern um den Unterschied zwischen \emph{worst-case-treuer Ausschöpfung} und \emph{durchschnittsfallbasierter Terminierung}, der im Folgenden in vier Ursachen aufgeschlüsselt wird.
@@ -617,12 +595,11 @@ Die in Abbildung~\ref{fig:speedup} sichtbare Umkehrung des Speedup-Verhältnisse
 
 Tabelle~\ref{tab:literatur} fasst die in dieser Arbeit gemessenen Größenordnungen zusammen mit publizierten Charakterisierungen weiterer etablierter Algorithmen für (Teil-)Graphisomorphie und Subgraph-Suche. Die Tabelle dient nicht dem direkten Laufzeitvergleich auf identischer Hardware (die zitierten Arbeiten verwenden unterschiedliche Implementierungssprachen, Graphgrößen und Hardware-Generationen), sondern der \emph{komplexitätstheoretischen Einordnung}.
 
-\begin{table}[h]
+\begin{sidewaystable}
+	\scriptsize
 	\centering
-	\footnotesize
-	\setlength{\tabcolsep}{4pt}
-	\caption{Komplexitätstheoretische Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren.}
-	\resizebox{\textwidth}{!}{%
+	\setlength{\tabcolsep}{3pt}
+	\caption{Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren.}
 	\begin{tabular}{>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{4.4cm}}
 		\toprule
 		Verfahren & Worst-Case-Komplexität & Entschiedene Relation & Charakteristik \\
@@ -634,46 +611,20 @@ Tabelle~\ref{tab:literatur} fasst die in dieser Arbeit gemessenen Größenordnun
 		QuickSI \cite{he2008} & worst-case exponentiell & Subgraph-Isomorphie (Pattern Matching) & Häufigkeits-basierte Kantenordnung, in \cite{he2008} ca.\ $10$--$1000\times$ schneller als naives Backtracking auf realen Graphdatenbanken \\
 		GraphQL \cite{he2008} & worst-case exponentiell & Subgraph-Containment-Suche & nutzt Nachbarschafts-Signaturen zum Pruning, konzeptuell verwandt mit Pre-Filter aus Abschnitt~\ref{sec:prefilter} \\
 		\bottomrule
-	\end{tabular}}
+	\end{tabular}
 	\label{tab:literatur}
-\end{table}
+\end{sidewaystable}
 
 Drei Beobachtungen lassen sich aus dieser Einordnung formal ableiten:
 
 \begin{enumerate}
 	\item \textbf{Komplexitätsklasse:} Der Subgraph Algorithmus ist das einzige der in Tabelle~\ref{tab:literatur} aufgeführten Verfahren mit einer \emph{unbedingten} polynomiellen Worst-Case-Schranke ($O(n^3)$, Satz~\ref{satz:laufzeit}). Alle übrigen Verfahren lösen das (im Allgemeinen NP-vollständige bzw.\ GI-vollständige) Subgraph-Isomorphie-Problem und besitzen daher worst-case zumindest superpolynomielle Schranken; ihre praktische Effizienz beruht auf Heuristiken (Pruning, Knoten\-ordnung, Nachbarschaftssignaturen), die im Average Case, aber nicht im Worst Case greifen. Dies ist konsistent mit der Tatsache, dass $\preceq$ (Definition~\ref{def:subgraphrelation_ref}) eine \emph{schwächere}, strukturell restriktivere Relation als die volle Subgraph-Isomorphie ist (vgl.\ Bemerkung zu Definition~\ref{def:vergleich}) — die polynomielle Schranke wird also durch eine Einschränkung des Relationsbegriffs erkauft, was formal die in \cite{epp2026subgraph} diskutierte SETH-basierte Optimalitätsanalyse motiviert.
 	\item \textbf{Praktische Konsequenz für Satz~\ref{satz:pipeline}:} Da $T_{\text{Suche}}(N,C,n)=O(\log N+C)+O(C\cdot n^3)$ die Komplexität \emph{eines einzelnen} Subgraph-Vergleichs als $O(n^3)$ in die Pipeline einsetzt, wäre eine Substitution durch VF2, Ullmann, RI oder QuickSI formal nicht mit demselben Korollar (konstante Suchzeit unabhängig von $N$) vereinbar, da $O(n^3)$ durch eine worst-case-exponentielle Schranke ersetzt würde. Die empirisch hohe Average-Case-Effizienz von VF2/RI/QuickSI auf realistischen Graphen (Ergebnis~2, sowie \cite{he2008,bonnici2013}) bedeutet zwar, dass eine solche Substitution \emph{im Mittel} ähnlich performant sein könnte, jedoch ohne die formale Garantie aus Satz~\ref{satz:pipeline} — ein Datenbanksystem mit harten Latenzanforderungen (SLA) profitiert daher strukturell vom Subgraph Algorithmus.
-	\item \textbf{Komplementarität statt Konkurrenz:} Die in \cite{bonnici2013,he2008} beschriebenen Optimierungen (Knotenordnung nach Seltenheit, Nachbarschaftssignaturen) sind \emph{orthogonal} zum Subgraph Algorithmus und könnten gemäß Abschnitt~\ref{sec:ausblick} (z.\,B.\ R-Baum-Pre-Filter) auf die \emph{Pre-Filter-Stufe} der Gen-DB-Pipeline angewendet werden, während der eigentliche Vergleich der gefilterten Kandidaten durch den Subgraph Algorithmus mit garantierter $O(n^3)$-Schranke erfolgt. Insofern stehen die hier verglichenen Verfahren nicht in direkter Konkurrenz, sondern adressieren unterschiedliche Stufen derselben Pipeline (Kandidatenreduktion vs.\ finaler Strukturvergleich).
+	\item \textbf{Komplementarität statt Konkurrenz:} Die in \cite{bonnici2013,he2008} beschriebenen Optimierungen (Knotenordnung nach Seltenheit, Nachbarschaftssignaturen) sind \emph{orthogonal} zum Subgraph Algorithmus und könnten gemäß Abschnitt~\ref{sec:schluss} (z.\,B.\ R-Baum-Pre-Filter) auf die \emph{Pre-Filter-Stufe} der Gen-DB-Pipeline angewendet werden, während der eigentliche Vergleich der gefilterten Kandidaten durch den Subgraph Algorithmus mit garantierter $O(n^3)$-Schranke erfolgt. Insofern stehen die hier verglichenen Verfahren nicht in direkter Konkurrenz, sondern adressieren unterschiedliche Stufen derselben Pipeline (Kandidatenreduktion vs.\ finaler Strukturvergleich).
 \end{enumerate}
 
-\subsection{Reproduktionsskript für den Vergleich}
-
-\begin{lstlisting}[language=Python, caption=Benchmark-Skript: Subgraph Algorithmus vs.\ VF2 (Auszug)]
-def subgraph_algorithm(A, B):
-    """True, falls A (zyklischer) Subgraph von B ist."""
-    nA, nB = A.shape[0], B.shape[0]
-    if nA > nB:
-        return False
-    rhoA = row_components(A)
-    rhoB = row_components(B)
-    for r in range(nB):
-        rot = rhoB[r:] + rhoB[:r]
-        if lcs_len(rhoA, rot) >= min(2, nA):
-            return True
-    return False
-
-def vf2_subgraph(A, B):
-    GA = nx.from_numpy_array(A, create_using=nx.DiGraph)
-    GB = nx.from_numpy_array(B, create_using=nx.DiGraph)
-    matcher = nx.algorithms.isomorphism.DiGraphMatcher(GB, GA)
-    return matcher.subgraph_is_isomorphic()
-
-# Messung ueber time.perf_counter(), Mittelwert/Std ueber Wiederholungen,
-# siehe bench_compare.py fuer das vollstaendige Skript.
-\end{lstlisting}
-
-\section{Ausblick}
-\label{sec:ausblick}
+\section{Schluss}
+\label{sec:schluss}
 
 Die vorliegende Realisierung von Gen-DB demonstriert die grundsätzliche Praktikabilität des Subgraph Algorithmus für Datenbanken biologischer Netzwerke, lässt jedoch zahlreiche Erweiterungsmöglichkeiten offen, die im Folgenden ausführlich diskutiert werden.
 
@@ -741,7 +692,7 @@ was insbesondere bei kleinem $C$ (großes $n_Q$, vgl.\ Abbildung~\ref{fig:prefil
 
 \subsection{Visuelle Exploration und Graph-Layout}
 
-Das aktuelle Frontend zeigt Adjazenzmatrizen als Zahlentabellen und Listen. Eine Erweiterung um eine graphische Darstellung (Force-Directed-Layout, z.\,B.\ mittels D3.js oder Cytoscape.js) würde die Interpretierbarkeit von Suchergebnissen erheblich verbessern, insbesondere für die in Abschnitt~\ref{sec:evaluation} diskutierten \texttt{subgraph}-Treffer, bei denen die \emph{Einbettung} des Query-Graphen im größeren Kontextgraphen visuell hervorgehoben werden könnte (z.\,B.\ durch Hervorhebung der $n_Q$ Knoten, auf die $\phi$ aus Abschnitt~\ref{sec:ausblick} (Label-Erweiterung) abbildet).
+Das aktuelle Frontend zeigt Adjazenzmatrizen als Zahlentabellen und Listen. Eine Erweiterung um eine graphische Darstellung (Force-Directed-Layout, z.\,B.\ mittels D3.js oder Cytoscape.js) würde die Interpretierbarkeit von Suchergebnissen erheblich verbessern, insbesondere für die in Abschnitt~\ref{sec:evaluation} diskutierten \texttt{subgraph}-Treffer, bei denen die \emph{Einbettung} des Query-Graphen im größeren Kontextgraphen visuell hervorgehoben werden könnte (z.\,B.\ durch Hervorhebung der $n_Q$ Knoten, auf die $\phi$ aus Abschnitt~\ref{sec:schluss} (Label-Erweiterung) abbildet).
 
 \subsection{Benchmark-Suite und kontinuierliche Performanzmessung}
 
@@ -777,7 +728,7 @@ mit einem aus den Messdaten von Abschnitt~\ref{sec:vergleich} kalibrierten Schwe
 	Satz~\ref{satz:hybrid} ist im strengen Sinne trivial (eine punktweise Minimum-Strategie ist niemals schlechter als jede ihrer Komponenten), seine praktische Bedeutung liegt jedoch darin, dass er die Hybridstrategie als \emph{strikt dominant} gegenüber jeder festen Verfahrenswahl ausweist — \emph{vorausgesetzt}, der Umschalt-Overhead (Bestimmung von $\max(n_Q,n_k)$ und Verzweigung) ist $O(1)$, was hier der Fall ist, da $n_Q$ und $n_k$ bereits in $\mathcal{D}_t$ materialisiert vorliegen (Abschnitt~\ref{sec:architektur}). Die Schranke $O(n^3)$ aus Satz~\ref{satz:pipeline} bleibt für die Hybridstrategie \emph{nicht} formal erhalten, da $T_{\text{VF2}}$ keine polynomielle Worst-Case-Schranke besitzt; für $n\ge\theta$ würde die Pipeline daher weiterhin den Subgraph Algorithmus als \emph{Fallback mit garantierter Schranke} benötigen, etwa mit einem Zeitbudget $\tau$: Falls VF2 nach $\tau$ nicht terminiert hat, wird auf den Subgraph Algorithmus zurückgegriffen (\emph{Race-Verfahren}). Dies verbindet die empirische Average-Case-Effizienz von VF2 (Abschnitt~\ref{sec:vergleich}) mit der formalen Worst-Case-Garantie des Subgraph Algorithmus.
 \end{bemerkung}
 
-\subsection{Erweiterung des Vergleichsbenchmarks auf weitere Verfahren und reale Netzwerke}
+\subsection{Erweiterung des Vergleichsbenchmarks}
 \label{sec:bench_erweiterung}
 
 Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente beschränken sich auf den Vergleich mit VF2 auf Erdős–Rényi-Zufallsgraphen $G(n,0{,}3)$ mit $n\le 18$. Eine umfassendere Evaluation sollte folgende Erweiterungen umfassen:
@@ -802,16 +753,30 @@ Die empirisch beobachtete Umkehrung des Geschwindigkeitsvorteils bei $n_B\approx
 
 Eine systematische Messreihe über das zweidimensionale Gitter $(n,p)\in\{4,\ldots,20\}\times\{0{,}1,0{,}2,\ldots,0{,}9\}$ — eine direkte Erweiterung des in Abschnitt~\ref{sec:vergleich} durchgeführten Experiments — würde die in Bemerkung~\ref{bem:theta} formulierte Vermutung empirisch prüfbar machen und gleichzeitig eine Tabelle $\theta(p)$ liefern, mit der die Hybridstrategie aus Abschnitt~\ref{sec:hybrid} dichteadaptiv kalibriert werden könnte (d.\,h.\ $\theta$ würde nicht als globale Konstante, sondern als Funktion der für den jeweiligen Kandidaten $k$ aus $m_k/(n_k(n_k-1))$ geschätzten Dichte $\hat p_k$ nachgeschlagen).
 
-\section{Zusammenfassung}
+\subsection{Priorisierung der nächsten Entwicklungsschritte}
 
-Diese Arbeit hat die Realisierung der Subgraph-Suche im System Gen-DB formal beschrieben und bewiesen, dass die Kombination aus relationalem Pre-Filter und dem $O(n^3)$-Subgraph Algorithmus für feste Kandidatenlimits $K$ eine von der Datenbankgröße $N$ unabhängige Suchzeit ermöglicht (Korollar zu Satz~\ref{satz:pipeline}), allerdings um den Preis einer potentiellen Unvollständigkeit (Lemma zur \texttt{LIMIT}-Verzerrung). Die empirische Evaluation an einer Datenbank mit $10^6$ synthetischen Netzwerken bestätigt die Plausibilität der theoretischen Modelle. Ein experimenteller Vergleich mit dem etablierten VF2-Algorithmus (Abschnitt~\ref{sec:vergleich}) zeigt, dass der Subgraph Algorithmus für $n\lesssim 13$ einen Geschwindigkeitsvorteil von Faktor $2$ bis $5$ bietet, für größere, dichte Instanzen jedoch von VF2s Average-Case-Pruning übertroffen werden kann — die zentrale Stärke des Subgraph Algorithmus liegt in der \emph{unbedingten polynomiellen Worst-Case-Schranke} $O(n^3)$, die für die formale Garantie aus Satz~\ref{satz:pipeline} unerlässlich ist und von keinem der in Tabelle~\ref{tab:literatur} aufgeführten klassischen Verfahren geboten wird. Der Ausblick zeigt zwölf konkrete, formal motivierte Erweiterungsrichtungen auf, von Indexstrukturen über Parallelisierung, GPU-Beschleunigung und eine adaptive Hybridstrategie bis hin zu biologisch motivierten Erweiterungen der Subgraph-Relation auf Labels und Gewichte.
+Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert und erst danach die Laufzeit optimiert. An erster Stelle steht daher die Validierung der vollständigen Suchsemantik: Für jede unterstützte Trefferrichtung muss geklärt sein, welche notwendigen Bedingungen die SQL-Vorauswahl verwenden darf. Die in Abschnitt~\ref{sec:pipeline} bewiesene Vollständigkeit gilt für $A_Q\preceq A_k$ bei vollständiger Kandidatenbetrachtung; ein endliches Kandidatenlimit kann Treffer abschneiden, und die umgekehrte Richtung $A_k\preceq A_Q$ erfordert eine entsprechend angepasste Vorauswahl. Diese Fälle sollten durch Tests mit gezielt konstruierten Netzwerken geprüft und in API sowie Benutzeroberfläche einheitlich kenntlich gemacht werden.
+
+Darauf sollte eine reproduzierbare Evaluation mit realen biologischen Netzwerken und einer größeren Zahl statistisch auswertbarer Wiederholungen folgen. Sie würde zeigen, ob die auf synthetischen Graphen beobachteten Laufzeitverhältnisse und der Übergangsbereich $\theta$ auf unterschiedlichen Netzwerktypen und Dichten bestehen bleiben. Erst auf dieser belastbaren Grundlage lässt sich entscheiden, welche Optimierung den größten Nutzen verspricht: ein mehrdimensionaler Index für die Vorauswahl, eine adaptive Auswahl des Vergleichsverfahrens oder die Parallelisierung unabhängiger Kandidatenvergleiche. Erweiterungen um Labels und Kantengewichte sollten anschließend anhand biologischer Anwendungsfälle spezifiziert werden, damit eine verfeinerte Treffermenge nicht nur technisch berechenbar, sondern fachlich sinnvoll ist.
+
+Diese Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche, empirisch belastbare Aussagen über ihre Leistung sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen. Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke — etwa der Subgraph Algorithmus — als Fallback vorgesehen ist.
+
+\subsection{Zusammenfassung}
+
+Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet die Architektur — einschließlich Paket- und Klassendiagrammen — mit der formalen Betrachtung der Such-Pipeline. Ihr zentraler Gedanke ist eine kostengünstige Vorauswahl in der Datenbank: Für die Richtung, in der das Query-Netzwerk Teil eines gespeicherten Netzwerks ist, werden Einträge mit zu wenigen Knoten oder Kanten vor dem strukturellen Vergleich ausgeschlossen. Diese notwendigen Bedingungen verkleinern den Suchraum, ohne bei vollständiger Kandidatenbetrachtung echte Treffer dieser Richtung auszuschließen; die endgültige Entscheidung trifft anschließend der Subgraph Algorithmus.
+
+Für den strukturellen Vergleich wurde die Laufzeit $O(n^3)$ hergeleitet. In Verbindung mit dem relationalen Pre-Filter ergibt sich für $C$ verbleibende Kandidaten eine Laufzeit von $O(\log N+C)+O(C\cdot n^3)$. Bei fest begrenztem $C$ und beschränkter Netzwerkgröße wächst der Indexsuchanteil weiterhin logarithmisch mit der Datenbankgröße; ein Kandidatenlimit begrenzt zwar die Zahl der Vergleiche, kann jedoch die Vollständigkeit beeinträchtigen. Die Beweise zur Vorauswahl gelten zudem ausdrücklich für $A_Q\preceq A_k$; eine Suche in der umgekehrten Richtung benötigt eigene Filterbedingungen.
+
+Die Evaluation betrachtet eine synthetische Datenbank mit einer Million Netzwerken und vergleicht den Subgraph Algorithmus mit VF2. Die Messungen zeigen, dass kein einzelnes Verfahren in allen untersuchten Größenordnungen überlegen ist: VF2 kann durch sein Average-Case-Pruning bei größeren Instanzen schneller sein, während der Subgraph Algorithmus eine kubische Worst-Case-Schranke bietet. Die Resultate sind wegen der synthetischen Graphenfamilie und der begrenzten Zahl von Wiederholungen als erste empirische Einordnung zu verstehen, nicht als allgemeingültiger Laufzeitvergleich.
+
+Aus diesen Ergebnissen folgt eine klare Entwicklungsrichtung: Zunächst sind Suchrichtungen, Filterbedingungen und Kandidatenlimits durch gezielte Tests abzusichern. Darauf sollten reproduzierbare Benchmarks mit realen biologischen Netzwerken folgen; erst dann lassen sich Indexierung, Hybridverfahren und Parallelisierung belastbar priorisieren. Erweiterungen um biologische Labels und Gewichte können die fachliche Aussagekraft der Suche erhöhen, müssen aber als präzisierte Treffermodellierung entworfen werden. Damit verbindet Gen-DB bereits eine klare modulare Architektur und eine nachvollziehbare Kandidatenreduktion mit einem strukturellen Vergleich; zugleich benennt die Arbeit die Korrektheits- und Evaluationsschritte, die für den Übergang von der prototypischen Realisierung zu einem belastbar validierten Suchsystem erforderlich sind.
 
 \begin{thebibliography}{9}
 
 \bibitem{epp2026subgraph}
 Stephan Epp.
 \emph{Der Subgraph Algorithmus}., 2026.
-Verfügbar unter: \url{https://github.com/hjstephan86/subgraph}.
+Verfügbar unter: \url{https://github.com/naphets86/subgraph}.
 
 \bibitem{abboud2015}
 Amir Abboud, Arturs Backurs, Virginia Vassilevska Williams.

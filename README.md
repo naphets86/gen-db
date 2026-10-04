@@ -1,5 +1,10 @@
 ﻿# gen-db
 
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/Tests-105%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-brightgreen)](doc/coverage/index.html)
+[![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
+
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 ## Setup & Start
@@ -111,7 +116,7 @@ Coverage-Report: `doc/coverage/index.html`
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 2.199.000,00 EUR.
+Der Preis für diese Software beträgt 2.245.000,00 EUR.
 
 ### Zahlungsinformationen
 
