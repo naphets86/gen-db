@@ -88,7 +88,7 @@ class SearchMatch:
         edge_count: Anzahl Kanten
         node_labels: Labels der Knoten
         match_type: Art des Match ('exact' = identisch, 'subgraph' = ist Subgraph)
-        subgraph_result: Rohes Ergebnis vom C++-Executor
+        subgraph_result: Rohes Ergebnis des Subgraph Algorithmus
     """
     network_id: int
     name: str
@@ -98,7 +98,7 @@ class SearchMatch:
     edge_count: int
     node_labels: List[str]
     match_type: str  # 'exact' oder 'subgraph'
-    subgraph_result: str  # Raw result from C++: 'KEEP_B', 'IDENTICAL', etc.
+    subgraph_result: str  # Raw result: 'keep_B', 'equal_keep_A', 'equal_keep_B'
 
 
 @dataclass

@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
     # Startup
     config = get_config()
     logger.info(f"Starting Gen API - Environment: {config.container_env}")
-    logger.info("ProcessPoolExecutor ready for C++-based Subgraph Executor")
+    logger.info("ProcessPoolExecutor ready for Subgraph Executor")
     yield
     
     # Shutdown
@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Gen - Biological Network Analysis API",
-    description="REST API for searching biological networks using C++-accelerated subgraph matching",
+    description="REST API for searching biological networks using subgraph matching",
     version="1.1.0",
     lifespan=lifespan
 )
@@ -307,7 +307,7 @@ async def create_network(network: NetworkCreate) -> CreationResponse:
     tags=["Search"],
     response_model=SearchResponse,
     summary="Search Subgraph",
-    description="Searches for networks containing the given subgraph using C++-accelerated matching"
+    description="Searches for networks containing the given subgraph using the Subgraph algorithm"
 )
 async def search_networks(search: NetworkSearch) -> SearchResponse:
     """

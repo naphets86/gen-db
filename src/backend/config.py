@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 class SubgraphConfig(BaseModel):
     """Subgraph-spezifische Konfiguration"""
     
-    cli_path: Optional[str] = Field(default=None, description="Path to subgraph-cli binary")
     max_workers: Optional[int] = Field(default=None, ge=1, description="Max parallel workers")
-    timeout: int = Field(default=30, ge=5, le=300, description="Timeout in seconds")
 
 
 class Config(BaseSettings):
@@ -62,9 +60,7 @@ class Config(BaseSettings):
     # ========================================
     # SUBGRAPH CONFIGURATION (ZENTRAL!)
     # ========================================
-    subgraph_cli_path: Optional[str] = Field(default=None, description="Path to C++ subgraph-cli binary")
     subgraph_max_workers: Optional[int] = Field(default=None, ge=1, description="Max parallel workers")
-    subgraph_timeout: int = Field(default=30, ge=5, le=300, description="Timeout in seconds")
     
     # ========================================
     # API CONFIGURATION
@@ -138,12 +134,10 @@ class Config(BaseSettings):
         Gibt SubgraphConfig Objekt zurück
         
         Returns:
-            SubgraphConfig mit cli_path, max_workers, timeout
+            SubgraphConfig mit max_workers
         """
         return SubgraphConfig(
-            cli_path=self.subgraph_cli_path,
-            max_workers=self.subgraph_max_workers,
-            timeout=self.subgraph_timeout
+            max_workers=self.subgraph_max_workers
         )
     
     def to_dict(self) -> Dict[str, Any]:

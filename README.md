@@ -33,6 +33,16 @@ cd C:\Users\sepp5\Git\gen-db
 C:\Users\sepp5\Downloads\pgsql\bin\psql.exe -U postgres -h localhost -d gendb -f init-db.sql
 ```
 
+### Abhängigkeiten installieren
+
+Der Subgraph Algorithmus (https://github.com/naphets86/subgraph) wird als Dependency über die `pyproject.toml` installiert:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Er wird in gen-db nur über die API genutzt (`Subgraph().compare_graphs(A, B)`), es gibt keine Kopie des Algorithmus im Projekt und kein C++-Binary mehr.
+
 ### Start
 
 ```bash
@@ -44,7 +54,7 @@ INFO:     Started reloader process [20200] using WatchFiles
 INFO:     Started server process [21028]
 INFO:     Waiting for application startup.
 2026-07-24 08:18:35 [INFO] Starting Gen API - Environment: development
-2026-07-24 08:18:35 [INFO] ProcessPoolExecutor ready for C++-based Subgraph Executor
+2026-07-24 08:18:35 [INFO] ProcessPoolExecutor ready for Subgraph Executor
 INFO:     Application startup complete.
 2026-07-24 08:18:37 [INFO] GET / - Serving frontend
 INFO:     127.0.0.1:51161 - "GET / HTTP/1.1" 200 OK
@@ -57,7 +67,7 @@ INFO:     127.0.0.1:51161 - "GET / HTTP/1.1" 200 OK
 (venv) PS C:\Users\sepp5\Git\gen-db> python .\db-populate.py
 ```
 
-## Effiziente Suche (ohne subgraph-cli.exe)
+## Effiziente Suche
 
 ```bash
 (venv) PS C:\Users\sepp5\Git\gen-db> uvicorn backend.app:app --app-dir src --reload --port 8000

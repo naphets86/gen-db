@@ -8,7 +8,7 @@ Diese Funktionen sind framework-unabhängig und können von überall aufgerufen 
 Dependencies:
 - Models (Domain Models)
 - Database (Verbindung)
-- Subgraph Executor (C++ Integration)
+- Subgraph Executor (Subgraph Algorithmus, Python-Dependency)
 """
 
 import logging
@@ -16,10 +16,13 @@ import hashlib
 import numpy as np
 from typing import List, Optional
 from .database import get_db_connection, get_db_cursor
-from .subgraph_executor import compare_graphs_async
+from .subgraph_executor import compare_many
 from .models import Network, NetworkSummary, SearchMatch, NetworkCreationResult
 
 logger = logging.getLogger(__name__)
+
+# Ergebnisse des Subgraph Algorithmus, die als Treffer gelten
+MATCH_RESULTS = frozenset({'keep_B', 'equal_keep_A', 'equal_keep_B'})
 
 
 def compute_signatures(matrix: np.ndarray) -> List[int]:
@@ -216,8 +219,8 @@ def search_subgraph(
     """
     Sucht in DB nach Netzwerken, die query_matrix enthalten könnten
     
-    Nutzt C++-basierte Subgraph-Executor mit ProcessPoolExecutor für
-    parallele nicht-blockierende Ausführung.
+    Nutzt den Subgraph Algorithmus (Python-Dependency) über einen
+    ProcessPoolExecutor, der alle Kandidaten parallel vergleicht.
     
     Args:
         query_matrix: Adjazenzmatrix des Such-Subgraph
@@ -252,27 +255,28 @@ def search_subgraph(
         candidates = cursor.fetchall()
         logger.info(f"search_subgraph: {len(candidates)} candidates for query (n={query_node_count}, e={query_edge_count})")
 
-        matches = []
-        for candidate in candidates:
-            candidate_matrix = candidate['adjacency_matrix']
+        # Query = A, Kandidat = B. Alle Kandidaten parallel vergleichen.
+        outcomes = compare_many(
+            query_matrix,
+            [candidate['adjacency_matrix'] for candidate in candidates]
+        )
 
-            # Führe C++-Vergleich aus (non-blocking über ProcessPoolExecutor)
-            result, error = compare_graphs_async(query_matrix, candidate_matrix)
-            
+        # Ergebnisse des Subgraph Algorithmus (A = Query, B = Kandidat):
+        # keep_B       : Query ist in Kandidat enthalten (Match!)
+        # equal_keep_* : Der Algorithmus erkennt Query und Kandidat als gleich (exakter Match!)
+        # keep_A       : Kandidat ist in Query enthalten (kein Match)
+        # keep_both    : Keine Subgraph-Beziehung (kein Match)
+        matches = []
+        failed = 0
+        for candidate, (result, error) in zip(candidates, outcomes):
             if error:
+                failed += 1
                 logger.warning(f"search_subgraph: Comparison error for network {candidate['network_id']}: {error}")
                 continue
 
-            # Konvertiere C++-Result-Codes zu Match-Typen
-            # KEEP_A (0): Query ist Subgraph von Candidate
-            # KEEP_B (1): Candidate ist Subgraph von Query (Match!)
-            # KEEP_BOTH (2): Keine Subgraph-Beziehung
-            # IDENTICAL (3): Identische Graphen (Match!)
+            if result in MATCH_RESULTS:
+                match_type = 'exact' if result.startswith('equal_') else 'subgraph'
 
-            if result in ['KEEP_B', 'IDENTICAL']:
-                match_type = 'exact' if result == 'IDENTICAL' else 'subgraph'
-                
-                # Konvertiert Dict zu Domain Model
                 match = SearchMatch(
                     network_id=candidate['network_id'],
                     name=candidate['name'],
@@ -285,6 +289,9 @@ def search_subgraph(
                     subgraph_result=result
                 )
                 matches.append(match)
+
+        if failed:
+            logger.warning(f"search_subgraph: {failed} of {len(candidates)} comparisons failed")
 
         logger.info(f"search_subgraph: Found {len(matches)} matches")
         return matches
