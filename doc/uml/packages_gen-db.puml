@@ -1,0 +1,28 @@
+@startuml packages_gen-db
+set namespaceSeparator none
+package "backend" as backend {
+}
+package "backend.app" as backend.app {
+}
+package "backend.config" as backend.config {
+}
+package "backend.crud" as backend.crud {
+}
+package "backend.database" as backend.database {
+}
+package "backend.models" as backend.models {
+}
+package "backend.schemas" as backend.schemas {
+}
+package "backend.subgraph_executor" as backend.subgraph_executor {
+}
+backend.app --> backend.config
+backend.app --> backend.models
+backend.app --> backend.schemas
+backend.app --> backend.subgraph_executor
+backend.crud --> backend.database
+backend.crud --> backend.models
+backend.crud --> backend.subgraph_executor
+backend.database --> backend.config
+backend.subgraph_executor --> backend.config
+@enduml
