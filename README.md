@@ -3,8 +3,8 @@
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-111%20passed-4c1)](tests/)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-brightgreen)](doc/coverage/index.html)
+[![Tests](https://img.shields.io/badge/Tests-139%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-93%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
 ## Inhaltsverzeichnis
@@ -15,7 +15,7 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [SQL-Struktur](#sql-strutkur)
 - [1.000.000 Netzwerke](#1000000-netzwerke)
 - [Starten](#starten)
-- [Suche](#suche)
+- [Suchen](#suchen)
 - [Testen](#testen)
 - [Erwerb](#erwerb)
 
@@ -61,6 +61,18 @@ Für die Netzwerkanalyse wird zusätzlich der Subgraph-Algorithmus installiert, 
 pip install -e ".[dev]"
 ```
 Es wird die API des Subgraph Algorithmus genutzt mit `Subgraph().compare_graphs(A, B)`.
+
+### Optional: C++-Implementierung (csubgraph)
+
+Die Suche nutzt zuerst die C++-Implementierung aus dem Repository `csubgraph`, wenn sie in der `.env` konfiguriert ist. Ist sie nicht konfiguriert, nicht auffindbar oder nicht ausführbar, wird automatisch die Python-Implementierung verwendet.
+
+```env
+# Datei subgraph-cli(.exe) oder Projekt-/Build-Ordner von csubgraph
+CSUBGRAPH_PATH=C:/Users/<name>/Git/csubgraph/build
+CSUBGRAPH_TIMEOUT=30
+```
+
+Der Pfad darf direkt auf `subgraph-cli(.exe)` zeigen oder auf einen Ordner, in dem das Executable liegt (Projektordner, `build/`, `build/Release`). Beim Start steht im Log, welcher Algorithmus verwendet wird (`Subgraph backend: csubgraph (C++)` bzw. `Python implementation`). Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` → `keep_B`, `IDENTICAL` → `equal_keep_A`/`equal_keep_B`), sodass die Suche in `crud.py` unverändert bleibt. Im Docker-Image ist csubgraph nicht enthalten; dort läuft die Python-Implementierung, solange kein Pfad gemountet und gesetzt wird.
 
 ## SQL-Strutkur
 
@@ -249,7 +261,7 @@ INFO:     127.0.0.1:59981 - "GET / HTTP/1.1" 200 OK
 INFO:     127.0.0.1:59981 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
 ```
 
-## Suche
+## Suchen
 
 Die Suche läuft über das Web-Frontend und ermöglicht den Vergleich biologischer Netzwerke über die Subgraph-Suche direkt im Browser.
 

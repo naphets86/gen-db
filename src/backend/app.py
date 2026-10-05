@@ -19,7 +19,7 @@ Diese Datei hat KEINE Business Logic!
 
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -42,7 +42,7 @@ from .schemas import (
 from . import crud
 
 # Executor Management
-from .subgraph_executor import shutdown_executor
+from .subgraph_executor import get_backend_name, shutdown_executor
 
 # ============================================================================
 # Logging Configuration
@@ -71,6 +71,11 @@ async def lifespan(app: FastAPI):
     # Startup
     config = get_config()
     logger.info(f"Starting Gen API - Environment: {config.container_env}")
+    backend_name = get_backend_name()
+    logger.info(
+        "Subgraph algorithm selected: %s",
+        "csubgraph (C++)" if backend_name == "csubgraph" else "Python",
+    )
     logger.info("ProcessPoolExecutor ready for Subgraph Executor")
     yield
     
@@ -178,6 +183,12 @@ async def root():
     """
     logger.info("GET / - Serving frontend")
     return FileResponse("src/frontend/index.html")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Browsers request a favicon automatically; this application has none."""
+    return Response(status_code=204)
 
 
 @app.get(

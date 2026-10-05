@@ -97,6 +97,7 @@ class TestExecuteComparison:
 
     def test_algorithm_instance_is_reused(self, monkeypatch):
         monkeypatch.setattr(subgraph_executor, "_algorithm", None)
+        monkeypatch.setattr(subgraph_executor, "_get_csubgraph_cli", lambda: None)
         execute_subgraph_comparison(CHAIN_4, CHAIN_4)
         first = subgraph_executor._algorithm
         execute_subgraph_comparison(CHAIN_4, CHAIN_4)
