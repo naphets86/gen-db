@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gendb-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gendb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gendb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gendb-app
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: gendb
+      DATABASE_SSL_MODE: disable
+      DATABASE_POOL_SIZE: 10
+      DATABASE_POOL_RECYCLE: 3600
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      CONTAINER_ENV: development
+      RELOAD: "false"
+      CORS_ORIGINS: '["http://localhost:8000","http://localhost:3000"]'
+      CORS_METHODS: '["GET","POST","PUT","DELETE","OPTIONS"]'
+      CORS_HEADERS: '["Content-Type","Authorization"]'
+      CORS_CREDENTIALS: "true"
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -c
+      - |
+        until pg_isready -h db -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        export PGPASSWORD=postgres
+        psql -h db -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='gendb'" | grep -q 1 || createdb -h db -U postgres gendb
+        psql -h db -U postgres -d gendb -f /app/init-db.sql
+        python -m uvicorn src.backend.app:app --host 0.0.0.0 --port 8000
+
+volumes:
+  postgres_data:
