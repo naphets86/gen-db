@@ -1,0 +1,38 @@
+6 Anfragen aus der Datenbank (mind. 15 Knoten), Seed 42, Worker [1, 2, 3], Warm-up 1
+
+=== 1 Worker ===
+  Anfrage   1/6: Netzwerk 654454 n=15 e= 68 Kandidaten=275420 Treffer=1 360.8s (Rest ca. 30 min)
+  Anfrage   2/6: Netzwerk 773650 n=19 e=107 Kandidaten=62064 Treffer=1 70.0s (Rest ca. 14 min)
+  Anfrage   3/6: Netzwerk 432492 n=16 e= 77 Kandidaten=221027 Treffer=1 294.9s (Rest ca. 12 min)
+  Anfrage   4/6: Netzwerk 858614 n=15 e= 70 Kandidaten=263668 Treffer=3 354.9s (Rest ca. 9 min)
+  Anfrage   5/6: Netzwerk 438514 n=15 e= 56 Kandidaten=325964 Treffer=7 403.2s (Rest ca. 5 min)
+  Anfrage   6/6: Netzwerk 88827 n=19 e= 95 Kandidaten=100911 Treffer=1 120.4s (Rest ca. 0 min)
+
+=== 2 Worker ===
+  Anfrage   1/6: Netzwerk 654454 n=15 e= 68 Kandidaten=275420 Treffer=1 193.2s (Rest ca. 16 min)
+  Anfrage   2/6: Netzwerk 773650 n=19 e=107 Kandidaten=62064 Treffer=1 36.7s (Rest ca. 8 min)
+  Anfrage   3/6: Netzwerk 432492 n=16 e= 77 Kandidaten=221027 Treffer=1 153.0s (Rest ca. 6 min)
+  Anfrage   4/6: Netzwerk 858614 n=15 e= 70 Kandidaten=263668 Treffer=3 185.8s (Rest ca. 5 min)
+  Anfrage   5/6: Netzwerk 438514 n=15 e= 56 Kandidaten=325964 Treffer=7 212.0s (Rest ca. 3 min)
+  Anfrage   6/6: Netzwerk 88827 n=19 e= 95 Kandidaten=100911 Treffer=1 62.4s (Rest ca. 0 min)
+
+=== 3 Worker ===
+  Anfrage   1/6: Netzwerk 654454 n=15 e= 68 Kandidaten=275420 Treffer=1 198.4s (Rest ca. 17 min)
+  Anfrage   2/6: Netzwerk 773650 n=19 e=107 Kandidaten=62064 Treffer=1 40.6s (Rest ca. 8 min)
+  Anfrage   3/6: Netzwerk 432492 n=16 e= 77 Kandidaten=221027 Treffer=1 169.4s (Rest ca. 7 min)
+  Anfrage   4/6: Netzwerk 858614 n=15 e= 70 Kandidaten=263668 Treffer=3 209.2s (Rest ca. 5 min)
+  Anfrage   5/6: Netzwerk 438514 n=15 e= 56 Kandidaten=325964 Treffer=7 224.6s (Rest ca. 3 min)
+  Anfrage   6/6: Netzwerk 88827 n=19 e= 95 Kandidaten=100911 Treffer=1 65.4s (Rest ca. 0 min)
+
+=== Zusammenfassung ===
+Worker  Summe[s]  Mittel[s]  Median[s]   P95[s]  Speedup  Vergl./s  seriell%
+     1      1604      267.4      324.9    403.2    1.00x       n/a       n/a
+     2       843      140.5      169.4    212.0    1.90x       n/a       n/a
+     3       908      151.3      183.9    224.6    1.77x       n/a       n/a
+
+Speedup = Gesamtzeit mit der ersten Worker-Anzahl / Gesamtzeit dieser Zeile.
+Vergl./s = Kandidaten pro Sekunde in der Vergleichsphase (nur wenn crud.py die Phasenzeiten loggt).
+seriell% = Anteil der Gesamtzeit außerhalb der parallelen Vergleiche (Laden, Treffer bauen).
+
+JSON: /home/claude/results/search_workers_20261005_071729.json
+PDF:  /home/claude/results/search_workers_20261005_071729.pdf
