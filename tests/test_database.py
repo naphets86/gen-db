@@ -1,4 +1,6 @@
 """Tests for database connections and the isolated test schema."""
+from uuid import uuid4
+
 import pytest
 import psycopg2
 
@@ -15,16 +17,31 @@ class TestDatabaseConnection:
                 cursor.execute('SELECT current_database()')
                 assert cursor.fetchone()[0] == test_db_config['database']
 
-    def test_get_db_connection_commit(self, clean_database):
-        with clean_database.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO biological_networks
-                (name, network_type, organism, description, node_count, edge_count)
-                VALUES ('Test', 'metabolic', 'Test', 'Test', 3, 2)
-            """)
-            clean_database.commit()
-            cursor.execute('SELECT COUNT(*) FROM biological_networks')
-            assert cursor.fetchone()[0] == 1
+    def test_get_db_connection_commit(self):
+        name = f'Test_{uuid4().hex}'
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO biological_networks
+                        (name, network_type, organism, description, node_count, edge_count)
+                        VALUES (%s, 'metabolic', 'Test', 'Test', 3, 2)
+                    """, (name,))
+
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        'SELECT COUNT(*) FROM biological_networks WHERE name = %s',
+                        (name,),
+                    )
+                    assert cursor.fetchone()[0] == 1
+        finally:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        'DELETE FROM biological_networks WHERE name = %s',
+                        (name,),
+                    )
 
     def test_get_db_connection_rollback_on_error(self):
         with pytest.raises(psycopg2.Error):

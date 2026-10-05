@@ -12,7 +12,6 @@ from backend.crud import (
 @pytest.mark.slow
 class TestSubgraphAlgorithmAllCases:
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_case_keep_B_linear_chain(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -36,10 +35,9 @@ class TestSubgraphAlgorithmAllCases:
             query_labels=['X', 'Y']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
-            assert any(m['match_type'] == 'subgraph' for m in matches)
-            assert any(m['subgraph_result'] == 'keep_B' for m in matches)
+        assert len(matches) >= 1
+        assert any(m.match_type == 'subgraph' for m in matches)
+        assert any(m.subgraph_result == 'keep_B' for m in matches)
 
     def test_subgraph_case_keep_B_tree_structure(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
@@ -183,7 +181,6 @@ class TestSubgraphAlgorithmAllCases:
 
         assert isinstance(matches, list)
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_multiple_candidates_mixed(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -227,10 +224,9 @@ class TestSubgraphAlgorithmAllCases:
             query_labels=['A', 'B', 'C']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
-            match_types = set(m['match_type'] for m in matches)
-            assert 'exact' in match_types or 'subgraph' in match_types
+        assert len(matches) >= 1
+        match_types = {match.match_type for match in matches}
+        assert 'exact' in match_types or 'subgraph' in match_types
 
 
 @pytest.mark.db
@@ -260,7 +256,6 @@ class TestSubgraphEdgeCases:
 
         assert len(matches) == 0
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_large_matrix(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -284,14 +279,12 @@ class TestSubgraphEdgeCases:
             query_labels=['A', 'B', 'C']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
+        assert len(matches) >= 1
 
 
 @pytest.mark.db
 class TestSubgraphSpecificStructures:
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_star_topology(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -316,10 +309,8 @@ class TestSubgraphSpecificStructures:
             query_labels=['X', 'Y']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
+        assert len(matches) >= 1
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_complete_graph(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -343,10 +334,8 @@ class TestSubgraphSpecificStructures:
             query_labels=['X', 'Y', 'Z']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
+        assert matches == []
 
-    @pytest.mark.skip(reason="Requires real C++ binary - tests complex subgraph logic")
     def test_subgraph_disconnected_components(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
 
@@ -370,8 +359,7 @@ class TestSubgraphSpecificStructures:
             query_labels=['X', 'Y']
         )
 
-        if SUBGRAPH_AVAILABLE:
-            assert len(matches) >= 1
+        assert len(matches) >= 1
 
 
 @pytest.mark.db

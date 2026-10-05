@@ -77,7 +77,7 @@
 	{≥}{{$\geq$}}1
 }
 
-\title{Effiziente Subgraph-Suche in Datenbanken biologischer Netzwerke: Realisierung und Analyse von Gen-DB}
+\title{\textbf{Genomdatenbank und evolutionäre Netzwerkanalyse}}
 \author{Stephan Epp}
 \date{23. Januar 2026}
 
@@ -231,8 +231,6 @@ Das Klassendiagramm ergänzt diese Sicht um den objektorientierten bzw. modellor
 
 Darüber hinaus arbeitet das Klassendiagramm die zentralen Abhängigkeiten zwischen den Suchkomponenten und den Datenstrukturen heraus. Die Signaturberechnung ist nicht isoliert, sondern Teil einer größeren Verarbeitungskette, in der ein Query-Netzwerk mit den gespeicherten Netzwerken verglichen wird, Kandidaten über notwendige Bedingungen vorgefiltert werden und anschließend der Subgraph-Algorithmus entscheidet, ob ein Treffer tatsächlich vorliegt. Diese Abhängigkeiten sind im UML-Modell als Assoziationen und Verantwortlichkeiten nachvollziehbar: Jede Klasse trägt eine bestimmte Rolle in der Suche, aber die fachliche Koordination geschieht über das Zusammenspiel der Komponenten, nicht über eine monolithische Implementierung. Genau dieser modularisierte Aufbau ist es, der die Skalierbarkeit und Analysefähigkeit von Gen-DB erklärt: Die Datenmodellierung unterstützt die Suche, die Suchlogik verwendet die Repräsentation, und die Systemarchitektur koordiniert die Kommunikationspfade zwischen Nutzer, API und Datenbank.
 
-Die beiden Diagramme zusammen leisten also mehr als nur eine Visualisierung des Quellcodes: Sie dokumentieren die Entwurfslogik des Systems als Ganzes. Sie zeigen, dass Gen-DB ein typisches Full-Stack-System ist, dessen Stärke nicht in einer einzelnen technischen Komponente, sondern in der engen Verknüpfung von semantischer Modellierung, datenbankseitiger Indexierung und algorithmischer Subgraph-Erkennung liegt. Gerade diese Architektur ist der Grund, warum die folgenden Abschnitte die Laufzeit, die Korrektheit und die Kandidatenreduktion formal analysieren können: Die Struktur des Systems ist so klar und modular, dass die mathematische Modellierung der Pipeline direkt auf die reale Implementierung zurückgeführt werden kann.
-
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\textwidth]{../doc/uml/packages_gen-db.pdf}
@@ -240,9 +238,11 @@ Die beiden Diagramme zusammen leisten also mehr als nur eine Visualisierung des 
 \label{fig:uml-packages}
 \end{figure}
 
+Die beiden Diagramme zusammen leisten also mehr als nur eine Visualisierung des Quellcodes: Sie dokumentieren die Entwurfslogik des Systems als Ganzes. Sie zeigen, dass Gen-DB ein typisches Full-Stack-System ist, dessen Stärke nicht in einer einzelnen technischen Komponente, sondern in der engen Verknüpfung von semantischer Modellierung, datenbankseitiger Indexierung und algorithmischer Subgraph-Erkennung liegt. Gerade diese Architektur ist der Grund, warum die folgenden Abschnitte die Laufzeit, die Korrektheit und die Kandidatenreduktion formal analysieren können: Die Struktur des Systems ist so klar und modular, dass die mathematische Modellierung der Pipeline direkt auf die reale Implementierung zurückgeführt werden kann.
+
 \begin{sidewaysfigure}
 \centering
-\includegraphics[width=0.9\textwidth]{../doc/uml/classes_gen-db.pdf}
+\includegraphics[width=0.86\textwidth]{../doc/uml/classes_gen-db.pdf}
 \caption{UML-Klassendiagramm der Gen-DB-Datenmodellierung und Suche.}
 \label{fig:uml-classes}
 \end{sidewaysfigure}
@@ -605,11 +605,12 @@ Die in Abbildung~\ref{fig:speedup} sichtbare Umkehrung des Speedup-Verhältnisse
 Tabelle~\ref{tab:literatur} fasst die in dieser Arbeit gemessenen Größenordnungen zusammen mit publizierten Charakterisierungen weiterer etablierter Algorithmen für (Teil-)Graphisomorphie und Subgraph-Suche. Die Tabelle dient nicht dem direkten Laufzeitvergleich auf identischer Hardware (die zitierten Arbeiten verwenden unterschiedliche Implementierungssprachen, Graphgrößen und Hardware-Generationen), sondern der \emph{komplexitätstheoretischen Einordnung}.
 
 \begin{sidewaystable}
-	\scriptsize
+	\small
+	%\scriptsize
 	\centering
 	\setlength{\tabcolsep}{3pt}
-	\caption{Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren.}
-	\begin{tabular}{>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{4.4cm}}
+	\caption{Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren}
+	\begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{4.8cm}>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{6.4cm}}
 		\toprule
 		Verfahren & Worst-Case-Komplexität & Entschiedene Relation & Charakteristik \\
 		\midrule

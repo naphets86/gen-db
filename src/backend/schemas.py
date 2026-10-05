@@ -12,7 +12,7 @@ Verwendung:
 Verwendet: pydantic.BaseModel
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 
 
@@ -37,7 +37,7 @@ class NetworkCreate(BaseModel):
     )
     node_labels: List[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="Labels der Knoten"
     )
     adjacency_matrix: List[List[int]] = Field(
@@ -45,8 +45,8 @@ class NetworkCreate(BaseModel):
         description="Adjazenzmatrix als Liste von Listen (0 oder 1)"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Protein Interaction Network",
                 "network_type": "protein",
@@ -56,6 +56,7 @@ class NetworkCreate(BaseModel):
                 "adjacency_matrix": [[0, 1, 1], [1, 0, 0], [1, 0, 0]]
             }
         }
+    )
 
 
 class NetworkSearch(BaseModel):
@@ -66,7 +67,7 @@ class NetworkSearch(BaseModel):
     """
     node_labels: List[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="Labels des Such-Subgraph"
     )
     adjacency_matrix: List[List[int]] = Field(
@@ -74,13 +75,14 @@ class NetworkSearch(BaseModel):
         description="Adjazenzmatrix des Such-Subgraph"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "node_labels": ["TP53", "BRCA1"],
                 "adjacency_matrix": [[0, 1], [1, 0]]
             }
         }
+    )
 
 
 # ============================================================================
@@ -105,8 +107,8 @@ class NetworkResponse(BaseModel):
     signature_array: Optional[List[int]] = Field(None, description="Spalten-Signaturen")
     created_at: Optional[str] = Field(None, description="Erstell-Zeitstempel")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "network_id": 1,
                 "name": "Protein Interaction Network",
@@ -120,6 +122,7 @@ class NetworkResponse(BaseModel):
                 "created_at": "2024-01-15T10:30:00"
             }
         }
+    )
 
 
 class NetworkSummaryResponse(BaseModel):
@@ -137,8 +140,8 @@ class NetworkSummaryResponse(BaseModel):
     edge_count: int = Field(..., ge=0, description="Anzahl Kanten")
     created_at: Optional[str] = Field(None, description="Erstell-Zeitstempel")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "network_id": 1,
                 "name": "Protein Interaction Network",
@@ -149,6 +152,7 @@ class NetworkSummaryResponse(BaseModel):
                 "created_at": "2024-01-15T10:30:00"
             }
         }
+    )
 
 
 class SearchMatchResponse(BaseModel):
@@ -169,8 +173,8 @@ class SearchMatchResponse(BaseModel):
         description="Art des Matches: 'exact' (identisch) oder 'subgraph' (ist Subgraph)"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "network_id": 5,
                 "name": "Full PPI Network",
@@ -182,6 +186,7 @@ class SearchMatchResponse(BaseModel):
                 "match_type": "subgraph"
             }
         }
+    )
 
 
 class NetworkCreationResponse(BaseModel):
@@ -198,8 +203,8 @@ class NetworkCreationResponse(BaseModel):
     node_count: int = Field(..., ge=0, description="Anzahl Knoten")
     edge_count: int = Field(..., ge=0, description="Anzahl Kanten")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "network_id": 123,
                 "name": "New Network",
@@ -210,6 +215,7 @@ class NetworkCreationResponse(BaseModel):
                 "edge_count": 2
             }
         }
+    )
 
 
 # ============================================================================

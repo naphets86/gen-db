@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "biological-network-database"
 version = "2.1.0"
-description = "Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend"
+description = "Biological Network Database mit PostgreSQL-Backend, FastAPI-basierter REST-API und Web-Frontend"
 authors = [
     {name = "Stephan Epp"}
 ]
@@ -30,7 +30,7 @@ dev = [
     "playwright",
     "requests",
     "coverage",
-    "httpx",
+    "httpx2",
 ]
 
 [tool.coverage.run]
