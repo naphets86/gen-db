@@ -89,6 +89,7 @@
 \newpage
 
 \section{Einführung}
+\label{sec:einleitung}
 
 Biologische Datenbanken enthalten heute Millionen von Netzwerken: metabolische Pfade, Protein-Interaktionsnetzwerke und Gen-Regulationsnetzwerke. Eine zentrale Aufgabe bei der Analyse solcher Datenbanken ist die \emph{Subgraph-Suche}: Gegeben sei ein Query-Netzwerk $G$ (z.\,B. ein bekanntes Motiv wie ein Teilstück der Glykolyse), gesucht sind alle in der Datenbank gespeicherten Netzwerke $G'$, die $G$ als Subgraphen enthalten.
 
@@ -101,12 +102,20 @@ Diese Arbeit beschreibt die konkrete Realisierung einer solchen Suche im System 
 	\item Formaler Nachweis der Korrektheit und Komplexität des Such-Pipeline-Prozesses (Pre-Filtering $+$ Subgraph-Vergleich).
 	\item Empirische Evaluation an einer synthetisch generierten Datenbank mit $1.000.000$ biologischen Netzwerken.
 	\item Veranschaulichung der Ergebnisse durch matplotlib-Diagramme: Laufzeitverteilung, Pre-Filter-Effektivität, Skalierungsverhalten und Trefferverteilung.
-	\item Ausführlicher Ausblick auf Erweiterungen (Indexierung, Parallelisierung, approximative Suche, GPU-Beschleunigung).
+	\item Experimenteller Vergleich des Subgraph Algorithmus mit VF2 sowie Analyse der Ursachen der beobachteten Laufzeitunterschiede.
+	\item Experimentelle Untersuchung der parallelen Ausführung der Kandidatenvergleiche mit $1$, $2$ und $3$ Worker-Prozessen (Gesamtzeit, Speedup, Effizienz, Skalierung mit der Kandidatenzahl).
+	\item Zusammenfassung, kritische Würdigung der Grenzen und ausführlicher, nach Themenfeldern geordneter Ausblick auf Erweiterungen (Korrektheit, Indexierung, Beschleunigung der Vergleiche, Systemebene, Evaluation, Anwendung) mit einer Priorisierung der nächsten Schritte.
 \end{itemize}
 
 \subsection{Aufbau der Arbeit}
 
-Zunächst führt Abschnitt~\ref{sec:grundlagen} in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation und den Subgraph Algorithmus ein. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank und Suche vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) bündelt den Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen; seine letzte Untersektion fasst die wesentlichen Ergebnisse zusammen.
+Die Arbeit gliedert sich in acht Abschnitte, die aufeinander aufbauen: von den theoretischen Grundlagen über das System und seine formale Analyse bis zu den Experimenten und dem Ausblick.
+
+Abschnitt~\ref{sec:grundlagen} führt in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation, die Spaltensignaturen und den Subgraph Algorithmus ein, dessen Laufzeit von $O(n^3)$ die Grundlage aller späteren Betrachtungen ist. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche.
+
+Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl.
+
+Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) besteht aus fünf Teilen. Es fasst die Ergebnisse aller Abschnitte zusammen (Abschnitt~\ref{sec:zusammenfassung}), benennt die Grenzen der Arbeit (Abschnitt~\ref{sec:grenzen}), entwickelt einen ausführlichen, nach Themenfeldern geordneten Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen (Abschnitt~\ref{sec:ausblick}), schlägt eine Reihenfolge für die nächsten Entwicklungsschritte vor (Abschnitt~\ref{sec:prio}) und schließt mit einer Gesamteinschätzung (Abschnitt~\ref{sec:schlussbemerkung}).
 
 \section{Grundlagen}
 \label{sec:grundlagen}
@@ -623,50 +632,295 @@ Drei Beobachtungen lassen sich aus dieser Einordnung formal ableiten:
 	\item \textbf{Komplementarität statt Konkurrenz:} Die in \cite{bonnici2013,he2008} beschriebenen Optimierungen (Knotenordnung nach Seltenheit, Nachbarschaftssignaturen) sind \emph{orthogonal} zum Subgraph Algorithmus und könnten gemäß Abschnitt~\ref{sec:schluss} (z.\,B.\ R-Baum-Pre-Filter) auf die \emph{Pre-Filter-Stufe} der Gen-DB-Pipeline angewendet werden, während der eigentliche Vergleich der gefilterten Kandidaten durch den Subgraph Algorithmus mit garantierter $O(n^3)$-Schranke erfolgt. Insofern stehen die hier verglichenen Verfahren nicht in direkter Konkurrenz, sondern adressieren unterschiedliche Stufen derselben Pipeline (Kandidatenreduktion vs.\ finaler Strukturvergleich).
 \end{enumerate}
 
+\section{Experimentelle Untersuchung der Parallelisierung}
+\label{sec:parallel}
+
+Die bisherigen Abschnitte haben die Such-Pipeline von Gen-DB formal analysiert (Abschnitt~\ref{sec:pipeline}), an einer synthetischen Datenbank mit einer Million Netzwerken statistisch charakterisiert (Abschnitt~\ref{sec:evaluation}) und den Subgraph Algorithmus in Einzelvergleichen gegen VF2 gemessen (Abschnitt~\ref{sec:vergleich}). Offen geblieben ist die Frage, wie sich die \emph{gesamte} Suche verhält, wenn der dominierende Kostenterm $O(C\cdot n^3)$ aus Satz~\ref{satz:pipeline} auf mehrere Prozesse verteilt wird. Dieser Abschnitt beantwortet sie empirisch: Er beschreibt die in Gen-DB implementierte parallele Ausführung der Kandidatenvergleiche, den Aufbau eines reproduzierbaren Experiments mit $1$, $2$ und $3$ Worker-Prozessen und wertet die Messergebnisse anhand von vier Diagrammen und zwei Tabellen aus.
+
+\subsection{Fragestellung und Hypothesen}
+\label{sec:parallel_hyp}
+
+Nach Satz~\ref{satz:pipeline} setzt sich die Suchzeit aus dem Pre-Filter $O(\log N + C)$ und den $C$ strukturellen Vergleichen $O(C\cdot n^3)$ zusammen. Da die Vergleiche für verschiedene Kandidaten voneinander unabhängig sind, lässt sich die Laufzeit einer Parallelisierung über $p$ Worker-Prozesse durch
+\[
+T_{\text{parallel}}(C,n,p) = O\!\left(\frac{C}{p}\cdot n^3\right) + O(n^3)
+\]
+modellieren. Das Experiment prüft drei daraus abgeleitete Hypothesen:
+
+\begin{enumerate}
+	\item[\textbf{H1}] Die Gesamtzeit einer Suche sinkt bei Verdopplung der Worker-Zahl von $1$ auf $2$ annähernd um den Faktor $2$, weil der parallelisierbare Vergleichsanteil die Laufzeit dominiert.
+	\item[\textbf{H2}] Mehr Worker-Prozesse als logische Prozessoren der Maschine bringen keinen weiteren Gewinn, da die Vergleiche CPU-gebunden sind und keine zusätzliche Rechenkapazität entsteht.
+	\item[\textbf{H3}] Die Suchzeit wächst, unabhängig von der Worker-Zahl, annähernd linear mit der Kandidatenzahl $C$, wie es der Term $O(C\cdot n^3)$ bei beschränktem $n\le 20$ erwarten lässt.
+\end{enumerate}
+
+\subsection{Implementierung der parallelen Suche}
+
+Die Suche ist in der Funktion \texttt{search\_subgraph} des Moduls \texttt{crud} umgesetzt und läuft in drei Phasen. Zuerst liest eine einzige SQL-Abfrage alle Netzwerke, die die notwendigen Bedingungen $n_k \ge n_Q$ und $m_k \ge m_Q$ des Pre-Filters (Abschnitt~\ref{sec:prefilter}) erfüllen, zusammen mit ihren Adjazenzmatrizen. Danach übergibt \texttt{compare\_many} aus dem Modul \texttt{subgraph\_executor} die Matrizen an einen \texttt{ProcessPoolExecutor}, dessen Größe über die Konfigurationsvariable \texttt{SUBGRAPH\_MAX\_WORKERS} bestimmt wird. Jeder Worker-Prozess erzeugt genau eine Instanz des Subgraph Algorithmus und ruft für ein Paar aus Query $A$ und Kandidat $B$ die Methode \texttt{compare\_graphs(A, B)} auf. Weil der Algorithmus in reinem Python implementiert und CPU-gebunden ist, werden Prozesse statt Threads verwendet; der Global Interpreter Lock würde Threads sonst serialisieren. Um den Kommunikationsaufwand zwischen Hauptprozess und Workern zu verringern, werden die Kandidaten in Blöcken (\emph{Chunks}) von $256$ Vergleichen pro Task verteilt. Schließlich baut der Hauptprozess aus den Entscheidungen \texttt{keep\_B} und \texttt{equal\_keep\_*} die Trefferliste auf.
+
+Zwei Eigenschaften dieser Implementierung sind für die Auswertung wichtig. Erstens enthält die aktuelle Fassung \emph{kein} Kandidatenlimit $K$; alle Kandidaten des Pre-Filters werden verglichen, sodass Satz~\ref{satz:korrektheit} mit $K=\infty$ gilt und die gemessenen Zeiten einer vollständigen Suche entsprechen. Zweitens sind nur die Vergleiche parallelisiert. Das Lesen der Kandidaten aus PostgreSQL, die Übertragung der Matrizen an die Worker und der Aufbau der Trefferliste laufen im Hauptprozess und bilden den seriellen Anteil der Suche.
+
+\subsection{Versuchsaufbau}
+
+Das Experiment wird durch das Skript \texttt{src/experiment\_search\_workers.py} gesteuert. Es wählt mit festem Seed zufällig Netzwerke aus der Datenbank und verwendet sie als Suchanfragen. Um Verzerrungen durch zu kleine Muster zu vermeiden, besitzen alle Queries mindestens $15$ Knoten. Für jede Worker-Anzahl werden \emph{dieselben} Anfragen in derselben Reihenfolge über \texttt{crud.search\_subgraph} ausgeführt, sodass die Zeiten als gepaarte Messungen direkt vergleichbar sind. Vor jeder Messreihe wird der Prozess-Pool neu erzeugt und alle Worker werden vorab gestartet, damit die Startzeit der Prozesse nicht in die Messung eingeht. Eine zusätzliche Aufwärmanfrage pro Worker-Anzahl wird verworfen, um Caching-Effekte der Datenbank auszugleichen. Gemessen wird die Wanduhrzeit der gesamten Funktion mit \texttt{time.perf\_counter()}; sie umfasst somit Datenbankabfrage, Vergleiche, Prozesskommunikation und Aufbau der Trefferliste. Nach jeder Anfrage schreibt das Skript die bisherigen Messwerte in eine JSON-Datei, sodass ein Abbruch keine Daten verliert.
+
+\begin{table}[h]
+	\centering
+	\caption{Parameter und Umgebung des Experiments.}
+	\label{tab:par_setup}
+	\begin{tabular}{@{}ll@{}}
+		\toprule
+		Parameter & Wert \\
+		\midrule
+		Datenbank & $1.000.002$ Netzwerke (davon $333.500$ mit $n_k\ge 15$) \\
+		Anzahl Anfragen & $6$ je Worker-Anzahl, identisch über alle Reihen \\
+		Query-Auswahl & zufällig aus der Datenbank, $n_Q \ge 15$, Seed $42$ \\
+		Worker-Anzahlen & $p\in\{1,2,3\}$ \\
+		Aufwärmanfragen & $1$ je Worker-Anzahl (verworfen) \\
+		Chunk-Größe & $256$ Vergleiche pro Task \\
+		Kandidatenlimit & keines \\
+		Rechner & $2$ logische Prozessoren, PostgreSQL~16 auf demselben System \\
+		Software & Python~3.13, Linux \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Die ursprüngliche Voreinstellung des Skripts sieht $50$ Anfragen je Worker-Anzahl vor. Da eine einzelne Suche auf dem verwendeten Rechner bis zu rund $400$ Sekunden dauert, hätte diese Konfiguration mehrere Stunden benötigt; die Messreihe wurde deshalb auf $6$ Anfragen begrenzt (Aufruf: \texttt{python src/experiment\_search\_workers.py} \linebreak \texttt{--queries 6 --workers 1 2 3}). Die Folgen dieser Entscheidung für die Aussagekraft werden in Abschnitt~\ref{sec:par_grenzen} diskutiert.
+
+
+\subsection{Metriken}
+
+Für eine Worker-Anzahl $p$ bezeichne $T(p)$ die Summe der Antwortzeiten aller $Q=6$ Anfragen und $C_{\Sigma}=\sum_q C_q$ die Summe der Kandidatenzahlen.
+
+\begin{definition}[Speedup, Effizienz, Durchsatz]
+	\label{def:par_metriken}
+	Der \emph{Speedup} ist $S(p)=T(1)/T(p)$, die \emph{parallele Effizienz} $E(p)=S(p)/p$. Der \emph{Durchsatz} ist $\Theta(p)=C_\Sigma/T(p)$ in Kandidaten pro Sekunde, und die \emph{Kosten pro Kandidat} sind $\kappa(p)=T(p)/C_\Sigma$.
+\end{definition}
+
+Aus dem Speedup lässt sich mit dem Gesetz von Amdahl der nicht parallelisierte Zeitanteil $f$ abschätzen. Gilt $T(p)=T(1)\bigl(f+\tfrac{1-f}{p}\bigr)$, so folgt
+\[
+f=\frac{1/S(p)-1/p}{1-1/p}.
+\]
+Diese Abschätzung ist nur sinnvoll, solange $p$ die Zahl der verfügbaren Prozessoren nicht übersteigt.
+
+\subsection{Ergebnisse}
+
+\subsubsection{Die untersuchten Anfragen}
+
+Tabelle~\ref{tab:par_queries} zeigt die sechs ausgewählten Anfragen. Die Kandidatenzahl $C$ schwankt um mehr als den Faktor $5$, zwischen $62.064$ und $325.964$. Sie ergibt sich aus der Vorauswahl: Bei gleichverteilter Knotenzahl $n_k\in\{3,\dots,20\}$ besitzen $333.500$ der $1.000.002$ Netzwerke mindestens $15$ Knoten, und für Queries mit $15$ Knoten entscheidet nur noch die Kantenbedingung $m_k\ge m_Q$ über den Rest. Bei der Anfrage~5 mit $m_Q=56$ Kanten erfüllen $97{,}7\,\%$ dieser Netzwerke die Kantenbedingung, bei der Anfrage~1 mit $m_Q=68$ noch $82{,}6\,\%$. Die Anfragen~2 und~6 mit $19$ Knoten werden zusätzlich von der Knotenbedingung stark eingeschränkt, da nur Netzwerke mit $19$ oder $20$ Knoten in Frage kommen. Der Pre-Filter reduziert den Suchraum damit auf $6{,}2\,\%$ bis $32{,}6\,\%$ der Datenbank.
+
+Die Trefferzahlen sind mit $1$ bis $7$ minimal. Da jede Query selbst ein Netzwerk der Datenbank ist und die Kandidatenmenge dieses Netzwerk enthält, ist zu erwarten, dass der einzelne Treffer der Anfragen mit genau einem Ergebnis dem Query-Netzwerk selbst entspricht. Netzwerke mit mindestens $15$ Knoten und der Kantendichte $p=0{,}3$ sind also in anderen Zufallsnetzwerken praktisch nie als Teilstruktur enthalten. Dieser Befund steht im Gegensatz zum Serverprotokoll in Abschnitt~\ref{sec:effiziente-suche}, bei dem nahezu alle Kandidaten Treffer waren; die Trefferquote hängt, wie dort bereits vermerkt, stark von der konkreten Query ab. Für die Laufzeitmessung ist das hier günstig, denn der Aufbau der Trefferliste im Hauptprozess ist vernachlässigbar, und die gemessene Zeit wird fast vollständig von Vorauswahl und Vergleichen bestimmt.
+
+\begin{table}[h]
+	\centering
+	\small
+	\caption{Eigenschaften der sechs Suchanfragen und Suchzeiten $t_p$ in Sekunden bei $p$ Workern.}
+	\label{tab:par_queries}
+	\begin{tabular}{@{}rrrrrrrrrr@{}}
+		\toprule
+		Nr. & Netzwerk-ID & $n_Q$ & $m_Q$ & $C$ & Treffer & $t_1$ & $t_2$ & $t_3$ & $S(2)$ \\
+		\midrule
+		1 & 654454 & 15 &  68 & 275.420 & 1 & 360{,}8 & 193{,}2 & 198{,}4 & 1{,}87 \\
+		2 & 773650 & 19 & 107 &  62.064 & 1 &  70{,}0 &  36{,}7 &  40{,}6 & 1{,}91 \\
+		3 & 432492 & 16 &  77 & 221.027 & 1 & 294{,}9 & 153{,}0 & 169{,}4 & 1{,}93 \\
+		4 & 858614 & 15 &  70 & 263.668 & 3 & 354{,}9 & 185{,}8 & 209{,}2 & 1{,}91 \\
+		5 & 438514 & 15 &  56 & 325.964 & 7 & 403{,}2 & 212{,}0 & 224{,}6 & 1{,}90 \\
+		6 &  88827 & 19 &  95 & 100.911 & 1 & 120{,}4 &  62{,}4 &  65{,}4 & 1{,}93 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\subsubsection{Gesamtzeit und Speedup}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.85\textwidth]{../src/results/plot1_gesamtzeit_speedup.pdf}
+	\caption{Gesamtzeit aller sechs Anfragen in Minuten für $1$, $2$ und $3$ Worker mit dem jeweiligen Speedup über den Balken.}
+	\label{fig:par_gesamtzeit}
+\end{figure}
+
+Abbildung~\ref{fig:par_gesamtzeit} zeigt als Balkendiagramm die Summe der Antwortzeiten aller sechs Anfragen in Minuten, getrennt nach Worker-Anzahl. Über jedem Balken steht der Speedup relativ zur Messreihe mit einem Worker. Mit einem Worker benötigt die Suche zusammen $1604$ Sekunden, das sind rund $26{,}7$ Minuten. Mit zwei Workern sinkt dieser Wert auf $843$ Sekunden (rund $14{,}1$ Minuten), was einem Speedup von $S(2)=1{,}90$ und einer Effizienz von $E(2)=0{,}95$ entspricht. Der dritte Balken liegt bei $908$ Sekunden (rund $15{,}1$ Minuten) und damit \emph{über} dem Balken für zwei Worker; der Speedup fällt auf $S(3)=1{,}77$, die nominale Effizienz auf $E(3)=0{,}59$. Das Diagramm macht zwei Dinge sichtbar: den nahezu idealen Gewinn beim Übergang von einem auf zwei Worker und die leichte Verschlechterung durch einen dritten Worker, obwohl dessen Hinzunahme in einer idealen parallelen Maschine einen weiteren Gewinn bringen müsste.
+
+Tabelle~\ref{tab:par_summary} fasst die Kennzahlen zusammen. Der Durchsatz steigt von $779$ auf $1482$ Kandidaten pro Sekunde und fällt mit drei Workern auf $1376$ zurück. Entsprechend sinken die Kosten pro Kandidat von $1{,}28$ auf $0{,}68$ Millisekunden und steigen mit drei Workern wieder auf $0{,}73$ Millisekunden. Aus $S(2)=1{,}90$ ergibt sich nach der Formel aus Definition~\ref{def:par_metriken} ein nicht parallelisierter Anteil von etwa $f\approx 5\,\%$. Dieser Wert fasst alle seriellen Anteile zusammen, darunter das Laden der bis zu $326.000$ Zeilen aus PostgreSQL, die Serialisierung der Matrizen für die Prozesskommunikation und den Aufbau der Trefferliste. Eine getrennte Zuordnung auf die einzelnen Phasen erlauben die vorliegenden Daten nicht, weil die Phasenzeiten im aktuellen Code nicht protokolliert werden.
+
+\begin{table}[h]
+	\centering
+	\small
+	\caption{Kennzahlen der Suche in Abhängigkeit von der Worker-Anzahl (jeweils $6$ Anfragen, $C_\Sigma = 1.249.054$ Kandidaten).}
+	\label{tab:par_summary}
+	\begin{tabular}{@{}rrrrrrrrr@{}}
+		\toprule
+		$p$ & $T(p)$ [s] & Mittel [s] & Median [s] & Max. [s] & $S(p)$ & $E(p)$ & $\Theta(p)$ [1/s] & $\kappa(p)$ [ms] \\
+		\midrule
+		1 & 1604 & 267{,}4 & 324{,}9 & 403{,}2 & 1{,}00 & 1{,}00 & 779  & 1{,}28 \\
+		2 &  843 & 140{,}5 & 169{,}4 & 212{,}0 & 1{,}90 & 0{,}95 & 1482 & 0{,}68 \\
+		3 &  908 & 151{,}3 & 183{,}9 & 224{,}6 & 1{,}77 & 0{,}59 & 1376 & 0{,}73 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\subsubsection{Verteilung der Antwortzeiten}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.85\textwidth]{../src/results/plot2_verteilung_antwortzeiten.pdf}
+	\caption{Verteilung der Antwortzeit pro Anfrage als Boxplot mit logarithmischer Zeitachse und Mittelwert (Dreieck) für $1$, $2$ und $3$ Worker.}
+	\label{fig:par_verteilung}
+\end{figure}
+
+Abbildung~\ref{fig:par_verteilung} stellt die Antwortzeiten der einzelnen Anfragen als Boxplots dar. Die Zeitachse ist logarithmisch, weil die Zeiten über mehr als eine Größenordnung streuen. Die Box umfasst das untere bis obere Quartil, die orange Linie markiert den Median, das grüne Dreieck den Mittelwert, und die Antennen reichen bis zur kleinsten bzw.\ größten Messung. Mit einem Worker liegen die Zeiten zwischen $70{,}0$ und $403{,}2$ Sekunden; das untere Quartil beträgt rund $164$ Sekunden, das obere rund $359$ Sekunden, der Median $324{,}9$ Sekunden und der Mittelwert $267{,}4$ Sekunden. Mit zwei Workern verschiebt sich die gesamte Verteilung nach unten: Die Zeiten reichen von $36{,}7$ bis $212{,}0$ Sekunden, die Quartile liegen bei rund $85$ und $191$ Sekunden, der Median bei $169{,}4$ und der Mittelwert bei $140{,}5$ Sekunden. Auf der logarithmischen Achse ist die Verschiebung für Minimum, Median und Maximum nahezu gleich groß, die Boxen haben also dieselbe Form. Das bedeutet, dass die Parallelisierung alle Anfragen unabhängig von ihrer Größe um etwa denselben Faktor beschleunigt und nicht nur besonders große oder kleine. Mit drei Workern liegt die Verteilung geringfügig oberhalb derjenigen mit zwei Workern (Median $183{,}9$ Sekunden, Maximum $224{,}6$ Sekunden), aber deutlich unterhalb der Verteilung mit einem Worker.
+
+Der Median liegt bei jeder Worker-Anzahl über dem Mittelwert. Die Verteilung ist also linksschief: Wenige kurze Anfragen, nämlich die beiden Queries mit $19$ Knoten und vergleichsweise kleiner Kandidatenmenge, ziehen den Mittelwert herunter, während vier Anfragen mit großem Suchraum die Laufzeit bestimmen. Wegen der geringen Stichprobe von nur sechs Werten sind die Quartile grobe Orientierungswerte; das $95$-\%-Quantil, das das Skript ebenfalls ausgibt, ist bei sechs Werten identisch mit dem Maximum und wird deshalb hier nicht gesondert aufgeführt.
+
+\subsubsection{Skalierung mit der Größe des Suchraums}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.85\textwidth]{../src/results/plot4_skalierung_suchraum.pdf}
+	\caption{Streudiagramm der Antwortzeit gegen die Kandidatenzahl nach der SQL-Vorauswahl für $1$, $2$ und $3$ Worker.}
+	\label{fig:par_skalierung}
+\end{figure}
+
+Abbildung~\ref{fig:par_skalierung} trägt für jede Anfrage und jede Worker-Anzahl die Antwortzeit gegen die Zahl der Kandidaten nach der SQL-Vorauswahl auf. Die Punkte jeder Worker-Anzahl liegen sehr nahe an einer Geraden, was Hypothese H3 stützt. Der Pearson-Korrelationskoeffizient zwischen $C$ und Antwortzeit beträgt $0{,}996$ für einen Worker, $0{,}996$ für zwei und $0{,}990$ für drei Worker. Die lineare Regression liefert für einen Worker eine Steigung von etwa $1{,}3$ Millisekunden je Kandidat, für zwei Worker etwa $0{,}70$ und für drei Worker etwa $0{,}75$ Millisekunden. Die Gerade für einen Worker verläuft also etwa doppelt so steil wie die Geraden für zwei und drei Worker, die ihrerseits fast aufeinander liegen, wobei die Punkte für drei Worker durchgehend leicht höher liegen. Die Parallelisierung ändert damit den Anstieg, nicht die Form des Zusammenhangs: Eine Verdopplung der Kandidatenzahl verdoppelt weiterhin die Suchzeit, nur mit etwa der halben Steigung.
+
+Zugleich zeigt das Diagramm, dass der Zusammenhang nicht exakt proportional ist. Die Kosten pro Kandidat (Tabelle~\ref{tab:par_queries}, aus den Zeiten $t_1$ berechnet) betragen für die Anfragen mit $15$ oder $16$ Knoten zwischen $1{,}24$ und $1{,}35$ Millisekunden, für die beiden Anfragen mit $19$ Knoten dagegen nur $1{,}13$ und $1{,}19$ Millisekunden. Die Regressionsgerade besitzt entsprechend einen negativen Achsenabschnitt. Aus der Kubikschranke $O(n^3)$ ließe sich für Queries mit mehr Knoten ein höherer, nicht ein niedrigerer Aufwand pro Vergleich erwarten. Die Schranke ist aber eine Worst-Case-Abschätzung für den Vergleich; die Messung zeigt, dass der tatsächliche Aufwand auf diesen Daten auch von anderen Faktoren abhängt, etwa davon, wie früh ein Vergleich entschieden werden kann. Eine belastbare Erklärung erlaubt die vorliegende Messreihe nicht, weil dafür Zeiten einzelner Vergleiche in Abhängigkeit von $n_Q$ und $n_k$ erhoben werden müssten.
+
+\subsubsection{Dieselben Anfragen im direkten Vergleich}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.85\textwidth]{../src/results/plot5_gleiche_anfragen_je_worker.pdf}
+	\caption{Antwortzeit jeder einzelnen Anfrage bei $1$, $2$ und $3$ Workern, sortiert nach der Zeit mit einem Worker, logarithmische Zeitachse.}
+	\label{fig:par_gleiche}
+\end{figure}
+
+Abbildung~\ref{fig:par_gleiche} ordnet die Anfragen auf der horizontalen Achse nach ihrer Laufzeit mit einem Worker und zeichnet für jede Worker-Anzahl einen Linienzug durch die zugehörigen Zeiten. Weil dieselben Anfragen in allen drei Messreihen verwendet wurden, zeigt jeder vertikale Schnitt dieselbe Anfrage unter drei Bedingungen. Die Linie für einen Worker liegt an jeder Stelle oberhalb der beiden anderen, die Linien für zwei und drei Worker verlaufen nahezu parallel zueinander, wobei die Linie für drei Worker für alle sechs Anfragen über der für zwei Worker liegt. Auf der logarithmischen Achse entspricht ein konstanter Faktor einem konstanten vertikalen Abstand; dass die Abstände zwischen den Linien über alle Positionen annähernd gleich bleiben, bestätigt, dass die Beschleunigung von der Größe der Anfrage weitgehend unabhängig ist. Der Speedup $S(2)$ liegt für die einzelnen Anfragen zwischen $1{,}87$ und $1{,}93$ (Tabelle~\ref{tab:par_queries}), der Speedup $S(3)$ zwischen $1{,}70$ und $1{,}84$. Diese enge Streuung ist ein Hinweis, dass der Gesamtwert $S(2)=1{,}90$ keine Folge einzelner Ausreißer ist. Besonders deutlich ist der Sprung von der zweiten zur dritten Position: Die Anfrage~3 ist mit $221.027$ Kandidaten wesentlich aufwendiger als die Anfrage~6 mit $100.911$ Kandidaten, und der Abstand zwischen den Linien bleibt trotzdem derselbe.
+
+\subsection{Diskussion}
+
+\paragraph{Hypothese H1.} Der Übergang von einem auf zwei Worker liefert einen Speedup von $1{,}90$ bei einer Effizienz von $95\,\%$, und alle sechs Anfragen liegen zwischen $1{,}87$ und $1{,}93$. Die Hypothese ist damit auf dem untersuchten Rechner bestätigt: Der parallelisierbare Vergleichsanteil dominiert die Laufzeit, und der serielle Anteil von etwa $5\,\%$ (Laden der Kandidaten, Prozesskommunikation, Aufbau der Trefferliste) begrenzt den Gewinn nur geringfügig. Die Messung stützt das in Abschnitt~\ref{sec:parallel_hyp} angegebene Modell $T_{\text{parallel}}=O(\frac{C}{p}n^3)+O(n^3)$, wobei der additive Term nur den langsamsten Einzelvergleich erfasst. Die Messung zeigt, dass zusätzlich ein mit $C$ wachsender serieller Anteil existiert, der in diesem Modell nicht abgebildet ist. Er fällt bei $p=2$ kaum ins Gewicht, würde bei größerem $p$ aber nach dem Gesetz von Amdahl zunehmend den erreichbaren Speedup bestimmen.
+
+\paragraph{Hypothese H2.} Mit drei Workern auf einem Rechner mit zwei logischen Prozessoren steigt die Gesamtzeit um rund $7{,}7\,\%$ gegenüber zwei Workern, und der Speedup fällt von $1{,}90$ auf $1{,}77$. Auch diese Hypothese wird bestätigt. Die Vergleiche sind rein rechengebunden; ein dritter Prozess erzeugt keine zusätzliche Rechenkapazität, sondern konkurriert mit den anderen Prozessen um dieselben zwei Prozessoren und verursacht zusätzliche Kontextwechsel. Hinzu kommt, dass auch der Hauptprozess, der die Ergebnisse einsammelt, und der PostgreSQL-Server auf demselben Rechner Rechenzeit benötigen. Welchen Anteil diese Effekte jeweils haben, lässt sich aus den Daten nicht trennen. Die Beobachtung lässt sich aber unmittelbar in eine Konfigurationsempfehlung übersetzen: Die Zahl der Worker sollte die Zahl der verfügbaren logischen Prozessoren nicht überschreiten. Die mitgelieferte \texttt{.env}-Datei setzt \texttt{SUBGRAPH\_MAX\_WORKERS=14}; dieser Wert ist nur auf einem Rechner mit mindestens vierzehn logischen Prozessoren sinnvoll und sollte für andere Systeme angepasst werden.
+
+\paragraph{Hypothese H3.} Die Antwortzeit hängt mit einem Korrelationskoeffizienten von mindestens $0{,}99$ linear von der Kandidatenzahl ab. Das stimmt mit dem Term $O(C\cdot n^3)$ aus Satz~\ref{satz:pipeline} bei beschränktem $n$ überein. Die Abweichungen in den Kosten pro Kandidat zeigen allerdings, dass die Konstante nicht allein durch die Knotenzahl bestimmt wird (siehe oben).
+
+\paragraph{Bedeutung für das Korollar zur Datenbankgröße.} Das Korollar zu Satz~\ref{satz:pipeline} behauptet eine von $N$ unabhängige Suchzeit, sofern die Kandidatenzahl durch ein Limit $K$ beschränkt ist. Das Experiment läuft bewusst ohne Limit und zeigt die Kehrseite: Bei $N\approx 10^6$ bleiben je nach Query bis zu $32{,}6\,\%$ der Datenbank als Kandidaten übrig, und die Suchzeit steigt dann proportional zu $C$ auf bis zu $403$ Sekunden mit einem und $212$ Sekunden mit zwei Workern. Ohne Limit wächst $C$ bei fester Selektivität des Pre-Filters linear mit $N$, und damit auch die Suchzeit. Die Parallelisierung verkleinert den Anstieg um etwa den Faktor $p$, hebt die Abhängigkeit von $N$ aber nicht auf. Wer harte Latenzgrenzen einhalten will, braucht deshalb weiterhin einen schärferen Pre-Filter (etwa den in Abschnitt~\ref{sec:schluss} diskutierten mehrdimensionalen Index) oder ein Kandidatenlimit mit den dort beschriebenen Einbußen bei der Vollständigkeit; die Parallelisierung ergänzt diese Maßnahmen, ersetzt sie aber nicht.
+
+\subsection{Grenzen der Untersuchung}
+\label{sec:par_grenzen}
+
+Die Ergebnisse sind als erste empirische Einordnung zu lesen und aus folgenden Gründen nicht ohne Weiteres verallgemeinerbar.
+
+\begin{itemize}
+	\item \textbf{Kleine Stichprobe.} Mit sechs Anfragen und einer Messung je Anfrage und Worker-Anzahl lassen sich keine Standardabweichungen über Wiederholungen und keine Signifikanztests angeben. Dass die Speedups der einzelnen Anfragen eng beieinander liegen, spricht für stabile Verhältnisse, ersetzt aber keine Wiederholungsmessungen. Die ursprünglich vorgesehenen $50$ Anfragen sollten auf einem Rechner mit mehr Prozessoren nachgeholt werden.
+	\item \textbf{Zwei logische Prozessoren.} Aussagen für $p>2$ beschränken sich auf die Überbelegung; das Skalierungsverhalten bei vier, acht oder vierzehn echten Prozessoren, insbesondere der Einfluss des seriellen Anteils, wird nicht gemessen. Die Abschätzung $f\approx 5\,\%$ beruht auf einem einzigen Messpunkt.
+	\item \textbf{Gemeinsam genutzter Rechner.} Datenbank, Hauptprozess und Worker teilen sich dieselben Prozessoren. Auf einem System mit separatem Datenbankserver würde sich der serielle Anteil anders verhalten. Die Absolutwerte sind außerdem nicht mit dem Serverprotokoll aus Abschnitt~\ref{sec:effiziente-suche} vergleichbar, das auf einem anderen System entstand.
+	\item \textbf{Keine Phasenzerlegung.} Der Code protokolliert die Zeiten für Laden, Vergleichen und Trefferaufbau nicht, weshalb das Diagramm „Zeit je Phase“ des Skripts leer bleibt und dieser Abschnitt auf seine Wiedergabe verzichtet. Der serielle Anteil kann daher nur indirekt aus dem Speedup abgeschätzt werden.
+	\item \textbf{Eine synthetische Graphenfamilie.} Alle Netzwerke stammen aus dem Erdős–Rényi-Modell mit $p=0{,}3$; für reale biologische Netzwerke mit anderer Dichte und Struktur können Kandidatenzahlen, Trefferquoten und Kosten pro Vergleich abweichen.
+	\item \textbf{Treffer von Query und Kandidat.} Da die Queries aus der Datenbank stammen, enthält jede Kandidatenmenge das Query-Netzwerk selbst. Das ist für die Laufzeitmessung unerheblich, spricht aber gegen eine Interpretation der Trefferzahlen als allgemeine Trefferquote.
+\end{itemize}
+
+\subsection{Zwischenfazit}
+
+Die parallele Ausführung der Kandidatenvergleiche über einen Prozess-Pool beschleunigt die Suche in Gen-DB auf dem untersuchten Rechner mit zwei logischen Prozessoren um den Faktor $1{,}90$ (Effizienz $95\,\%$); der Gewinn ist für alle sechs Anfragen nahezu gleich. Ein dritter Worker verschlechtert die Zeit um rund $8\,\%$, da keine zusätzliche Rechenkapazität zur Verfügung steht. Die Suchzeit wächst unabhängig von der Worker-Zahl linear mit der Kandidatenzahl und erreicht ohne Kandidatenlimit bei großen Suchräumen mehrere Minuten, sodass die Parallelisierung die Antwortzeit um einen konstanten Faktor senkt, aber die Notwendigkeit eines selektiveren Pre-Filters oder eines Kandidatenlimits nicht beseitigt. Für die Praxis folgt daraus die Empfehlung, die Worker-Anzahl an die Zahl der logischen Prozessoren anzupassen. Die offene Frage, wie weit sich der Gewinn auf Rechnern mit deutlich mehr Prozessoren fortsetzt, soll eine Wiederholung der Messreihe mit der vollen Anfragezahl klären.
+
 \section{Schluss}
 \label{sec:schluss}
 
-Die vorliegende Realisierung von Gen-DB demonstriert die grundsätzliche Praktikabilität des Subgraph Algorithmus für Datenbanken biologischer Netzwerke, lässt jedoch zahlreiche Erweiterungsmöglichkeiten offen, die im Folgenden ausführlich diskutiert werden.
+Die vorliegende Arbeit hat Gen-DB, ein System zur Subgraph-Suche in Datenbanken biologischer Netzwerke, von der Architektur über die formale Analyse der Such-Pipeline bis zu mehreren empirischen Untersuchungen betrachtet. Dieser abschließende Abschnitt gliedert sich in fünf Teile: Zunächst fasst Abschnitt~\ref{sec:zusammenfassung} die Ergebnisse aller vorangegangenen Abschnitte zusammen und gleicht sie mit den in der Einleitung formulierten Beiträgen ab. Abschnitt~\ref{sec:grenzen} benennt die Grenzen der Arbeit, sodass die Ergebnisse richtig eingeordnet werden können. Abschnitt~\ref{sec:ausblick} entwickelt darauf aufbauend ausführlich mögliche Erweiterungen und offene Forschungsfragen, geordnet nach Themenfeldern. Abschnitt~\ref{sec:prio} schlägt schließlich eine Reihenfolge für die Umsetzung vor, und Abschnitt~\ref{sec:schlussbemerkung} schließt die Arbeit mit einer Gesamteinschätzung.
 
-\subsection{Indexierung über Signatur-Hashes}
+% =====================================================================
+\subsection{Zusammenfassung}
+\label{sec:zusammenfassung}
 
-Aktuell wird der Signatur-Hash $h(A)$ zwar berechnet und gespeichert (Spalte \texttt{signature\_hash}, indiziert über \texttt{idx\_matrices\_hash}), jedoch nicht für die Subgraph-Suche genutzt — er eignet sich nur für \emph{exakte} Übereinstimmungen (inklusive Rotation, falls die Hashfunktion rotationsinvariant gestaltet wird). Eine Erweiterung bestünde darin, einen \emph{rotationsinvarianten} Hash
+\subsubsection{Ausgangspunkt und Zielsetzung}
+
+Biologische Datenbanken enthalten Millionen von Netzwerken: metabolische Pfade, Protein-Interaktionsnetzwerke und Gen-Regulationsnetzwerke. Eine zentrale Aufgabe bei ihrer Analyse ist die Subgraph-Suche, bei der zu einem Query-Netzwerk alle gespeicherten Netzwerke gefunden werden sollen, die das Query als Teilstruktur enthalten. Diese Arbeit hat untersucht, wie sich der Subgraph Algorithmus \cite{epp2026subgraph}, der zwei Adjazenzmatrizen über Spaltensignaturen und zyklische längste gemeinsame Teilsequenzen in $O(n^3)$ vergleicht, in eine relationale Datenbank einbetten lässt, ob die entstehende Such-Pipeline formal korrekt und analysierbar ist und wie sie sich bei einer Datenbank mit einer Million Einträgen tatsächlich verhält.
+
+\subsubsection{Systemarchitektur und Datenmodell}
+
+Gen-DB besteht aus drei Schichten: einem Web-Frontend in HTML, CSS und JavaScript, einem FastAPI-Backend in Python und einer PostgreSQL-Datenbank. Das Datenmodell speichert Metadaten (Name, Netzwerktyp, Organismus, Knoten- und Kantenzahl) in der Tabelle \texttt{biological\_networks} und die strukturellen Repräsentationen (Knotenlabels, Adjazenzmatrix, Signatur-Array und Signatur-Hash) in der $1{:}1$-verknüpften Tabelle \texttt{network\_matrices}. Entscheidend für die Suche ist, dass Knoten- und Kantenzahl als eigene, indizierte Spalten vorliegen, sodass sie ohne Zugriff auf die Matrizen ausgewertet werden können. Die UML-Paket- und Klassendiagramme in Abschnitt~\ref{sec:uml} dokumentieren, dass die Zerlegung in Präsentation, Logik und Persistenz sauber getrennt ist. Dadurch lässt sich die Such-Pipeline als eigenständiger Baustein formalisieren. Für die Ausführung der Vergleiche besitzt das Backend einen Prozess-Pool, der die Kandidaten blockweise auf mehrere Worker-Prozesse verteilt (Abschnitt~\ref{sec:parallel}).
+
+\subsubsection{Formale Ergebnisse zur Such-Pipeline}
+
+Die Pipeline besteht aus zwei Stufen. Die erste ist eine datenbankseitige Vorauswahl, die nur Netzwerke mit mindestens so vielen Knoten und Kanten wie das Query zulässt. Die zweite ist der strukturelle Vergleich der verbliebenen Kandidaten mit dem Subgraph Algorithmus. Gezeigt wurde Folgendes:
+
+\begin{itemize}
+	\item Die Vorauswahl ist korrekt: Aus $A_Q \preceq A_k$ folgt $n_Q \le n_k$ und $m_Q \le m_k$ (Lemma~\ref{lem:notwendig}). Damit scheidet der Pre-Filter keinen Treffer der Richtung $A_Q \preceq A_k$ fälschlich aus (Korollar~\ref{kor:prefilter}).
+	\item Die Gesamtlaufzeit beträgt $T_{\text{Suche}}(N,C,n)=O(\log N + C)+O(C\cdot n^3)$ (Satz~\ref{satz:pipeline}). Bei beschränkter Knotenzahl und beschränkter Kandidatenzahl $K$ ist die Suchzeit unabhängig von der Datenbankgröße $N$.
+	\item Ohne Kandidatenlimit ($K=\infty$) findet die Pipeline alle Treffer der Richtung $A_Q \preceq A_k$ (Satz~\ref{satz:korrektheit}). Mit Limit gilt dies nur noch eingeschränkt, weil ein sortiertes \texttt{LIMIT} Treffer mit großer Knotenzahl systematisch abschneiden kann (Lemma zur Verzerrung durch \texttt{LIMIT}).
+	\item Die symmetrische Richtung $A_k \preceq A_Q$ wird von der Vorauswahl nicht abgedeckt und braucht eine eigene Filterbedingung.
+\end{itemize}
+
+\subsubsection{Empirische Evaluation der Datenbank}
+
+Als Testdatenbank dienten $1.000.000$ synthetische Netzwerke (zuzüglich zweier Beispielnetzwerke) mit gleichverteilter Knotenzahl $n_k\in\{3,\dots,20\}$, Kantenwahrscheinlichkeit $p=0{,}3$ und gleichverteilten Netzwerktypen und Organismen. Im Mittel hatten sie $11{,}5$ Knoten und $44{,}3$ Kanten. Die Verteilungen entsprachen den Erwartungen aus dem Generierungsmodell, einschließlich der Abweichung der mittleren Kantenzahl vom naiven Erwartungswert, die sich durch die Jensen-Ungleichung erklärt. Die Auswertung zeigte, dass allein die Knotenzahlbedingung den Suchraum je nach Querygröße um bis zum Faktor $18$ verkleinert, und die Kantenbedingung die Reduktion weiter verstärkt. Die Modellkurven zur Skalierung bestätigten die Aussage des Korollars zu Satz~\ref{satz:pipeline}: Mit Kandidatenlimit bleibt die Suchzeit näherungsweise konstant, ohne Limit wächst sie linear in $N$.
+
+\subsubsection{Experimenteller Vergleich mit VF2}
+
+In einer direkten Messung gegen VF2 \cite{cordella2004} auf Erdős–Rényi-Graphen $G(n,0{,}3)$ war der Subgraph Algorithmus bei festem $n_A=5$ und $n_B\in[5,13]$ um den Faktor $1{,}9$ bis $4{,}7$ schneller. Der Vorsprung schmolz bei $n_B=14$ bis $16$ auf etwa $1{,}1$ ab, und bei $n_B=17$ und $18$ war VF2 mit Speedups von $0{,}83$ und $0{,}82$ etwas schneller. Bei gemeinsam wachsendem $n=n_A=n_B$ stieg die Laufzeit des Subgraph Algorithmus von $0{,}055\,$ms ($n=4$) auf $1{,}309\,$ms ($n=12$), also um den Faktor $23{,}8$ und damit in der Größenordnung der kubischen Referenz $3^3=27$, während VF2 im selben Bereich nur um den Faktor $2{,}8$ wuchs. Die Ursachenanalyse hat dies auf vier Punkte zurückgeführt: eine Referenzimplementierung ohne vorzeitigen Abbruch, das frühe Terminieren von VF2 auf zufälligen dichten Graphen, den Interpreter-Overhead der Python-Implementierung und den grundsätzlichen Unterschied zwischen Worst-Case-Schranke und Durchschnittsverhalten. Die Literaturübersicht hat gezeigt, dass der Subgraph Algorithmus unter den betrachteten Verfahren das einzige mit unbedingt polynomieller Worst-Case-Schranke ist, dafür aber eine strukturell schwächere Relation entscheidet als die volle Subgraph-Isomorphie. Daraus wurde eine Hybridstrategie abgeleitet, bei der je nach Graphgröße zwischen beiden Verfahren gewählt und der Subgraph Algorithmus als Fallback mit garantierter Schranke behalten wird.
+
+\subsubsection{Parallelisierung der Kandidatenvergleiche}
+
+Die Messreihe mit sechs aus der Datenbank gezogenen Queries (mindestens $15$ Knoten, $62.064$ bis $325.964$ Kandidaten, kein Kandidatenlimit) hat die parallele Ausführung quantifiziert. Mit zwei Workern sank die Gesamtzeit aller Anfragen von $1604$ auf $843$ Sekunden, das entspricht einem Speedup von $1{,}90$ und einer Effizienz von $95\,\%$, für jede einzelne Anfrage zwischen $1{,}87$ und $1{,}93$. Aus dem Speedup ergibt sich ein serieller Anteil von etwa $5\,\%$. Ein dritter Worker auf dem Rechner mit zwei logischen Prozessoren verschlechterte die Gesamtzeit um rund $8\,\%$ ($S(3)=1{,}77$), weil keine zusätzliche Rechenkapazität entsteht. Die Antwortzeit wuchs mit einem Korrelationskoeffizienten von mindestens $0{,}99$ linear mit der Kandidatenzahl. Eine einzelne Suche dauerte ohne Parallelisierung bis zu $403$ Sekunden und mit zwei Workern bis zu $212$ Sekunden.
+
+\subsubsection{Zentrale Erkenntnisse}
+
+Aus der Gesamtschau lassen sich sieben Erkenntnisse festhalten:
+
+\begin{enumerate}
+	\item \textbf{Die Architektur trägt die Analyse.} Die klare Trennung zwischen relationaler Kandidatenreduktion und algorithmischem Strukturvergleich erlaubt es, beide Stufen getrennt zu beweisen, zu messen und zu optimieren.
+	\item \textbf{Der Pre-Filter ist notwendig, aber allein nicht ausreichend.} Er verkleinert den Suchraum erheblich, doch bei kleinen oder spärlichen Queries bleiben Hunderttausende Kandidaten übrig. Bei den sechs Messanfragen lagen zwischen $6{,}2\,\%$ und $32{,}6\,\%$ der Datenbank im Suchraum.
+	\item \textbf{Die Suchzeit wird von den Vergleichen dominiert.} Sie wächst linear mit der Kandidatenzahl, so wie es der Term $O(C\cdot n^3)$ aus Satz~\ref{satz:pipeline} erwarten lässt.
+	\item \textbf{Garantie und Geschwindigkeit sind zwei verschiedene Eigenschaften.} Der Subgraph Algorithmus bietet eine bewiesene polynomielle Schranke und vorhersagbare Laufzeiten. Auf kleinen dichten Zufallsgraphen kann ein Verfahren mit exponentieller Worst-Case-Schranke wie VF2 im Durchschnitt gleich schnell oder schneller sein.
+	\item \textbf{Parallelisierung ist ein verlässlicher, aber begrenzter Hebel.} Sie senkt die Antwortzeit auf dem untersuchten System um einen konstanten Faktor nahe der Prozessorzahl, ändert aber nichts an der linearen Abhängigkeit von $C$. Sie ersetzt deshalb weder einen schärferen Pre-Filter noch ein Kandidatenlimit.
+	\item \textbf{Die Worker-Zahl muss zur Hardware passen.} Mehr Worker als logische Prozessoren verschlechtern die Laufzeit. Die mitgelieferte Voreinstellung von vierzehn Workern ist deshalb nur auf entsprechend ausgestatteten Rechnern sinnvoll.
+	\item \textbf{Vollständigkeit und Geschwindigkeit stehen im Spannungsfeld.} Ein Kandidatenlimit macht die Suchzeit unabhängig von $N$, kostet aber die Vollständigkeitsgarantie. Auch die Suchrichtung ist nur für $A_Q \preceq A_k$ abgesichert.
+\end{enumerate}
+
+\subsubsection{Abgleich mit den Beiträgen der Arbeit}
+
+In der Einleitung wurden acht Beiträge angekündigt. Sie sind wie folgt erfüllt: Die formale Beschreibung der Architektur und die Einbettung des Algorithmus in die relationale Datenbank sind in Abschnitt~\ref{sec:architektur} geleistet. Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, jedoch mit der ausdrücklichen Einschränkung auf die Richtung $A_Q \preceq A_k$ und den Fall ohne Kandidatenlimit. Die empirische Evaluation an einer Million Netzwerke und die zugehörigen Diagramme finden sich in Abschnitt~\ref{sec:evaluation}. Der Vergleich mit VF2 samt Ursachenanalyse folgt in Abschnitt~\ref{sec:vergleich}, die Untersuchung der Parallelisierung in Abschnitt~\ref{sec:parallel}. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Ein Unterschied in der Belastbarkeit ist zu beachten: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während die Abschnitte~\ref{sec:vergleich} und~\ref{sec:parallel} gemessene Werte zeigen. Dieser Punkt wird in Abschnitt~\ref{sec:grenzen} noch einmal aufgegriffen.
+
+% =====================================================================
+\subsection{Kritische Würdigung und Grenzen}
+\label{sec:grenzen}
+
+Die Ergebnisse dieser Arbeit sind belastbar, soweit es um die formalen Aussagen geht. Für die empirischen Aussagen gelten die folgenden Einschränkungen, die bei der Interpretation berücksichtigt werden müssen.
+
+\begin{enumerate}
+	\item \textbf{Die entschiedene Relation ist nicht die Subgraph-Isomorphie.} Die zyklische, auf den Zeilenkomponenten der Signaturen beruhende Relation $\preceq$ ist strukturell schwächer als die klassische Subgraph-Isomorphie. Treffer von Gen-DB sind daher Treffer im Sinne von $\preceq$ und nicht ohne Weiteres im Sinne der Isomorphie. Die Laufzeitvergleiche mit VF2 vergleichen deshalb Größenordnungen und nicht die Mächtigkeit der Relationen.
+	\item \textbf{Nur eine Suchrichtung ist abgesichert.} Die Vollständigkeitsaussage gilt für $A_Q \preceq A_k$. Für die umgekehrte Richtung fehlt eine bewiesene Vorauswahl.
+	\item \textbf{Kandidatenlimit und Implementierungsstand.} Die Analyse in Abschnitt~\ref{sec:pipeline} modelliert ein optionales Kandidatenlimit $K$, und das dort gezeigte SQL-Statement enthält eine \texttt{LIMIT}-Klausel. Die für die Messungen in Abschnitt~\ref{sec:parallel} verwendete Programmfassung führt dagegen den Vergleich über alle Kandidaten aus. Beides ist mit den Sätzen vereinbar, die Textstellen sollten bei einer Überarbeitung jedoch auf einen einheitlichen Stand gebracht werden.
+	\item \textbf{Teilweise modellbasierte Auswertung.} Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Laufzeitmodell und nicht auf Messungen. Gemessen sind der Vergleich mit VF2 (Abschnitt~\ref{sec:vergleich}) und die Parallelisierung (Abschnitt~\ref{sec:parallel}).
+	\item \textbf{Synthetische Daten.} Alle Netzwerke stammen aus dem Erdős–Rényi-Modell mit $p=0{,}3$. Reale biologische Netzwerke sind häufig skalenfrei, haben hohe Clusterkoeffizienten und Hub-Knoten. Kandidatenzahlen, Trefferquoten und Kosten pro Vergleich können dort deutlich abweichen.
+	\item \textbf{Geringe Stichprobengröße.} Der Vergleich mit VF2 beruht auf $8$ bzw.\ $5$ Wiederholungen je Datenpunkt, die Parallelisierungsmessung auf $6$ Anfragen mit je einer Messung. Konfidenzintervalle und Signifikanztests fehlen.
+	\item \textbf{Begrenzte Hardware.} Die Parallelisierung wurde auf einem Rechner mit zwei logischen Prozessoren gemessen, auf dem auch die Datenbank lief. Aussagen zur Skalierung auf viele Prozessoren oder auf getrennte Datenbankserver sind daher Extrapolationen.
+	\item \textbf{Ungenutzte Knotenlabels.} Die Relation $\preceq$ ignoriert Knotenlabels. Zwei strukturell gleiche, biologisch aber verschiedene Netzwerke gelten als äquivalent, was für die praktische Anwendung eine wesentliche Einschränkung ist.
+	\item \textbf{Referenzimplementierung ohne Optimierung.} Die Laufzeitwerte des Subgraph Algorithmus stammen aus einer in reinem Python geschriebenen Implementierung ohne vorzeitigen Abbruch. Sie sind daher eher eine obere Abschätzung des praktisch Erreichbaren.
+\end{enumerate}
+
+% =====================================================================
+\subsection{Ausblick}
+\label{sec:ausblick}
+
+Die Erweiterungsmöglichkeiten lassen sich in sechs Themenfelder ordnen: die Absicherung von Korrektheit und Suchsemantik, die Verschärfung der Vorauswahl und Indexierung, die Beschleunigung der Vergleiche, die Skalierung auf Systemebene, die Weiterentwicklung der Evaluation und die Anwendungsebene. Die folgenden Unterabschnitte behandeln jedes Feld einzeln. Wo eine Idee bereits durch die Ergebnisse dieser Arbeit gestützt oder relativiert wird, ist darauf verwiesen.
+
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld A: Korrektheit und Suchsemantik}
+
+\subsubsection{Vollständige Suche in beide Richtungen}
+\label{sec:beide_richtungen}
+
+Die Pipeline findet bisher nur Netzwerke, die das Query enthalten. Für die umgekehrte Richtung, bei der ein gespeichertes Netzwerk Teil des Querys ist, lässt sich dieselbe Argumentation wie in Lemma~\ref{lem:notwendig} anwenden: Aus $A_k \preceq A_Q$ folgt $n_k \le n_Q$ und $m_k \le m_Q$. Die zugehörige Kandidatenmenge ist
 \[
-h^*(A) = \min_{r \in \{0,\ldots,n-1\}} \mathrm{SHA256}\bigl(\mathrm{str}(\mathrm{rot}_r(\rho(A)))\bigr)
+\mathcal{C}'(Q,\mathcal{D}) = \{(id_k,L_k,A_k)\in\mathcal{D} : n_k \le n_Q \wedge m_k \le m_Q\},
 \]
-zu definieren und zu indizieren. Damit ließen sich \texttt{exact}-Treffer (Korollar zu Satz~\ref{satz:korrektheit} für $A_Q \equiv A_k$ bis auf Rotation) in $O(\log N)$ statt $O(C \cdot n^3)$ finden, indem zunächst eine Hash-Gleichheitssuche durchgeführt wird und der teure Subgraph-Vergleich nur für \texttt{subgraph}-Treffer (echte Teilstruktur) verbleibt. Die Korrektheit dieser Optimierung folgt aus der Tatsache, dass $h^*(A_Q) = h^*(A_k) \Rightarrow A_Q \preceq A_k \wedge A_k \preceq A_Q$ (Äquivalenz unter Rotation), was eine direkte Anwendung von Lemma~\ref{lem:injektiv} auf die Zeilenkomponenten ist.
+und eine vollständige Suche in beide Richtungen verarbeitet die Vereinigung $\mathcal{C}(Q,\mathcal{D})\cup\mathcal{C}'(Q,\mathcal{D})$. Die beiden Mengen überschneiden sich genau in den Netzwerken mit $n_k=n_Q$ und $m_k=m_Q$. Für die Praxis ist wichtig, dass $\mathcal{C}'$ bei großen Queries sehr groß wird: Für $n_Q=20$ erfüllt fast jedes Netzwerk die Knotenbedingung $n_k\le 20$. Eine Suche in Gegenrichtung ist deshalb nur mit einer Parallelisierung und mit einer Ergebnisbegrenzung sinnvoll und sollte in API und Oberfläche als eigener Suchmodus gekennzeichnet werden. Ob die Gegenrichtung für biologische Anwendungen überhaupt gebraucht wird (die Frage lautet dann: „Welche gespeicherten Motive stecken in meinem großen Netzwerk?“), ist eine fachliche Frage, die mit Anwendern geklärt werden sollte.
 
-\subsection{Mehrdimensionale Indexstrukturen (R-Baum über $(n_k,m_k)$)}
+\subsubsection{Differenzielle Tests der Vorauswahl und Eigenschaftstests}
 
-Der aktuelle Pre-Filter nutzt zwei unabhängige B-Baum-Indizes (\texttt{node\_count}, \texttt{edge\_count}) und kombiniert sie via konjunktiver \texttt{WHERE}-Klausel, was PostgreSQL typischerweise durch Bitmap-Index-Scans mit anschließendem \texttt{AND} realisiert. Eine direktere Lösung wäre ein zweidimensionaler Index (z.\,B.\ GiST/R-Baum über das Tupel $(n_k,m_k)$ als Punkt im $\mathbb{R}^2$), der die Bedingung $n_k \ge n_Q \wedge m_k \ge m_Q$ als achsenparallele Bereichsabfrage (``dominance query'') in $O(\log N + C)$ statt der aktuellen Bitmap-Kombination beantwortet. Formal entspricht $\mathcal{C}(Q,\mathcal{D})$ exakt der Menge der Punkte $(n_k,m_k)$, die den Punkt $(n_Q,m_Q)$ im Sinne der Pareto-Dominanz dominieren — ein klassisches Problem der rechnerischen Geometrie, für das R-Bäume und $k$-d-Bäume $O(\log N)$-Anfragezeiten (amortisiert) erreichen.
+Die Korrektheit des Pre-Filters wurde bewiesen, aber nicht automatisiert geprüft. Ein wirksamer Test vergleicht auf kleinen Datenbanken (etwa tausend zufällige Netzwerke) die Ergebnisse der Pipeline mit einer vollständigen Suche ohne Vorauswahl, bei der jedes Netzwerk mit dem Subgraph Algorithmus verglichen wird. Beide Ergebnismengen müssen für die Richtung $A_Q\preceq A_k$ identisch sein. Ergänzend können Eigenschaften, die aus der Definition der Relation folgen, als Eigenschaftstests (\emph{property-based tests}) formuliert werden, etwa dass jedes Netzwerk Subgraph von sich selbst ist und dass der Vergleich nicht von der zyklischen Anordnung der Zeilenkomponenten abhängt. Solche Tests würden auch jede spätere Optimierung des Vergleichs (Abschnitt~\ref{sec:impl_opt}) absichern.
 
-\subsection{Parallelisierung der Subgraph-Vergleiche}
-
-Satz~\ref{satz:pipeline} zeigt, dass die Kosten $C \cdot n^3$ für die Subgraph-Vergleiche dominieren. Da die Vergleiche für verschiedene Kandidaten $k \in \mathcal{C}(Q,\mathcal{D})$ \emph{unabhängig} sind (keine gemeinsamen Zwischenergebnisse, im Gegensatz zur in \cite{epp2026subgraph} bewiesenen Abhängigkeit zwischen Rotationen \emph{innerhalb} eines Vergleichs), bietet sich eine Parallelisierung über $p$ Worker-Prozesse an:
-\[
-T_{\text{parallel}}(C,n,p) = O\left(\frac{C}{p}\cdot n^3\right) + O(n^3)
-\]
-(der additive Term $O(n^3)$ entspricht dem langsamsten Einzelvergleich, der nicht weiter aufgeteilt werden kann). Eine Implementierung mittels \texttt{multiprocessing.Pool} oder einer Verteilung über mehrere FastAPI-Worker (Uvicorn mit \texttt{--workers}) erscheint naheliegend; bei sehr großen $C$ wäre auch eine Auslagerung auf eine verteilte Architektur (z.\,B.\ Apache Spark mit UDF für \texttt{compare\_graphs}) denkbar, wobei die Kommunikationskosten für den Versand der Adjazenzmatrizen (je $O(n^2)$ Bit) gegen den Berechnungsgewinn $O(n^3/p)$ abgewogen werden müssen — für $n \le 20$ ist $n^2=400$ Bit vs.\ $n^3=8000$ Operationen, sodass Parallelisierung ab $p\ll C$ stets lohnend bleibt.
-
-\subsection{GPU-Beschleunigung der Signatur- und LCS-Berechnung}
-
-Die Signaturberechnung (Schritt 1 des Subgraph Algorithmus) ist eine Matrix-Vektor-Operation der Form $\sigma_j = \sum_i A_{ij}2^i + j2^n$, die sich als gewichtete Spaltensummen mit Bitmasken-Gewichten $2^i$ darstellen lässt — eine klassische BLAS-Level-2-Operation, die auf GPUs (CUDA, via CuPy oder PyTorch) hochparallel ausgeführt werden kann. Für $C$ Kandidaten mit $n\times n$-Matrizen ergibt sich ein Tensor der Form $(C,n,n)$, dessen Signaturen in einem einzigen GPU-Kernel-Aufruf berechnet werden könnten, was Schritt~1 von $O(C\cdot n^2)$ sequentiellen auf $O(C\cdot n^2 / P_{\mathrm{GPU}})$ effektiv parallele Operationen reduziert ($P_{\mathrm{GPU}}$ = Anzahl CUDA-Kerne). Die LCS-Berechnung (Schritt~3) ist aufgrund der sequentiellen Abhängigkeiten der DP-Tabelle ($dp[i][j]$ hängt von $dp[i-1][j-1]$ ab) schwieriger zu parallelisieren, jedoch existieren Wellenfront-Parallelisierungen (Anti-Diagonalen der DP-Tabelle sind unabhängig berechenbar), die auf GPUs in $O(n)$ Schritten mit $O(n)$ Prozessoren statt $O(n^2)$ sequentiellen Schritten realisierbar wären (Brent-Theorem).
-
-\subsection{Approximative Suche und geschichtete Stichproben}
-
-Die Beschränkung $K=10.000$ (Abschnitt~\ref{sec:pipeline}) gefährdet die Vollständigkeitsgarantie aus Satz~\ref{satz:korrektheit}, falls $|\mathcal{C}(Q,\mathcal{D})|>K$. Eine Abmilderung wäre eine \emph{geschichtete Stichprobe}: Partitioniere $\mathcal{C}(Q,\mathcal{D})$ in Schichten nach $n_k$ (also $\mathcal{C}_3,\ldots,\mathcal{C}_{20}$) und ziehe aus jeder nichtleeren Schicht $\mathcal{C}_i$ mindestens $\lceil K/18\rceil$ Kandidaten, bevor das verbleibende Budget proportional zur Schichtgröße verteilt wird. Dies garantiert, dass Treffer mit seltenen Knotenzahlen $n_k$ (z.\,B.\ $n_k=20$, am dünnsten besetzte Schicht) nicht systematisch unterrepräsentiert werden — ein Problem, das bei einfachem \texttt{LIMIT K} nach \texttt{ORDER BY node\_count ASC} auftritt (kleine $n_k$ werden bevorzugt, große $n_k$ ggf.\ nie erreicht).
-
-\begin{lemma}[Verzerrung durch \texttt{LIMIT}]
-	Sei $\mathcal{C}(Q,\mathcal{D})$ sortiert nach $n_k$ aufsteigend und $K < |\mathcal{C}(Q,\mathcal{D})|$. Dann enthält das durch \texttt{LIMIT K} gelieferte Präfix $\mathcal{C}_K$ keinen Kandidaten mit $n_k > n^*$, wobei $n^*$ das kleinste $n$ mit $|\{k:n_k\le n\}|\ge K$ ist.
-\end{lemma}
-
-\begin{proof}
-	Da \texttt{ORDER BY node\_count ASC} eine totale Ordnung auf $\mathcal{C}(Q,\mathcal{D})$ induziert und \texttt{LIMIT K} die ersten $K$ Elemente dieser Ordnung zurückgibt, ist $\mathcal{C}_K = \{k\in\mathcal{C}(Q,\mathcal{D}): \mathrm{rank}(n_k)\le K\}$. Per Definition von $n^*$ als kleinstem Wert mit kumulativer Häufigkeit $\ge K$ folgt $n_k \le n^*$ für alle $k\in\mathcal{C}_K$.
-\end{proof}
-
-Dieses Lemma motiviert formal die Notwendigkeit der oben skizzierten Schichtung für eine unverzerrte approximative Suche.
-
-\subsection{Erweiterung auf gewichtete und beschriftete Subgraph-Isomorphie}
+\subsubsection{Erweiterung auf gewichtete und beschriftete Subgraph-Isomorphie}
 
 Die aktuelle Subgraph-Relation $\preceq$ berücksichtigt ausschließlich die \emph{Struktur} (Adjazenzmatrix), nicht jedoch die \emph{Knotenlabels} $L$ (z.\,B.\ \texttt{Glucose}, \texttt{p53}). Zwei strukturell identische, aber biologisch unterschiedliche Netzwerke (z.\,B.\ Glykolyse vs.\ ein Zufallsgraph gleicher Adjazenzmatrix) würden aktuell als äquivalent erkannt. Eine biologisch sinnvolle Erweiterung wäre eine \emph{gefärbte} Subgraph-Relation
 \[
@@ -674,31 +928,61 @@ Die aktuelle Subgraph-Relation $\preceq$ berücksichtigt ausschließlich die \em
 \]
 deren Prüfung zusätzlich eine Label-Kompatibilitätsprüfung in $O(n)$ pro Rotation erfordert (Gesamtkomplexität bleibt $O(n^3)$, da $O(n)\subseteq O(n^2)$). Für kontinuierliche Kantengewichte $w: E\to\mathbb{R}_{\ge 0}$ (z.\,B.\ Reaktionsraten) wäre die binäre Signatur $\sigma_j=\sum_i A_{ij}2^i+j2^n$ durch eine gewichtete Variante $\sigma_j^w=\sum_i w_{ij}2^i+j2^n$ zu ersetzen, wobei die Injektivität aus Lemma~\ref{lem:injektiv} nur noch für endliche Wertebereiche $w_{ij}\in\{0,\ldots,W\}$ mit Basis $W+1$ statt $2$ erhalten bliebe.
 
-\subsection{Inkrementelle Aktualisierung der Signatur-Indizes}
 
-Bei $\texttt{INSERT}$ bzw.\ $\texttt{DELETE}$ einzelner Netzwerke (wie in der Gen-DB-API über \texttt{POST}/\texttt{DELETE /api/networks}) werden Signaturen aktuell vollständig neu berechnet (Aufwand $O(n^2)$ pro Operation, vernachlässigbar). Bei einer zukünftigen Erweiterung um \emph{Batch-Updates} (Änderung mehrerer Kanten gleichzeitig) wäre jedoch eine inkrementelle Aktualisierung der Signaturen wünschenswert: Da $\sigma_j=\sum_iA_{ij}2^i+j2^n$ linear in den Einträgen $A_{ij}$ ist, lässt sich eine Änderung $A_{ij}\to A_{ij}'$ als
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld B: Vorauswahl und Indexierung}
+
+\subsubsection{Indexierung über Signatur-Hashes}
+
+Aktuell wird der Signatur-Hash $h(A)$ zwar berechnet und gespeichert (Spalte \texttt{signature\_hash}, indiziert über \texttt{idx\_matrices\_hash}), jedoch nicht für die Subgraph-Suche genutzt — er eignet sich nur für \emph{exakte} Übereinstimmungen (inklusive Rotation, falls die Hashfunktion rotationsinvariant gestaltet wird). Eine Erweiterung bestünde darin, einen \emph{rotationsinvarianten} Hash
 \[
-\sigma_j' = \sigma_j + (A_{ij}'-A_{ij})\cdot 2^i
+h^*(A) = \min_{r \in \{0,\ldots,n-1\}} \mathrm{SHA256}\bigl(\mathrm{str}(\mathrm{rot}_r(\rho(A)))\bigr)
 \]
-in $O(1)$ pro geänderter Kante nachführen, ohne die gesamte Spalte neu zu durchlaufen — eine direkte Konsequenz der Linearität der Signaturfunktion.
+zu definieren und zu indizieren. Damit ließen sich \texttt{exact}-Treffer (Korollar zu Satz~\ref{satz:korrektheit} für $A_Q \equiv A_k$ bis auf Rotation) in $O(\log N)$ statt $O(C \cdot n^3)$ finden, indem zunächst eine Hash-Gleichheitssuche durchgeführt wird und der teure Subgraph-Vergleich nur für \texttt{subgraph}-Treffer (echte Teilstruktur) verbleibt. Die Korrektheit dieser Optimierung folgt aus der Tatsache, dass $h^*(A_Q) = h^*(A_k) \Rightarrow A_Q \preceq A_k \wedge A_k \preceq A_Q$ (Äquivalenz unter Rotation), was eine direkte Anwendung von Lemma~\ref{lem:injektiv} auf die Zeilenkomponenten ist.
 
-\subsection{Caching häufiger Queries}
 
-Da biologische Analysen oft wiederholt nach denselben oder ähnlichen Motiven suchen (z.\,B.\ Standard-Pfadabschnitte der Glykolyse), bietet sich ein LRU-Cache auf Ebene des Signatur-Arrays $\Sigma(A_Q)$ an: Wird $\Sigma(A_Q)$ bereits für eine vorherige Anfrage berechnet, kann Schritt~1 des Subgraph Algorithmus übersprungen werden (Ersparnis $O(n_Q^2)$ pro wiederholter Anfrage). Bei einer angenommenen Cache-Trefferquote $\alpha\in[0,1]$ reduziert sich die erwartete Laufzeit aus Satz~\ref{satz:pipeline} zu
+\subsubsection{Mehrdimensionale Indexstrukturen (R-Baum über $(n_k,m_k)$)}
+
+Der aktuelle Pre-Filter nutzt zwei unabhängige B-Baum-Indizes (\texttt{node\_count}, \texttt{edge\_count}) und kombiniert sie via konjunktiver \texttt{WHERE}-Klausel, was PostgreSQL typischerweise durch Bitmap-Index-Scans mit anschließendem \texttt{AND} realisiert. Eine direktere Lösung wäre ein zweidimensionaler Index (z.\,B.\ GiST/R-Baum über das Tupel $(n_k,m_k)$ als Punkt im $\mathbb{R}^2$), der die Bedingung $n_k \ge n_Q \wedge m_k \ge m_Q$ als achsenparallele Bereichsabfrage (``dominance query'') in $O(\log N + C)$ statt der aktuellen Bitmap-Kombination beantwortet. Formal entspricht $\mathcal{C}(Q,\mathcal{D})$ exakt der Menge der Punkte $(n_k,m_k)$, die den Punkt $(n_Q,m_Q)$ im Sinne der Pareto-Dominanz dominieren — ein klassisches Problem der rechnerischen Geometrie, für das R-Bäume und $k$-d-Bäume $O(\log N)$-Anfragezeiten (amortisiert) erreichen.
+
+
+\subsubsection{Zusätzliche notwendige Bedingungen und Label-Indizes}
+
+Die Vorauswahl nutzt derzeit nur Knoten- und Kantenzahl. Jede weitere Größe, die sich billig aus der Datenbank lesen lässt und für $A_Q\preceq A_k$ notwendig ist, würde den Suchraum weiter verkleinern. Solche Bedingungen müssen vor ihrer Verwendung aus der Definition von $\preceq$ bewiesen werden, denn eine zu scharfe Bedingung würde echte Treffer ausschließen. Bei Einführung der beschrifteten Relation $\preceq_\ell$ (Themenfeld A) ist dagegen eine sehr wirksame Bedingung unmittelbar ableitbar: Das Multiset der Knotenlabels des Querys muss im Multiset der Labels des Kandidaten enthalten sein. PostgreSQL unterstützt für Array-Spalten wie \texttt{node\_labels} GIN-Indizes mit dem Enthaltenseins-Operator \texttt{@>} \cite{postgresql}, sodass diese Bedingung direkt im Index ausgewertet werden könnte. Biologische Queries enthalten meist seltene Labels (etwa \texttt{p53}), wodurch die Kandidatenmenge in diesem Fall um Größenordnungen kleiner würde als bei der reinen Zählung von Knoten und Kanten. Einfacher umzusetzen ist ein zusammengesetzter Index über $(\texttt{node\_count},\texttt{edge\_count})$, der die beiden bisher getrennten B-Baum-Indizes ersetzt, bevor der aufwendigere R-Baum-Ansatz nötig wird.
+
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld C: Beschleunigung der Vergleiche}
+
+\subsubsection{Weiterführende Parallelisierung}
+\label{sec:weiter_parallel}
+
+Die Parallelisierung der Kandidatenvergleiche ist in Gen-DB umgesetzt und in Abschnitt~\ref{sec:parallel} vermessen. Die Messung zeigt zugleich, an welchen Stellen weitere Gewinne liegen. Das Modell $T_{\text{parallel}}(C,n,p)=O(\frac{C}{p}n^3)+O(n^3)$ aus Abschnitt~\ref{sec:parallel} übersieht, dass das Laden und Übertragen der Kandidaten ebenfalls mit $C$ wächst. Ein realistischeres Modell lautet
 \[
-\mathbb{E}[T_{\text{Suche}}] = (1-\alpha)\cdot O(n_Q^2) + O(C\cdot n^3),
+T_{\text{parallel}}(C,n,p) = \underbrace{O(C\cdot n^2)}_{\text{Laden, Übertragung, Ergebnisaufbau (seriell)}} + \underbrace{O\!\left(\frac{C}{p}\cdot n^3\right)}_{\text{Vergleiche}} + O(n^3),
 \]
-was insbesondere bei kleinem $C$ (großes $n_Q$, vgl.\ Abbildung~\ref{fig:prefilter}) relativ stärker zu Buche schlägt.
+in dem der serielle Anteil nach dem Gesetz von Amdahl \cite{amdahl1967} den erreichbaren Speedup für große $p$ auf etwa $1/f$ begrenzt. Mit dem geschätzten Anteil $f\approx 5\,\%$ wäre der Gewinn rechnerisch bei etwa dem zwanzigfachen Wert gedeckelt; da dieser Wert aus einem einzigen Messpunkt stammt, ist er nur ein Anhaltspunkt. Folgende Maßnahmen setzen am seriellen Anteil an:
 
-\subsection{Visuelle Exploration und Graph-Layout}
+\begin{itemize}
+	\item \textbf{Strömendes Laden.} Die Kandidaten werden derzeit mit einem einzigen Abruf vollständig in den Speicher gelesen. Ein serverseitiger Cursor würde sie in Blöcken liefern, sodass das Laden mit den Vergleichen überlappt und der Speicherbedarf bei $C\approx 3\cdot 10^5$ sinkt.
+	\item \textbf{Query nur einmal pro Task übertragen.} Die Query-Matrix wird gegenwärtig für jeden Kandidaten mitgeführt; bei einem Block von $256$ Vergleichen wird sie $256$-mal serialisiert. Eine Übergabe pro Block oder pro Worker (etwa über einen Initialisierer des Prozess-Pools bei Beginn der Suche) würde den Kommunikationsaufwand senken.
+	\item \textbf{Blockgröße anpassen.} Die Blockgröße von $256$ Vergleichen ist ein Kompromiss zwischen Kommunikationsaufwand und Lastverteilung. Eine adaptive Wahl (kleinere Blöcke am Ende, um Leerlauf zu vermeiden) und eine Messreihe zur Blockgröße sind einfach umzusetzen.
+	\item \textbf{Worker-Zahl automatisch an die Hardware anpassen.} Die Ergebnisse zeigen, dass mehr Worker als logische Prozessoren schaden. Die Konfiguration sollte deshalb standardmäßig an \texttt{os.cpu\_count()} gebunden und eine Überschreitung mit einer Warnung quittiert werden. Dabei ist zu bedenken, dass der Hauptprozess und der Datenbankserver ebenfalls Rechenzeit beanspruchen.
+	\item \textbf{Gleichzeitige Suchanfragen.} Der Prozess-Pool wird von allen Anfragen gemeinsam genutzt. Laufen mehrere lange Suchen gleichzeitig, konkurrieren sie um dieselben Worker. Eine Warteschlange mit Priorisierung kurzer Suchen oder ein Limit gleichzeitiger Suchen würde die Antwortzeit kleiner Anfragen schützen.
+\end{itemize}
 
-Das aktuelle Frontend zeigt Adjazenzmatrizen als Zahlentabellen und Listen. Eine Erweiterung um eine graphische Darstellung (Force-Directed-Layout, z.\,B.\ mittels D3.js oder Cytoscape.js) würde die Interpretierbarkeit von Suchergebnissen erheblich verbessern, insbesondere für die in Abschnitt~\ref{sec:evaluation} diskutierten \texttt{subgraph}-Treffer, bei denen die \emph{Einbettung} des Query-Graphen im größeren Kontextgraphen visuell hervorgehoben werden könnte (z.\,B.\ durch Hervorhebung der $n_Q$ Knoten, auf die $\phi$ aus Abschnitt~\ref{sec:schluss} (Label-Erweiterung) abbildet).
+Für sehr große Kandidatenmengen oder viele Nutzer kommt zusätzlich die Verteilung über mehrere Rechner in Betracht, etwa mit Apache Spark und einer benutzerdefinierten Funktion für \texttt{compare\_graphs}. Dabei muss der Kommunikationsaufwand für den Versand der Adjazenzmatrizen (je $O(n^2)$ Bit) gegen den Rechengewinn $O(n^3/p)$ abgewogen werden. Für $n\le 20$ stehen $n^2=400$ Bit nur $n^3=8000$ Operationen gegenüber, sodass sich die Verteilung bei $p\ll C$ lohnt. Das Gesetz von Gustafson \cite{gustafson1988} legt zudem nahe, bei mehr Prozessoren auch die Problemgröße zu steigern, also etwa größere Netzwerke oder Datenbanken zu bearbeiten, anstatt nur dieselbe Suche zu beschleunigen.
 
-\subsection{Benchmark-Suite und kontinuierliche Performanzmessung}
+\subsubsection{Optimierung der Implementierung des Vergleichs}
+\label{sec:impl_opt}
 
-Schließlich wäre die Entwicklung einer reproduzierbaren Benchmark-Suite sinnvoll, die die in Abschnitt~\ref{sec:evaluation} dargestellten Diagramme automatisch aus Live-Messungen (statt aus dem hier verwendeten analytischen Modell) generiert, etwa durch Instrumentierung der \texttt{search\_subgraph}-Funktion mit \texttt{time.perf\_counter()} und Protokollierung von $(N,n_Q,m_Q,C,T_{\text{gemessen}})$-Tupeln in einer separaten Metriktabelle. Eine solche Suite ermöglichte die empirische Validierung der in Satz~\ref{satz:pipeline} hergeleiteten asymptotischen Schranken und die Kalibrierung des Kandidatenlimits $K$ in Abhängigkeit von einem Antwortzeit-Budget (z.\,B.\ $200\,$ms für interaktive Anwendungen). Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente liefern hierfür einen konkreten Ausgangspunkt: \texttt{bench\_compare.py} kann als Kern einer kontinuierlichen Integrationspipeline (CI) dienen, die bei jeder Änderung der Implementierung des Subgraph Algorithmus automatisch prüft, ob die gemessene Laufzeit weiterhin innerhalb der durch Satz~\ref{satz:laufzeit} vorhergesagten Größenordnung liegt (Regressions-Schranke, z.\,B.\ $T_{\text{Sub}}(n) \le c\cdot n^3$ für eine aus historischen Messungen kalibrierte Konstante $c$).
+Die Ursachenanalyse in Abschnitt~\ref{sec:ursachen} hat gezeigt, dass die Referenzimplementierung des Subgraph Algorithmus die Tabelle der längsten gemeinsamen Teilsequenz für jede Rotation vollständig aufbaut und in reinem Python arbeitet. Daraus ergeben sich drei Hebel, die die asymptotische Schranke $O(n^3)$ nicht verändern, die gemessene Zeit aber erheblich senken können. Erstens kann die Suche über die Rotationen abgebrochen werden, sobald eine Rotation die Bedingung erfüllt; im günstigen Fall genügt dann eine einzige Tabelle. Zweitens lässt sich die Tabelle zeilenweise abbrechen, wenn bereits feststeht, dass die geforderte Mindestlänge nicht mehr erreichbar ist. Drittens kann die innere Schleife mit \texttt{numpy} vektorisiert oder mit \texttt{numba} bzw.\ als C++-Erweiterung kompiliert werden. Da der Vergleich nach der Abschätzung in Abschnitt~\ref{sec:parallel} etwa $95\,\%$ der Laufzeit ausmacht, wirkt jede Beschleunigung des Einzelvergleichs fast vollständig auf die Gesamtzeit durch; zusammen mit den Prozessen multiplizieren sich die Gewinne. Diese Maßnahmen müssen allerdings durch die differenziellen Tests aus Abschnitt~\ref{sec:beide_richtungen} abgesichert werden, damit die Optimierung das Ergebnis nicht verändert.
 
-\subsection{Hybridstrategie: Adaptive Verfahrenswahl nach Kandidatengröße}
+\subsubsection{GPU-Beschleunigung der Signatur- und LCS-Berechnung}
+
+Die Signaturberechnung (Schritt 1 des Subgraph Algorithmus) ist eine Matrix-Vektor-Operation der Form $\sigma_j = \sum_i A_{ij}2^i + j2^n$, die sich als gewichtete Spaltensummen mit Bitmasken-Gewichten $2^i$ darstellen lässt — eine klassische BLAS-Level-2-Operation, die auf GPUs (CUDA, via CuPy oder PyTorch) hochparallel ausgeführt werden kann. Für $C$ Kandidaten mit $n\times n$-Matrizen ergibt sich ein Tensor der Form $(C,n,n)$, dessen Signaturen in einem einzigen GPU-Kernel-Aufruf berechnet werden könnten, was Schritt~1 von $O(C\cdot n^2)$ sequentiellen auf $O(C\cdot n^2 / P_{\mathrm{GPU}})$ effektiv parallele Operationen reduziert ($P_{\mathrm{GPU}}$ = Anzahl CUDA-Kerne). Die LCS-Berechnung (Schritt~3) ist aufgrund der sequentiellen Abhängigkeiten der DP-Tabelle ($dp[i][j]$ hängt von $dp[i-1][j-1]$ ab) schwieriger zu parallelisieren, jedoch existieren Wellenfront-Parallelisierungen (Anti-Diagonalen der DP-Tabelle sind unabhängig berechenbar), die auf GPUs in $O(n)$ Schritten mit $O(n)$ Prozessoren statt $O(n^2)$ sequentiellen Schritten realisierbar wären (Brent-Theorem).
+
+
+\subsubsection{Hybridstrategie: Adaptive Verfahrenswahl nach Kandidatengröße}
 \label{sec:hybrid}
 
 Die in Abschnitt~\ref{sec:vergleich} beobachtete Umkehrung des Speedup-Verhältnisses bei $n_B\approx 14$ (Tabelle~\ref{tab:runtime}, Abbildung~\ref{fig:speedup}) motiviert eine \emph{adaptive Hybridstrategie}: Da sowohl $n_A$ (Query-Größe $n_Q$) als auch $n_B$ (Kandidatengröße $n_k$) zum Zeitpunkt des Vergleichs bekannt sind (sie sind Teil des Tupels $(id_k,L_k,A_k,n_k,m_k)\in\mathcal{C}(Q,\mathcal{D})$, vgl.\ Abschnitt~\ref{sec:architektur}), könnte die Vergleichsfunktion \texttt{compare\_graphs} zur Laufzeit zwischen dem Subgraph Algorithmus und VF2 umschalten:
@@ -728,7 +1012,65 @@ mit einem aus den Messdaten von Abschnitt~\ref{sec:vergleich} kalibrierten Schwe
 	Satz~\ref{satz:hybrid} ist im strengen Sinne trivial (eine punktweise Minimum-Strategie ist niemals schlechter als jede ihrer Komponenten), seine praktische Bedeutung liegt jedoch darin, dass er die Hybridstrategie als \emph{strikt dominant} gegenüber jeder festen Verfahrenswahl ausweist — \emph{vorausgesetzt}, der Umschalt-Overhead (Bestimmung von $\max(n_Q,n_k)$ und Verzweigung) ist $O(1)$, was hier der Fall ist, da $n_Q$ und $n_k$ bereits in $\mathcal{D}_t$ materialisiert vorliegen (Abschnitt~\ref{sec:architektur}). Die Schranke $O(n^3)$ aus Satz~\ref{satz:pipeline} bleibt für die Hybridstrategie \emph{nicht} formal erhalten, da $T_{\text{VF2}}$ keine polynomielle Worst-Case-Schranke besitzt; für $n\ge\theta$ würde die Pipeline daher weiterhin den Subgraph Algorithmus als \emph{Fallback mit garantierter Schranke} benötigen, etwa mit einem Zeitbudget $\tau$: Falls VF2 nach $\tau$ nicht terminiert hat, wird auf den Subgraph Algorithmus zurückgegriffen (\emph{Race-Verfahren}). Dies verbindet die empirische Average-Case-Effizienz von VF2 (Abschnitt~\ref{sec:vergleich}) mit der formalen Worst-Case-Garantie des Subgraph Algorithmus.
 \end{bemerkung}
 
-\subsection{Erweiterung des Vergleichsbenchmarks}
+
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld D: Skalierung auf Systemebene}
+
+\subsubsection{Asynchrone Suche mit Fortschrittsanzeige und Teilergebnissen}
+
+Eine Suche mit mehreren hunderttausend Kandidaten dauert Minuten (bis zu $403$ Sekunden in Abschnitt~\ref{sec:parallel}) und blockiert den HTTP-Aufruf bis zum Ende. Für interaktive Nutzung eignet sich ein asynchrones Modell: Die API nimmt die Suche an, liefert sofort eine Kennung zurück und stellt den Fortschritt (verglichene Kandidaten von $C$) sowie die bisher gefundenen Treffer über Abfrage, Server-Sent Events oder WebSockets bereit. Der Prozess-Pool liefert Ergebnisse bisher in der Reihenfolge der Kandidaten; mit \texttt{as\_completed} oder blockweiser Ausgabe könnten Treffer sofort sichtbar werden. Da die Kandidaten nach Knotenzahl sortiert sind, ließe sich zusätzlich ein „Anytime“-Verhalten erreichen: Der Nutzer sieht früh erste Treffer und kann die Suche abbrechen. Das senkt die wahrgenommene Antwortzeit unabhängig von der tatsächlichen Gesamtzeit und ist ohne Änderung des Algorithmus möglich.
+
+\subsubsection{Approximative Suche und geschichtete Stichproben}
+
+Die Beschränkung $K=10.000$ (Abschnitt~\ref{sec:pipeline}) gefährdet die Vollständigkeitsgarantie aus Satz~\ref{satz:korrektheit}, falls $|\mathcal{C}(Q,\mathcal{D})|>K$. Eine Abmilderung wäre eine \emph{geschichtete Stichprobe}: Partitioniere $\mathcal{C}(Q,\mathcal{D})$ in Schichten nach $n_k$ (also $\mathcal{C}_3,\ldots,\mathcal{C}_{20}$) und ziehe aus jeder nichtleeren Schicht $\mathcal{C}_i$ mindestens $\lceil K/18\rceil$ Kandidaten, bevor das verbleibende Budget proportional zur Schichtgröße verteilt wird. Dies garantiert, dass Treffer mit seltenen Knotenzahlen $n_k$ (z.\,B.\ $n_k=20$, am dünnsten besetzte Schicht) nicht systematisch unterrepräsentiert werden — ein Problem, das bei einfachem \texttt{LIMIT K} nach \texttt{ORDER BY node\_count ASC} auftritt (kleine $n_k$ werden bevorzugt, große $n_k$ ggf.\ nie erreicht).
+
+\begin{lemma}[Verzerrung durch \texttt{LIMIT}]
+	Sei $\mathcal{C}(Q,\mathcal{D})$ sortiert nach $n_k$ aufsteigend und $K < |\mathcal{C}(Q,\mathcal{D})|$. Dann enthält das durch \texttt{LIMIT K} gelieferte Präfix $\mathcal{C}_K$ keinen Kandidaten mit $n_k > n^*$, wobei $n^*$ das kleinste $n$ mit $|\{k:n_k\le n\}|\ge K$ ist.
+\end{lemma}
+
+\begin{proof}
+	Da \texttt{ORDER BY node\_count ASC} eine totale Ordnung auf $\mathcal{C}(Q,\mathcal{D})$ induziert und \texttt{LIMIT K} die ersten $K$ Elemente dieser Ordnung zurückgibt, ist $\mathcal{C}_K = \{k\in\mathcal{C}(Q,\mathcal{D}): \mathrm{rank}(n_k)\le K\}$. Per Definition von $n^*$ als kleinstem Wert mit kumulativer Häufigkeit $\ge K$ folgt $n_k \le n^*$ für alle $k\in\mathcal{C}_K$.
+\end{proof}
+
+Dieses Lemma motiviert formal die Notwendigkeit der oben skizzierten Schichtung für eine unverzerrte approximative Suche.
+
+
+\subsubsection{Caching häufiger Queries}
+
+Da biologische Analysen oft wiederholt nach denselben oder ähnlichen Motiven suchen (z.\,B.\ Standard-Pfadabschnitte der Glykolyse), bietet sich ein LRU-Cache auf Ebene des Signatur-Arrays $\Sigma(A_Q)$ an: Wird $\Sigma(A_Q)$ bereits für eine vorherige Anfrage berechnet, kann Schritt~1 des Subgraph Algorithmus übersprungen werden (Ersparnis $O(n_Q^2)$ pro wiederholter Anfrage). Bei einer angenommenen Cache-Trefferquote $\alpha\in[0,1]$ reduziert sich die erwartete Laufzeit aus Satz~\ref{satz:pipeline} zu
+\[
+\mathbb{E}[T_{\text{Suche}}] = (1-\alpha)\cdot O(n_Q^2) + O(C\cdot n^3),
+\]
+was insbesondere bei kleinem $C$ (großes $n_Q$, vgl.\ Abbildung~\ref{fig:prefilter}) relativ stärker zu Buche schlägt.
+
+
+\subsubsection{Inkrementelle Aktualisierung der Signatur-Indizes}
+
+Bei $\texttt{INSERT}$ bzw.\ $\texttt{DELETE}$ einzelner Netzwerke (wie in der Gen-DB-API über \texttt{POST}/\texttt{DELETE /api/networks}) werden Signaturen aktuell vollständig neu berechnet (Aufwand $O(n^2)$ pro Operation, vernachlässigbar). Bei einer zukünftigen Erweiterung um \emph{Batch-Updates} (Änderung mehrerer Kanten gleichzeitig) wäre jedoch eine inkrementelle Aktualisierung der Signaturen wünschenswert: Da $\sigma_j=\sum_iA_{ij}2^i+j2^n$ linear in den Einträgen $A_{ij}$ ist, lässt sich eine Änderung $A_{ij}\to A_{ij}'$ als
+\[
+\sigma_j' = \sigma_j + (A_{ij}'-A_{ij})\cdot 2^i
+\]
+in $O(1)$ pro geänderter Kante nachführen, ohne die gesamte Spalte neu zu durchlaufen — eine direkte Konsequenz der Linearität der Signaturfunktion.
+
+
+\subsubsection{Betrieb, Reproduzierbarkeit und Beobachtbarkeit}
+
+Für den produktiven Betrieb sind mehrere organisatorische Erweiterungen sinnvoll. Die Dockerdateien des Projekts erlauben bereits einen reproduzierbaren Aufbau; sie sollten um einen automatisierten Testlauf und eine Messung der Suchzeit in einer Continuous-Integration-Pipeline ergänzt werden. Der Server sollte die Zeiten der einzelnen Phasen (Laden, Vergleichen, Ergebnisaufbau) und die Zahl der Kandidaten protokollieren oder als Metriken veröffentlichen. Das würde die in Abschnitt~\ref{sec:parallel} fehlende Phasenzerlegung liefern und den seriellen Anteil direkt messbar machen, anstatt ihn aus dem Speedup abzuschätzen. Eine Begrenzung von Anfragegröße, Laufzeit und Zahl gleichzeitiger Suchen schützt den Dienst vor Überlastung.
+
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld E: Weiterentwicklung der Evaluation}
+
+\subsubsection{Wiederholung und Erweiterung der Parallelisierungsmessung}
+\label{sec:par_erweiterung}
+
+Die Messreihe aus Abschnitt~\ref{sec:parallel} ist als erste Einordnung gedacht und sollte in folgenden Punkten erweitert werden: (i) Wiederholung mit den ursprünglich vorgesehenen $50$ Anfragen, damit Streuungsmaße und Konfidenzintervalle berechnet werden können; (ii) Durchführung auf Rechnern mit vier, acht, sechzehn und mehr echten Prozessoren, um die Kurve $S(p)$ jenseits von $p=2$ zu bestimmen und den seriellen Anteil mit mehr als einem Messpunkt anzupassen; (iii) Trennung von Datenbankserver und Anwendung auf zwei Rechner, um zu klären, wie stark das Laden die Messung beeinflusst; (iv) Variation der Queries (Knotenzahlen oberhalb und unterhalb von $15$, verschiedene Kantendichten), damit auch Suchen mit wenigen und mit sehr vielen Kandidaten abgedeckt sind; (v) Messung mit und ohne Kandidatenlimit; (vi) Vergleich verschiedener Blockgrößen. Mit diesen Daten ließen sich Amdahl- und Gustafson-Modell tatsächlich an Messwerte anpassen.
+
+\subsubsection{Benchmark-Suite und kontinuierliche Performanzmessung}
+
+Schließlich wäre die Entwicklung einer reproduzierbaren Benchmark-Suite sinnvoll, die die in Abschnitt~\ref{sec:evaluation} dargestellten Diagramme automatisch aus Live-Messungen (statt aus dem hier verwendeten analytischen Modell) generiert, etwa durch Instrumentierung der \texttt{search\_subgraph}-Funktion mit \texttt{time.perf\_counter()} und Protokollierung von $(N,n_Q,m_Q,C,T_{\text{gemessen}})$-Tupeln in einer separaten Metriktabelle. Eine solche Suite ermöglichte die empirische Validierung der in Satz~\ref{satz:pipeline} hergeleiteten asymptotischen Schranken und die Kalibrierung des Kandidatenlimits $K$ in Abhängigkeit von einem Antwortzeit-Budget (z.\,B.\ $200\,$ms für interaktive Anwendungen). Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente liefern hierfür einen konkreten Ausgangspunkt: \texttt{bench\_compare.py} kann als Kern einer kontinuierlichen Integrationspipeline (CI) dienen, die bei jeder Änderung der Implementierung des Subgraph Algorithmus automatisch prüft, ob die gemessene Laufzeit weiterhin innerhalb der durch Satz~\ref{satz:laufzeit} vorhergesagten Größenordnung liegt (Regressions-Schranke, z.\,B.\ $T_{\text{Sub}}(n) \le c\cdot n^3$ für eine aus historischen Messungen kalibrierte Konstante $c$).
+
+
+\subsubsection{Erweiterung des Vergleichsbenchmarks}
 \label{sec:bench_erweiterung}
 
 Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente beschränken sich auf den Vergleich mit VF2 auf Erdős–Rényi-Zufallsgraphen $G(n,0{,}3)$ mit $n\le 18$. Eine umfassendere Evaluation sollte folgende Erweiterungen umfassen:
@@ -741,7 +1083,8 @@ Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente beschränken si
 	\item \textbf{Implementierungssprache:} Die hier verwendete Referenzimplementierung des Subgraph Algorithmus ist reines Python mit \texttt{numpy}, während \texttt{networkx} ebenfalls in Python implementiert ist (mit C-Erweiterungen für einige Kernoperationen). Ein faircr Vergleich auf Implementierungsebene (z.\,B.\ beide Verfahren in C++ oder beide in einer JIT-kompilierten Umgebung wie \texttt{numba}) würde den Einfluss des Implementierungs-Overheads von der algorithmischen Komplexität trennen und die in Satz~\ref{satz:laufzeit} bewiesene asymptotische Aussage von konstanten Faktoren isolieren.
 \end{itemize}
 
-\subsection{Formale Charakterisierung des Übergangsbereichs $\theta$}
+
+\subsubsection{Formale Charakterisierung des Übergangsbereichs $\theta$}
 \label{sec:theta}
 
 Die empirisch beobachtete Umkehrung des Geschwindigkeitsvorteils bei $n_B\approx 14$ (Abschnitt~\ref{sec:vergleich}) wirft die Frage auf, ob sich der Schwellwert $\theta$ aus Abschnitt~\ref{sec:hybrid} formal als Funktion der Graphdichte $p$ charakterisieren lässt. Intuitiv gilt: Je größer $p$, desto eher findet VF2 \emph{sehr früh} einen Match oder einen Konsistenzbruch (da fast jeder Knoten mit fast jedem anderen verbunden ist, sind die meisten Teilabbildungen $\phi$ bereits nach wenigen Schritten konsistent oder inkonsistent), während die Kosten des Subgraph Algorithmus $\Theta(n^3)$ \emph{unabhängig} von $p$ sind (Satz~\ref{satz:laufzeit} macht keine Annahme über $p$). Dies legt die folgende Vermutung nahe:
@@ -753,23 +1096,59 @@ Die empirisch beobachtete Umkehrung des Geschwindigkeitsvorteils bei $n_B\approx
 
 Eine systematische Messreihe über das zweidimensionale Gitter $(n,p)\in\{4,\ldots,20\}\times\{0{,}1,0{,}2,\ldots,0{,}9\}$ — eine direkte Erweiterung des in Abschnitt~\ref{sec:vergleich} durchgeführten Experiments — würde die in Bemerkung~\ref{bem:theta} formulierte Vermutung empirisch prüfbar machen und gleichzeitig eine Tabelle $\theta(p)$ liefern, mit der die Hybridstrategie aus Abschnitt~\ref{sec:hybrid} dichteadaptiv kalibriert werden könnte (d.\,h.\ $\theta$ würde nicht als globale Konstante, sondern als Funktion der für den jeweiligen Kandidaten $k$ aus $m_k/(n_k(n_k-1))$ geschätzten Dichte $\hat p_k$ nachgeschlagen).
 
+
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld F: Anwendungsebene}
+
+\subsubsection{Visuelle Exploration und Graph-Layout}
+
+Das aktuelle Frontend zeigt Adjazenzmatrizen als Zahlentabellen und Listen. Eine Erweiterung um eine graphische Darstellung (Force-Directed-Layout, z.\,B.\ mittels D3.js oder Cytoscape.js) würde die Interpretierbarkeit von Suchergebnissen erheblich verbessern, insbesondere für die in Abschnitt~\ref{sec:evaluation} diskutierten \texttt{subgraph}-Treffer, bei denen die \emph{Einbettung} des Query-Graphen im größeren Kontextgraphen visuell hervorgehoben werden könnte (z.\,B.\ durch Hervorhebung der $n_Q$ Knoten, auf die $\phi$ aus Abschnitt~\ref{sec:schluss} (Label-Erweiterung) abbildet).
+
+
+\subsubsection{Validierung mit realen Anwendungsfällen}
+
+Der größte offene Punkt auf Anwendungsebene ist der Nachweis, dass die Suche für Biologinnen und Biologen nützliche Treffer liefert. Dazu sollten bekannte Motive (etwa Teilpfade der Glykolyse oder des p53-Netzwerks) gegen Datensätze aus öffentlichen Datenbanken gesucht und die Treffer von Fachleuten bewertet werden. Maßgeblich sind dabei die Präzision (wie viele Treffer sind fachlich sinnvoll) und die Vollständigkeit (werden bekannte Vorkommen gefunden). Die Ergebnisse ließen sich mit den Treffern etablierter Verfahren wie VF2 oder RI vergleichen und würden zeigen, an welchen Stellen die schwächere Relation $\preceq$ zu Abweichungen führt. Erst eine solche Validierung beantwortet, ob die zyklische Relation für die Praxis hinreichend ist oder ob die gefärbte Variante und eine Verfeinerung durch VF2 als Nachprüfung der Treffer nötig sind.
+
+% =====================================================================
 \subsection{Priorisierung der nächsten Entwicklungsschritte}
+\label{sec:prio}
 
-Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert und erst danach die Laufzeit optimiert. An erster Stelle steht daher die Validierung der vollständigen Suchsemantik: Für jede unterstützte Trefferrichtung muss geklärt sein, welche notwendigen Bedingungen die SQL-Vorauswahl verwenden darf. Die in Abschnitt~\ref{sec:pipeline} bewiesene Vollständigkeit gilt für $A_Q\preceq A_k$ bei vollständiger Kandidatenbetrachtung; ein endliches Kandidatenlimit kann Treffer abschneiden, und die umgekehrte Richtung $A_k\preceq A_Q$ erfordert eine entsprechend angepasste Vorauswahl. Diese Fälle sollten durch Tests mit gezielt konstruierten Netzwerken geprüft und in API sowie Benutzeroberfläche einheitlich kenntlich gemacht werden.
+Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert, danach die Messbarkeit herstellt und erst anschließend die Laufzeit optimiert. Die Parallelisierung der Vergleiche, die zuvor als eine von mehreren möglichen Optimierungen aufgeführt war, ist inzwischen umgesetzt und gemessen; sie entfällt daher als eigener Entwicklungsschritt, nicht jedoch ihre Verfeinerung.
 
-Darauf sollte eine reproduzierbare Evaluation mit realen biologischen Netzwerken und einer größeren Zahl statistisch auswertbarer Wiederholungen folgen. Sie würde zeigen, ob die auf synthetischen Graphen beobachteten Laufzeitverhältnisse und der Übergangsbereich $\theta$ auf unterschiedlichen Netzwerktypen und Dichten bestehen bleiben. Erst auf dieser belastbaren Grundlage lässt sich entscheiden, welche Optimierung den größten Nutzen verspricht: ein mehrdimensionaler Index für die Vorauswahl, eine adaptive Auswahl des Vergleichsverfahrens oder die Parallelisierung unabhängiger Kandidatenvergleiche. Erweiterungen um Labels und Kantengewichte sollten anschließend anhand biologischer Anwendungsfälle spezifiziert werden, damit eine verfeinerte Treffermenge nicht nur technisch berechenbar, sondern fachlich sinnvoll ist.
+\begin{table}[h]
+	\centering
+	\small
+	\caption{Vorgeschlagene Reihenfolge der Weiterentwicklung.}
+	\label{tab:prio}
+	\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.7cm}>{\raggedright\arraybackslash}p{6.2cm}>{\raggedright\arraybackslash}p{5.4cm}>{\raggedright\arraybackslash}p{2.4cm}@{}}
+		\toprule
+		Nr. & Maßnahme & Nutzen & Aufwand \\
+		\midrule
+		1 & Differenzielle Tests der Vorauswahl, Eigenschaftstests (Abschnitt~\ref{sec:ausblick}, Feld A) & sichert Korrektheit und alle weiteren Optimierungen ab & gering \\
+		2 & Phasen- und Metrikprotokollierung (Feld D) & macht seriellen Anteil messbar & gering \\
+		3 & Wiederholung der Parallelisierungsmessung (Feld E) & belastbare Aussagen zu $S(p)$ & gering bis mittel \\
+		4 & Suche in beide Richtungen (Feld A) & vollständige Suchsemantik & mittel \\
+		5 & Optimierung des Einzelvergleichs: Abbruch, Vektorisierung (Feld C) & wirkt fast vollständig auf die Gesamtzeit & mittel \\
+		6 & Verfeinerte Parallelisierung: strömendes Laden, Query pro Task, Blockgröße (Feld C) & kleinerer serieller Anteil & mittel \\
+		7 & Asynchrone Suche mit Teilergebnissen (Feld D) & bessere Bedienbarkeit bei langen Suchen & mittel \\
+		8 & Beschriftete Relation, Label-Indizes (Felder A und B) & fachlich sinnvollere und kleinere Trefferlisten & mittel bis hoch \\
+		9 & Mehrdimensionaler Index, Hash-Index (Feld B) & schärfere Vorauswahl & mittel \\
+		10 & Hybridstrategie mit VF2 und Fallback (Feld C) & Geschwindigkeit bei garantierter Schranke & hoch \\
+		11 & Validierung mit realen Netzwerken (Feld F) & Nachweis der Praxistauglichkeit & hoch \\
+		12 & GPU-Beschleunigung, verteilte Ausführung (Feld C) & Skalierung für sehr große Datenbanken & hoch \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
-Diese Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche, empirisch belastbare Aussagen über ihre Leistung sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen. Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke — etwa der Subgraph Algorithmus — als Fallback vorgesehen ist.
+Die Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche (Nummern~1 und~4), empirisch belastbare Aussagen über ihre Leistung (Nummern~2, 3 und~11) sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen (Nummern~5 bis~10 und~12). Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke, etwa der Subgraph Algorithmus, als Fallback vorgesehen ist. Wo die Maßnahmen voneinander abhängen, gilt: Die Tests (Nr.~1) müssen vor jeder Optimierung des Vergleichs (Nr.~5 und~10) stehen, und die Protokollierung (Nr.~2) vor der Verfeinerung der Parallelisierung (Nr.~6), weil sonst nicht erkennbar ist, ob eine Änderung den seriellen Anteil tatsächlich senkt.
 
-\subsection{Zusammenfassung}
+% =====================================================================
+\subsection{Abschließende Bemerkung}
+\label{sec:schlussbemerkung}
 
-Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet die Architektur — einschließlich Paket- und Klassendiagrammen — mit der formalen Betrachtung der Such-Pipeline. Ihr zentraler Gedanke ist eine kostengünstige Vorauswahl in der Datenbank: Für die Richtung, in der das Query-Netzwerk Teil eines gespeicherten Netzwerks ist, werden Einträge mit zu wenigen Knoten oder Kanten vor dem strukturellen Vergleich ausgeschlossen. Diese notwendigen Bedingungen verkleinern den Suchraum, ohne bei vollständiger Kandidatenbetrachtung echte Treffer dieser Richtung auszuschließen; die endgültige Entscheidung trifft anschließend der Subgraph Algorithmus.
+Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet die Architektur mit der formalen Analyse der Such-Pipeline, mit einer Evaluation an einer Million synthetischer Netzwerke, einem Vergleich mit VF2 und einer Messung der Parallelisierung. Ihr zentraler Gedanke ist die Trennung zweier Aufgaben: Eine kostengünstige Vorauswahl in der Datenbank verkleinert den Suchraum, und der Subgraph Algorithmus entscheidet anschließend über jeden verbliebenen Kandidaten mit einer bewiesenen kubischen Zeitschranke. Diese Trennung hat sich in allen Teilen der Arbeit bewährt: Sie ermöglicht Korrektheits- und Komplexitätsbeweise, sie macht die Kandidatenzahl zur entscheidenden Stellgröße der Laufzeit, und sie erlaubt es, die teure Stufe unabhängig auf mehrere Prozessoren zu verteilen.
 
-Für den strukturellen Vergleich wurde die Laufzeit $O(n^3)$ hergeleitet. In Verbindung mit dem relationalen Pre-Filter ergibt sich für $C$ verbleibende Kandidaten eine Laufzeit von $O(\log N+C)+O(C\cdot n^3)$. Bei fest begrenztem $C$ und beschränkter Netzwerkgröße wächst der Indexsuchanteil weiterhin logarithmisch mit der Datenbankgröße; ein Kandidatenlimit begrenzt zwar die Zahl der Vergleiche, kann jedoch die Vollständigkeit beeinträchtigen. Die Beweise zur Vorauswahl gelten zudem ausdrücklich für $A_Q\preceq A_k$; eine Suche in der umgekehrten Richtung benötigt eigene Filterbedingungen.
-
-Die Evaluation betrachtet eine synthetische Datenbank mit einer Million Netzwerken und vergleicht den Subgraph Algorithmus mit VF2. Die Messungen zeigen, dass kein einzelnes Verfahren in allen untersuchten Größenordnungen überlegen ist: VF2 kann durch sein Average-Case-Pruning bei größeren Instanzen schneller sein, während der Subgraph Algorithmus eine kubische Worst-Case-Schranke bietet. Die Resultate sind wegen der synthetischen Graphenfamilie und der begrenzten Zahl von Wiederholungen als erste empirische Einordnung zu verstehen, nicht als allgemeingültiger Laufzeitvergleich.
-
-Aus diesen Ergebnissen folgt eine klare Entwicklungsrichtung: Zunächst sind Suchrichtungen, Filterbedingungen und Kandidatenlimits durch gezielte Tests abzusichern. Darauf sollten reproduzierbare Benchmarks mit realen biologischen Netzwerken folgen; erst dann lassen sich Indexierung, Hybridverfahren und Parallelisierung belastbar priorisieren. Erweiterungen um biologische Labels und Gewichte können die fachliche Aussagekraft der Suche erhöhen, müssen aber als präzisierte Treffermodellierung entworfen werden. Damit verbindet Gen-DB bereits eine klare modulare Architektur und eine nachvollziehbare Kandidatenreduktion mit einem strukturellen Vergleich; zugleich benennt die Arbeit die Korrektheits- und Evaluationsschritte, die für den Übergang von der prototypischen Realisierung zu einem belastbar validierten Suchsystem erforderlich sind.
+Die Ergebnisse zeigen aber auch, wo die Grenzen des gegenwärtigen Stands liegen. Eine vollständige Suche über eine Datenbank mit einer Million Einträgen dauert bei großen Suchräumen mehrere Minuten, und die Parallelisierung senkt diese Zeit um einen konstanten Faktor, nicht in der Größenordnung. Der Weg zu interaktiven Antwortzeiten führt deshalb über mehrere sich ergänzende Maßnahmen: eine schärfere Vorauswahl, einen schnelleren Einzelvergleich, eine Verfahrenswahl nach Graphgröße und eine Bedienung, die Teilergebnisse früh anzeigt. Zugleich bleibt zu klären, ob die zyklische Relation $\preceq$ die fachlichen Anforderungen biologischer Anwender erfüllt, was eine Validierung an realen Netzwerken und die Einbeziehung der Knotenlabels verlangt. Gen-DB bietet dafür eine modulare Architektur, eine nachvollziehbare Kandidatenreduktion und ein reproduzierbares Experimentierwerkzeug. Die Arbeit benennt zugleich die Korrektheits- und Evaluationsschritte, die für den Übergang von der prototypischen Realisierung zu einem belastbar validierten Suchsystem erforderlich sind.
 
 \begin{thebibliography}{9}
 
@@ -842,6 +1221,16 @@ BMC Bioinformatics, 14(Suppl 7):S13, 2013.
 Huahai He, Ambuj K. Singh.
 \emph{Graphs-at-a-time: Query Language and Access Methods for Graph Databases}.
 In: Proceedings of ACM SIGMOD, 2008.
+
+\bibitem{amdahl1967}
+Gene M. Amdahl.
+\emph{Validity of the Single Processor Approach to Achieving Large Scale Computing Capabilities}.
+In: Proceedings of the AFIPS Spring Joint Computer Conference, 1967.
+
+\bibitem{gustafson1988}
+John L. Gustafson.
+\emph{Reevaluating Amdahl's Law}.
+Communications of the ACM, 31(5):532--533, 1988.
 
 \end{thebibliography}
 
