@@ -1,0 +1,192 @@
+{
+  "meta": {
+    "created": "2026-10-06T11:12:16",
+    "seed": 42,
+    "queries": 6,
+    "backends": [
+      "python",
+      "cpp"
+    ],
+    "workers": [
+      2
+    ],
+    "min_nodes": 15,
+    "max_nodes": null,
+    "warmup": 1,
+    "csubgraph_cli": "C:\\Users\\Internet\\Git\\csubgraph\\build\\subgraph-cli.exe",
+    "logical_cpus": 4,
+    "python": "3.14.8",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "query_network_ids": [
+      655359,
+      774601,
+      433490,
+      859418,
+      439395,
+      88980
+    ],
+    "calibration": {
+      "pairs": 200,
+      "seed": 42,
+      "python": {
+        "mean_ms": 2.6979705000189824,
+        "median_ms": 2.7694500001871347,
+        "max_ms": 4.006399999980204
+      },
+      "cpp": {
+        "mean_ms": 11.416936999987684,
+        "median_ms": 11.18449999967197,
+        "max_ms": 14.438700000027893
+      },
+      "cpp_overhead": {
+        "mean_ms": 10.081267500008835,
+        "median_ms": 9.952749999911248,
+        "max_ms": 11.902500000360305
+      }
+    },
+    "worker_pids": {
+      "python/2": [
+        7500,
+        12680
+      ]
+    },
+    "complete": false,
+    "reference_backend": "python"
+  },
+  "summary": [
+    {
+      "backend": "python",
+      "workers": 2,
+      "queries": 6,
+      "sum_s": 1301.0324087000013,
+      "mean_s": 216.83873478333354,
+      "median_s": 225.24099784999999,
+      "p95_s": 361.97914720000017,
+      "max_s": 361.97914720000017,
+      "candidates_sum": 1143115,
+      "pairs_per_s": 878.6214642740582,
+      "ms_per_candidate": 1.1381465632941579,
+      "compare_share": 0.8976678339373316,
+      "serial_share": 0.10233216606266837,
+      "speedup": 1.0,
+      "speedup_min": 1.0,
+      "speedup_max": 1.0,
+      "matches_equal": true,
+      "failed": 0,
+      "slope_ms_per_candidate": 1.1152872833658127,
+      "corr_candidates_time": 0.9940320400225973
+    }
+  ],
+  "measurements": [
+    {
+      "nodes": 15,
+      "edges": 59,
+      "candidates": 317772,
+      "matches": 3,
+      "match_ids": [
+        410560,
+        655359,
+        814402
+      ],
+      "failed": 0,
+      "total_s": 361.97914720000017,
+      "compare_s": 314.1545911999997,
+      "serial_s": 47.824556000000484,
+      "backend": "python",
+      "workers": 2,
+      "query": 1,
+      "network_id": 655359
+    },
+    {
+      "nodes": 15,
+      "edges": 54,
+      "candidates": 328808,
+      "matches": 7,
+      "match_ids": [
+        105427,
+        246253,
+        382101,
+        414840,
+        571895,
+        774601,
+        862761
+      ],
+      "failed": 0,
+      "total_s": 352.20561240000006,
+      "compare_s": 317.5741555999998,
+      "serial_s": 34.63145680000025,
+      "backend": "python",
+      "workers": 2,
+      "query": 2,
+      "network_id": 774601
+    },
+    {
+      "nodes": 18,
+      "edges": 88,
+      "candidates": 147814,
+      "matches": 1,
+      "match_ids": [
+        433490
+      ],
+      "failed": 0,
+      "total_s": 164.7210774,
+      "compare_s": 147.14758740000025,
+      "serial_s": 17.573489999999765,
+      "backend": "python",
+      "workers": 2,
+      "query": 3,
+      "network_id": 433490
+    },
+    {
+      "nodes": 15,
+      "edges": 76,
+      "candidates": 227780,
+      "matches": 1,
+      "match_ids": [
+        859418
+      ],
+      "failed": 0,
+      "total_s": 285.76091829999996,
+      "compare_s": 264.29000080000014,
+      "serial_s": 21.470917499999814,
+      "backend": "python",
+      "workers": 2,
+      "query": 4,
+      "network_id": 859418
+    },
+    {
+      "nodes": 18,
+      "edges": 97,
+      "candidates": 111466,
+      "matches": 1,
+      "match_ids": [
+        439395
+      ],
+      "failed": 0,
+      "total_s": 125.52806970000074,
+      "compare_s": 114.91281530000015,
+      "serial_s": 10.615254400000595,
+      "backend": "python",
+      "workers": 2,
+      "query": 5,
+      "network_id": 439395
+    },
+    {
+      "nodes": 20,
+      "edges": 123,
+      "candidates": 9475,
+      "matches": 1,
+      "match_ids": [
+        88980
+      ],
+      "failed": 0,
+      "total_s": 10.837583700000323,
+      "compare_s": 9.815793899999335,
+      "serial_s": 1.0217898000009882,
+      "backend": "python",
+      "workers": 2,
+      "query": 6,
+      "network_id": 88980
+    }
+  ]
+}
