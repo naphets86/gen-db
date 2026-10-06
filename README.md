@@ -309,7 +309,7 @@ Der Coverage-Report wird automatisch generiert nach `doc/coverage/index.html`.
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 2.345.000,00 EUR.
+Der Preis für diese Software beträgt 3.145.000,00 EUR.
 
 ### Zahlungsinformationen
 
