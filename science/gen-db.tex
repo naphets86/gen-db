@@ -104,8 +104,8 @@ Diese Arbeit beschreibt die konkrete Realisierung einer solchen Suche im System 
 	\item Veranschaulichung der Ergebnisse durch matplotlib-Diagramme: Laufzeitverteilung, Pre-Filter-Effektivität, Skalierungsverhalten und Trefferverteilung.
 	\item Experimenteller Vergleich des Subgraph Algorithmus mit VF2 sowie Analyse der Ursachen der beobachteten Laufzeitunterschiede.
 	\item Experimentelle Untersuchung der parallelen Ausführung der Kandidatenvergleiche mit $1$, $2$ und $3$ Worker-Prozessen (Gesamtzeit, Speedup, Effizienz, Skalierung mit der Kandidatenzahl).
-	\item Experimenteller Vergleich der Python- und C++-Implementierung des Subgraph Algorithmus, einschließlich eines Mikrobenchmarks, einer Ende-zu-Ende-Suchmessung und einer Analyse des Prozess- und Schnittstellenaufwands.
-	\item Zusammenfassung, kritische Würdigung der Grenzen und ausführlicher, nach Themenfeldern geordneter Ausblick auf Erweiterungen (Korrektheit, Indexierung, Beschleunigung der Vergleiche, Systemebene, Evaluation, Anwendung) mit einer Priorisierung der nächsten Schritte.
+	\item Experimenteller Vergleich der Python- und C++-Implementierung des Subgraph Algorithmus, einschließlich eines Mikrobenchmarks, einer Ende-zu-Ende-Suchmessung, einer Analyse des Prozess- und Schnittstellenaufwands und einer begründeten Position zur losen Kopplung von Bausteinen in anderen Beschreibungen.
+	\item Zusammenfassung, kritische Würdigung der Grenzen und ausführlicher, nach Themenfeldern geordneter Ausblick auf Erweiterungen (Korrektheit, Indexierung, Beschleunigung der Vergleiche, Systemebene, Evaluation, Anwendung, Kopplung und Schnittstellen) mit einer Priorisierung der nächsten Schritte.
 \end{itemize}
 
 \subsection{Aufbau der Arbeit}
@@ -114,7 +114,7 @@ Die Arbeit gliedert sich in aufeinander aufbauende Abschnitte: von den theoretis
 
 Abschnitt~\ref{sec:grundlagen} führt in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation, die Spaltensignaturen und den Subgraph Algorithmus ein, dessen Laufzeit von $O(n^3)$ die Grundlage aller späteren Betrachtungen ist. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche.
 
-Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Neben der Laufzeit der vollständigen Suche werden die Kosten einzelner Aufrufe betrachtet, damit ein möglicher Geschwindigkeitsvorteil des nativen Algorithmuskerns nicht mit dem Aufwand der CLI- und JSON-Schnittstelle verwechselt wird.
+Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Neben der Laufzeit der vollständigen Suche werden die Kosten einzelner Aufrufe betrachtet, damit ein möglicher Geschwindigkeitsvorteil des nativen Algorithmuskerns nicht mit dem Aufwand der CLI- und JSON-Schnittstelle verwechselt wird. Der letzte Unterabschnitt (Abschnitt~\ref{sec:fremde_beschreibungen}) begründet, weshalb eine lose Kopplung über eine C++-Library einer Anbindung über die C++-CLI vorzuziehen ist, und überträgt diese Position auf die gesamte Arbeit.
 
 Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) besteht aus fünf Teilen. Es fasst die Ergebnisse aller Abschnitte zusammen (Abschnitt~\ref{sec:zusammenfassung}), benennt die Grenzen der Arbeit (Abschnitt~\ref{sec:grenzen}), entwickelt einen ausführlichen, nach Themenfeldern geordneten Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen (Abschnitt~\ref{sec:ausblick}), schlägt eine Reihenfolge für die nächsten Entwicklungsschritte vor (Abschnitt~\ref{sec:prio}) und schließt mit einer Gesamteinschätzung (Abschnitt~\ref{sec:schlussbemerkung}).
 
@@ -997,12 +997,122 @@ Der bisherige Mikrobenchmark zeigt keinen Vorteil des C++-Backends auf der Ebene
 Zum ausgewerteten Zeitpunkt war der längere Suchvergleich noch im Gang. Die Python-Baseline über sechs Queries dauerte insgesamt $1.301$ Sekunden; C++-Gesamtzeit, Trefferübereinstimmung und Fehlerzahl standen noch aus. Damit bleibt die zentrale Erwartung dieser Untersuchung, dass C++ die tatsächliche Gen-DB-Suche beschleunigt, zunächst unbestätigt. Das Kapitel dokumentiert bewusst diesen Zwischenstand; eine endgültige Bewertung muss nach Abschluss der C++-Messreihe ergänzt werden.
 
 \subsection{Fremde Beschreibungen}
-Die Anreicherung mit einem Fremdmodul in einer anderen Beschreibung erscheint mir sehr unpassend und beschreibungstechnisch nicht durchgängig. Eine lose Kopplung dagegen, angenommen durch eine C++ Library und nicht durch eine C++ CLI, erlaubt eine klarere Trennung, bei der alle beteiligten Mitgestalter dieses Software Systems mit einem klaren Trennungsbewusstsein dieses System mitgestalten. Ein System, das aus Bereichen oder Teilen besteht, die durch unterschiedliche Beschreibungen entwickelt sind oder arbeiten, schafft Mitgestaltern dieses Systems ein eher unruhigeres Trennungsbewusstsein in der Analyse, Weiterentwicklung und Wiederverwendung.
+\label{sec:fremde_beschreibungen}
+
+Die Anreicherung mit einem Fremdmodul in einer anderen Beschreibung erscheint mir sehr unpassend und beschreibungstechnisch nicht durchgängig. Eine lose Kopplung dagegen, angenommen durch eine C++-Library und nicht durch eine C++-CLI, erlaubt eine klarere Trennung, bei der alle beteiligten Mitgestalter dieses Software Systems mit einem klaren Trennungsbewusstsein dieses System mitgestalten. Ein System, das aus Bereichen oder Teilen besteht, die durch unterschiedliche Beschreibungen entwickelt sind oder arbeiten, schafft Mitgestaltern dieses Systems ein eher unruhigeres Trennungsbewusstsein in der Analyse, Weiterentwicklung und Wiederverwendung.
+
+Dieser Abschnitt führt die Aussage weiter aus. Er klärt zunächst, was hier unter einer \emph{Beschreibung} verstanden wird, wendet die Aussage dann auf die Messungen dieses Kapitels an und überträgt sie anschließend auf die übrigen Teile der Arbeit. Abschließend werden Gegenargumente und die Grenzen der Position benannt. Wichtig ist die Reihenfolge der Argumente: Die Position beruht in erster Linie auf einer Überlegung zur Gestaltung des Systems. Die Messwerte aus diesem Kapitel illustrieren sie, sie beweisen sie nicht.
+
+\subsubsection{Was hier unter einer Beschreibung verstanden wird}
+\label{sec:fremde_begriff}
+
+Eine \emph{Beschreibung} bezeichnet im Folgenden die Gesamtheit der Vereinbarungen, in denen ein Teil eines Systems formuliert ist: seine Sprache, seine Datentypen, sein Fehlermodell, die Lebensdauer seiner Zustände und die Art, wie er aufgerufen, getestet und ausgeliefert wird. Zwei Teile liegen in derselben Beschreibung, wenn sie diese Vereinbarungen teilen. Dann kann ein Mitgestalter, der den einen Teil versteht, den anderen mit denselben Begriffen lesen. Ein \emph{Fremdmodul} ist ein Teil, der in einer anderen Beschreibung arbeitet und dennoch Teil desselben Systems sein soll.
+
+Gen-DB besteht in der Beschreibung des Backends aus Python-Code. Matrizen sind dort \texttt{numpy}-Arrays, Fehler sind Ausnahmen, und der Subgraph Algorithmus ist ein Objekt, das über \texttt{Subgraph().compare\_graphs(A, B)} aufgerufen wird. Die C++-CLI arbeitet dagegen in einer anderen Beschreibung: Matrizen sind JSON-Text, Fehler sind Exit-Codes und Ausgaben auf \texttt{stderr}, und ein Zustand überlebt keinen Aufruf. Zwischen beiden Beschreibungen vermittelt im Backend Übersetzungscode, den keiner der beiden Teile beschreibt.
+
+Die C++-Library ist ebenfalls in C++ geschrieben, ihre Schnittstelle kann jedoch in der Beschreibung des Aufrufers erscheinen, etwa als importierbare Funktion, die Arrays entgegennimmt und Werte oder Ausnahmen zurückgibt. Der Unterschied liegt also nicht in der Programmiersprache des Algorithmuskerns, sondern darin, \emph{wo die Grenze zwischen beiden Beschreibungen verläuft}. Bei der Library verläuft sie an einer schmalen, typisierten Funktionsschnittstelle. Bei der CLI verläuft sie am Betriebssystem, also an Prozessgrenze, Textformat und Dateideskriptoren.
+
+\subsubsection{Anwendung auf die Messungen dieses Kapitels}
+\label{sec:fremde_messung}
+
+Die Untersuchung in diesem Kapitel zeigt an mehreren Stellen, dass die Grenze der CLI-Anbindung nicht nur Rechenzeit kostet, sondern auch Beschreibungsaufwand erzeugt.
+
+\paragraph{Der Messaufbau muss die Grenze selbst überwachen.} Die Versuchsanordnung prüft ausdrücklich die tatsächlich in den Worker-Prozessen aktive Implementierung, zählt fehlgeschlagene Einzelvergleiche und vergleicht die Treffer-IDs beider Backends (Abschnitt~\ref{sec:backend_versuchsaufbau}). Diese Kontrollen sind sinnvoll. Sie sind aber auch ein Symptom: Weil die Grenze nicht in einer gemeinsamen Beschreibung liegt, kann das System nicht zusichern, dass beide Seiten dasselbe tun. Ein stiller Rückfall auf Python, der mit einem erfolgreichen C++-Lauf verwechselt werden könnte, ist eine Fehlerklasse, die erst durch die Mischung zweier Beschreibungen entsteht.
+
+\paragraph{Fachliche Regeln wandern über die Grenze.} Die C++-CLI liefert eigene Ergebniswerte, die das Backend auf die von Gen-DB erwarteten Bezeichner abbildet. Bei identischen Graphen wird der beizubehaltende Graph außerdem im Backend anhand der Kantenzahl bestimmt, und zwar nach der Regel der Python-Implementierung (Abschnitt~\ref{sec:backend_implementierungen}). Eine fachliche Entscheidung ist damit auf zwei Orte verteilt: Ein Teil lebt im Algorithmus, ein Teil im Übersetzungscode der Anwendung. Wer den Algorithmus weiterentwickelt, muss wissen, dass seine Ergebniswerte außerhalb noch ergänzt werden; wer die Anwendung ändert, muss wissen, dass der Algorithmus diese Ergänzung voraussetzt. Genau hier entsteht das unruhige Trennungsbewusstsein, das die Position beschreibt: Niemand kann die Verantwortlichkeiten mehr an einer Stelle ablesen.
+
+\paragraph{Die Grenzkosten sind sichtbar und groß.} Der Mikrobenchmark (Tabelle~\ref{tab:backend_micro}) zeigt für den trivialen CLI-Aufruf mit zwei $1\times1$-Matrizen im Mittel $10{,}081$ Millisekunden. Das sind $88{,}3\,\%$ der mittleren Zeit von $11{,}417$ Millisekunden, die ein regulärer Vergleich über die CLI benötigt. Der überwiegende Teil der gemessenen Zeit gehört damit nicht zum Algorithmus, sondern zur Grenze. Für die Suche in diesem Kapitel ergibt sich daraus eine Überschlagsrechnung, die ausdrücklich keine Messung ist: Bei $1.143.115$ Kandidaten in den sechs Queries entsprächen $10{,}081$ Millisekunden je Aufruf allein für die Mindestlatenz rund $11.524$ Sekunden. Verteilt auf zwei Worker wären das etwa $5.762$ Sekunden, also rund $96$ Minuten, gegenüber $1.301$ Sekunden für die gesamte Python-Baseline. Die Rechnung setzt voraus, dass die Mindestlatenz in der parallelen Suche unverändert anfällt. Sie zeigt, in welcher Größenordnung die Grenze wirken kann, ersetzt aber nicht die ausstehende C++-Suchreihe.
+
+\paragraph{Zwei Prozessebenen überlagern sich.} Gen-DB betreibt bereits einen \texttt{ProcessPoolExecutor}, dessen Worker blockweise mit je $256$ Vergleichen arbeiten. Die CLI-Anbindung legt darunter pro Vergleich einen weiteren Prozess an. Der Pool bleibt langlebig und amortisiert seine Startkosten, die CLI tut das nicht. Beide Ebenen folgen unterschiedlichen Lebensdauern, die in keiner gemeinsamen Beschreibung zusammengeführt sind. Eine Library im Worker-Prozess vermeidet diese zweite Ebene: Die Instanz kann wie die Python-Algorithmusinstanz einmal pro Worker erzeugt und für alle Vergleiche des Blocks wiederverwendet werden.
+
+\subsubsection{Anwendung auf die gesamte Arbeit}
+\label{sec:fremde_gesamt}
+
+Die Position betrifft nicht nur dieses Kapitel. Sie knüpft an den Gedanken an, den die Schlussbemerkung als zentral bezeichnet, nämlich die Trennung zweier Aufgaben: eine günstige Vorauswahl in der Datenbank und der Subgraph Algorithmus als Entscheidung über jeden verbliebenen Kandidaten. Diese Trennung funktioniert, weil sie klar ist. Eine Anbindung, die sie an anderer Stelle durch eine unscharfe Grenze unterläuft, widerspricht dem Prinzip der Gesamtarbeit.
+
+\paragraph{Systemarchitektur (Abschnitt~\ref{sec:architektur}).} Die drei Schichten Frontend, Backend und Datenbank sind jeweils durch eine benannte Schnittstelle getrennt: REST-Aufrufe zwischen Frontend und Backend, SQL zwischen Backend und Datenbank. Der Algorithmus wird vom Modul \texttt{crud.py} über seine öffentliche Python-API aufgerufen. Er bildet damit keine vierte Schicht in einer eigenen Beschreibung, sondern einen Baustein des Backends. Die Library-Anbindung setzt dieses Muster fort, die CLI-Anbindung bricht es.
+
+\paragraph{Formale Analyse (Abschnitt~\ref{sec:pipeline}).} Satz~\ref{satz:pipeline} modelliert die Suchzeit als Summe aus dem Pre-Filter und $C$ Vergleichen mit je $O(n^3)$ Aufwand. Das Modell trägt, solange die Kosten eines Vergleichs dem Algorithmus zugerechnet werden können. Eine Prozess-pro-Vergleich-Anbindung fügt jedem Vergleich einen Term hinzu, den das Modell nicht enthält.
+
+\begin{bemerkung}[Erweitertes Kostenmodell]
+\label{bem:schnittstellenkosten}
+Bezeichne $\delta$ die Schnittstellenkosten je Vergleich, also bei der CLI Prozessstart, JSON-Serialisierung und Antwortauswertung. Dann lautet eine erweiterte Form des Modells aus Satz~\ref{satz:pipeline}
+\[
+	T'_{\text{Suche}}(N,C,n) = O(\log N + C) + O\bigl(C\cdot(n^3+\delta)\bigr).
+\]
+Bei der Library-Anbindung ist $\delta$ der Aufwand einer Funktionsübergabe innerhalb des Prozesses. Bei der CLI-Anbindung zeigt der Mikrobenchmark Werte in der Größenordnung von $10$ Millisekunden. Da in der Evaluation $n\le 20$ gilt, ist $n^3\le 8.000$; es ist daher plausibel, dass $\delta$ den Term $n^3$ bei nativer Rechengeschwindigkeit deutlich übersteigt. Diese Größenordnungsüberlegung ist nicht gemessen und gilt nur unter den dokumentierten Bedingungen.
+\end{bemerkung}
+
+Das erweiterte Modell erhält die asymptotische Aussage, dass die Suchzeit linear mit $C$ wächst. Es macht aber sichtbar, dass die Wahl der Anbindung den konstanten Faktor bestimmt. Ein Modell mit einem Term, den die Beschreibung der Arbeit nicht benennt, wäre ein Beispiel für das beschriebene Problem im Kleinen.
+
+\paragraph{Empirische Evaluation und VF2-Vergleich (Abschnitte~\ref{sec:evaluation} und~\ref{sec:vergleich}).} Der Vergleich mit VF2 ist aussagekräftig, weil beide Verfahren in derselben Beschreibung laufen: Beide werden in Python aufgerufen, auf identischen Eingaben und mit derselben Zeitmessung. Die Laufzeitunterschiede lassen sich deshalb den Verfahren zuschreiben. Beim Vergleich Python gegen C++-CLI gilt das nicht, denn dort unterscheiden sich zugleich Sprache und Ausführungsmodell, wie der Abschnitt über den Mikrobenchmark festhält. Eine Library-Anbindung würde den C++-Kern wieder unter vergleichbare Bedingungen stellen, also in denselben Prozess, mit denselben Daten und mit derselben Messmethode.
+
+\paragraph{Parallelisierung (Abschnitt~\ref{sec:parallel}).} Die dort gemessenen Ergebnisse, ein Speedup von $1{,}90$ mit zwei Workern und eine Verschlechterung beim dritten Worker auf einem Rechner mit zwei logischen Prozessoren, beschreiben eine Arbeitslast, die Rechenzeit in den Worker-Prozessen verbraucht. Bei der CLI-Anbindung verbraucht zusätzlich jeder Prozessstart Rechenzeit und Betriebssystemressourcen. Ob die Skalierungsaussagen unverändert gelten, ist nicht belegt. Die Hardwareempfehlung, die Worker-Zahl an die Zahl der logischen Prozessoren anzupassen, wäre dann ebenfalls neu zu prüfen. Bei einer Library bliebe die Arbeitslast die gleiche wie in der Messreihe, nur der Rechenkern wäre ausgetauscht.
+
+\paragraph{Schluss und Ausblick (Abschnitte~\ref{sec:grenzen} und~\ref{sec:ausblick}).} Die Grenzen der Arbeit nennen eine in reinem Python geschriebene Referenzimplementierung als obere Abschätzung des praktisch Erreichbaren. Der Ausblick führt als Hebel die Vektorisierung mit \texttt{numpy}, die Kompilierung mit \texttt{numba} und die C++-Erweiterung auf (Abschnitt~\ref{sec:impl_opt}). Alle drei sind Anbindungen, die in der Beschreibung des Aufrufers bleiben. Die hier vertretene Position stützt diese Reihenfolge: Weiterentwicklungen des Vergleichs sollten zuerst dort ansetzen, wo die Grenze schmal bleibt, und die Prozessgrenze nur dort einführen, wo ihr Zweck, etwa Isolation, den Beschreibungsbruch rechtfertigt.
+
+\subsubsection{Kriterien einer losen Kopplung}
+\label{sec:fremde_kriterien}
+
+Aus den vorangehenden Überlegungen lassen sich Kriterien ableiten, an denen sich beide Anbindungsformen vergleichen lassen. Die Tabelle fasst sie zusammen. Sie beschreibt Gestaltungseigenschaften und keine Messwerte; Aussagen zur Laufzeit stehen unter dem Vorbehalt der noch fehlenden C++-Suchreihe.
+
+\begin{table}[!htbp]
+	\centering
+	\small
+	\caption{Vergleich der Anbindungsformen nach Gestaltungskriterien. Die Einordnung der Library beschreibt die angestrebte Form; eine umgesetzte und gemessene Library-Anbindung liegt zum Stand dieser Arbeit nicht vor.}
+	\label{tab:fremde_kriterien}
+	\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
+		\toprule
+		Kriterium & C++-CLI (Prozess pro Vergleich) & C++-Library (im Worker-Prozess) \\
+		\midrule
+		Datenaustausch & Matrizen als JSON-Text über \texttt{stdin} und \texttt{stdout} & typisierte Arrays über eine Funktionsschnittstelle \\
+		Fehlermodell & Exit-Code, \texttt{stderr}, Timeout (\texttt{CSUBGRAPH\_TIMEOUT}) & Ausnahmen oder Rückgabewerte in der Beschreibung des Aufrufers \\
+		Lebensdauer & kein Zustand über einen Vergleich hinaus & Instanz je Worker, wiederverwendbar \\
+		Aufrufkosten $\delta$ & Prozessstart je Vergleich, gemessen etwa $10$ ms & Funktionsaufruf im Prozess; nicht gemessen \\
+		Ergebnisabbildung & Übersetzung der Ergebniswerte und Regel für identische Graphen im Backend & Abbildung kann Teil der Schnittstelle sein und liegt dann beim Algorithmus \\
+		Testbarkeit & Tests brauchen ein gebautes Executable und einen Prozessstart & Tests rufen die Funktion direkt auf, gleiche Mittel wie beim Python-Algorithmus \\
+		Auslieferung & plattformabhängiger Pfad zum Executable (\texttt{subgraph-cli.exe}) über die Konfiguration & Abhängigkeit des Projekts, Binärdatei je Plattform \\
+		Isolation & Absturz des Algorithmus betrifft nur den Einzelprozess & Absturz betrifft den Worker-Prozess \\
+		Messbarkeit & Schnittstellenkosten verdecken den Rechenkern & Rechenkern lässt sich unter gleichen Bedingungen wie Python messen \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Die Zeile zur Isolation zeigt, dass die Gegenüberstellung nicht einseitig ausfällt. Sie ist die stärkste Gegenposition und wird im nächsten Abschnitt behandelt.
+
+\subsubsection{Gegenargumente und Grenzen der Position}
+\label{sec:fremde_gegen}
+
+\paragraph{Isolation und Sprachneutralität.} Eine CLI trennt Prozesse hart. Ein Fehler im nativen Code reißt dann nicht den Worker mit, und ein Timeout kann den Prozess beenden. Außerdem ist eine CLI von jeder Sprache aus aufrufbar. Beide Eigenschaften sind echte Vorteile. Sie sprechen für die CLI als Werkzeug, etwa für Skripte, manuelle Prüfungen oder Experimente. Die hier vertretene Position betrifft die Einbindung in das System. Für diese zählt, ob die Grenze in der gemeinsamen Beschreibung des Systems liegt. Die CLI bleibt als eigenständiges Programm sinnvoll, auch wenn Gen-DB den Algorithmus über die Library aufruft.
+
+\paragraph{Aufwand der Library.} Eine Library braucht eine Anbindung an Python, etwa über einen Erweiterungsmechanismus, und eine Bauumgebung je Plattform. Das ist Aufwand, den die CLI zunächst nicht verlangt. Die Position behauptet nicht, dass dieser Aufwand gering sei. Sie behauptet, dass er einmalig anfällt und die Grenze danach schmal hält, während die Kosten der CLI bei jedem Vergleich und bei jeder Weiterentwicklung wiederkehren.
+
+\paragraph{Die Evidenz ist unvollständig.} Die C++-Suchreihe liegt zum ausgewerteten Zeitpunkt nicht vor, und die Library-Anbindung wurde nicht gemessen. Aus den vorhandenen Werten folgt nur, dass die CLI-Anbindung in ihrer jetzigen Form beim Einzelaufruf deutlich langsamer als der direkte Python-Aufruf ist. Ob die Library am Ende auch in der Gesamtsuche schneller ist, bleibt offen. Die Position hängt davon aber nicht ab: Selbst wenn eine Library nicht schneller wäre, bliebe die Grenze klarer, die Messung sauberer und die Verantwortlichkeit eindeutiger.
+
+\paragraph{Die Position ist eine Gestaltungsentscheidung.} Begriffe wie Trennungsbewusstsein lassen sich in dieser Arbeit nicht messen. Sie bezeichnen eine Eigenschaft der Zusammenarbeit von Mitgestaltern, die durch Fallbeispiele wie die oben genannten plausibel gemacht, aber nicht durch eine Studie belegt wird. Die Arbeit formuliert sie deshalb als begründete Position und nicht als Ergebnis.
+
+\subsubsection{Folgerungen für Gen-DB}
+\label{sec:fremde_folgerungen}
+
+Aus der Position und den Messungen ergeben sich fünf Folgerungen für die weitere Arbeit am System:
+
+\begin{enumerate}
+	\item \textbf{Eine Schnittstelle, mehrere Implementierungen.} Python- und C++-Algorithmus sollten hinter derselben Funktionsschnittstelle liegen. Der Aufrufer in Gen-DB wählt die Implementierung über die Konfiguration, und der Rückfall auf Python bleibt erhalten. Er ist dann ein Wechsel hinter einer gemeinsamen Schnittstelle und kein Wechsel der Beschreibung.
+	\item \textbf{Fachliche Regeln gehören zum Algorithmus.} Die Abbildung der Ergebniswerte und die Auswahl nach der Kantenzahl bei identischen Graphen sollten in der Schnittstelle des Algorithmus festgelegt sein und nicht im Übersetzungscode der Anwendung. Beide Implementierungen liefern dann per Konstruktion dieselben Werte, und die Kontrolle über die Treffer-IDs wird zu einem Test statt zu einer Laufzeitprüfung.
+	\item \textbf{Die Library zuerst messen.} Die in Abschnitt~\ref{sec:backend_grenzen} empfohlene Folgeuntersuchung sollte den C++-Kern als Bibliotheksaufruf messen, mit identischen Queries und Kandidaten und mit mehreren Wiederholungen. Erst danach lässt sich beurteilen, ob ein Batch-CLI-Aufruf als Zwischenlösung überhaupt benötigt wird.
+	\item \textbf{Schnittstellenkosten ausweisen.} Künftige Messungen sollten $\delta$ getrennt von der Rechenzeit des Algorithmus berichten, wie es die Bemerkung~\ref{bem:schnittstellenkosten} nahelegt. Dadurch lassen sich Ergebnisse verschiedener Anbindungen vergleichen, ohne Algorithmus und Schnittstelle zu vermischen.
+	\item \textbf{Die CLI als Werkzeug behalten.} Die CLI bleibt für Einzelprüfungen, Skripte und Fehlersuche nützlich. Sie sollte jedoch nicht der Pfad sein, über den die produktive Suche einen Vergleich nach dem anderen ausführt.
+\end{enumerate}
+
+\subsubsection{Zwischenfazit zur Kopplung}
+\label{sec:fremde_fazit}
+
+Die Aussage des Abschnitts lässt sich so zusammenfassen: Ein System bleibt analysierbar, weiterentwickelbar und wiederverwendbar, wenn seine Teile in einer gemeinsamen Beschreibung liegen und ihre Grenzen schmal und benannt sind. In diesem Kapitel zeigt sich das am Beispiel der C++-Anbindung. Die CLI verlegt die Grenze an die Prozessgrenze, verteilt fachliche Regeln auf zwei Orte, erzwingt Kontrollen gegen stille Abweichungen und verdeckt den Rechenkern hinter Schnittstellenkosten. Die Library hält die Grenze schmal. In der Gesamtarbeit setzt sie das Prinzip fort, das schon die Architektur, die formale Analyse und die Messmethodik tragen. Ob die Library auch schneller ist, wird die ausstehende Messung zeigen; die Entscheidung für die lose Kopplung stützt sich zuerst auf die Klarheit der Grenze.
 
 \section{Schluss}
 \label{sec:schluss}
 
-Die vorliegende Arbeit hat Gen-DB, ein System zur Subgraph-Suche in Datenbanken biologischer Netzwerke, von der Architektur über die formale Analyse der Such-Pipeline bis zu mehreren empirischen Untersuchungen betrachtet. Dieser abschließende Abschnitt gliedert sich in fünf Teile: Zunächst fasst Abschnitt~\ref{sec:zusammenfassung} die Ergebnisse aller vorangegangenen Abschnitte zusammen und gleicht sie mit den in der Einleitung formulierten Beiträgen ab. Abschnitt~\ref{sec:grenzen} benennt die Grenzen der Arbeit, sodass die Ergebnisse richtig eingeordnet werden können. Abschnitt~\ref{sec:ausblick} entwickelt darauf aufbauend ausführlich mögliche Erweiterungen und offene Forschungsfragen, geordnet nach Themenfeldern. Abschnitt~\ref{sec:prio} schlägt schließlich eine Reihenfolge für die Umsetzung vor, und Abschnitt~\ref{sec:schlussbemerkung} schließt die Arbeit mit einer Gesamteinschätzung.
+Die vorliegende Arbeit hat Gen-DB, ein System zur Subgraph-Suche in Datenbanken biologischer Netzwerke, von der Architektur über die formale Analyse der Such-Pipeline bis zu mehreren empirischen Untersuchungen betrachtet. Dieser abschließende Abschnitt gliedert sich in fünf Teile: Zunächst fasst Abschnitt~\ref{sec:zusammenfassung} die Ergebnisse aller vorangegangenen Abschnitte zusammen und gleicht sie mit den in der Einleitung formulierten Beiträgen ab. Abschnitt~\ref{sec:grenzen} benennt die Grenzen der Arbeit, sodass die Ergebnisse richtig eingeordnet werden können. Abschnitt~\ref{sec:ausblick} entwickelt darauf aufbauend ausführlich mögliche Erweiterungen und offene Forschungsfragen, geordnet nach Themenfeldern. Abschnitt~\ref{sec:prio} schlägt schließlich eine Reihenfolge für die Umsetzung vor, und Abschnitt~\ref{sec:schlussbemerkung} schließt die Arbeit mit einer Gesamteinschätzung. Ein Faden, der sich durch alle fünf Teile zieht, ist die in Abschnitt~\ref{sec:fremde_beschreibungen} begründete Position zur losen Kopplung: Die Zusammenfassung ordnet sie in die Ergebnisse ein, die Würdigung benennt ihre Belastbarkeit, der Ausblick leitet daraus das Themenfeld G ab, die Priorisierung gibt ihr einen Platz in der Reihenfolge, und die Schlussbemerkung stellt sie neben den zentralen Gedanken der Trennung.
 
 % =====================================================================
 \subsection{Zusammenfassung}
@@ -1010,7 +1120,7 @@ Die vorliegende Arbeit hat Gen-DB, ein System zur Subgraph-Suche in Datenbanken 
 
 \subsubsection{Ausgangspunkt und Zielsetzung}
 
-Biologische Datenbanken enthalten Millionen von Netzwerken: metabolische Pfade, Protein-Interaktionsnetzwerke und Gen-Regulationsnetzwerke. Eine zentrale Aufgabe bei ihrer Analyse ist die Subgraph-Suche, bei der zu einem Query-Netzwerk alle gespeicherten Netzwerke gefunden werden sollen, die das Query als Teilstruktur enthalten. Diese Arbeit hat untersucht, wie sich der Subgraph Algorithmus \cite{epp2026subgraph}, der zwei Adjazenzmatrizen über Spaltensignaturen und zyklische längste gemeinsame Teilsequenzen in $O(n^3)$ vergleicht, in eine relationale Datenbank einbetten lässt, ob die entstehende Such-Pipeline formal korrekt und analysierbar ist und wie sie sich bei einer Datenbank mit einer Million Einträgen tatsächlich verhält.
+Biologische Datenbanken enthalten Millionen von Netzwerken: metabolische Pfade, Protein-Interaktionsnetzwerke und Gen-Regulationsnetzwerke. Eine zentrale Aufgabe bei ihrer Analyse ist die Subgraph-Suche, bei der zu einem Query-Netzwerk alle gespeicherten Netzwerke gefunden werden sollen, die das Query als Teilstruktur enthalten. Diese Arbeit hat untersucht, wie sich der Subgraph Algorithmus \cite{epp2026subgraph}, der zwei Adjazenzmatrizen über Spaltensignaturen und zyklische längste gemeinsame Teilsequenzen in $O(n^3)$ vergleicht, in eine relationale Datenbank einbetten lässt, ob die entstehende Such-Pipeline formal korrekt und analysierbar ist und wie sie sich bei einer Datenbank mit einer Million Einträgen tatsächlich verhält. Im Verlauf der Untersuchung trat eine weitere Frage hinzu: auf welche Weise ein in C++ geschriebener Rechenkern in ein Python-System eingebunden werden sollte, damit Analyse, Weiterentwicklung und Wiederverwendung klar bleiben.
 
 \subsubsection{Systemarchitektur und Datenmodell}
 
@@ -1043,9 +1153,49 @@ Die Messreihe mit sechs aus der Datenbank gezogenen Queries (mindestens $15$ Kno
 
 Der Mikrobenchmark des in Abschnitt~\ref{sec:backends} beschriebenen Experiments ergab zunächst $2{,}70$ Millisekunden je direktem Python-Aufruf und $11{,}42$ Millisekunden je Vergleich über die C++-CLI. Bereits ein trivialer $1\times1$-CLI-Aufruf benötigte rund $10{,}08$ Millisekunden. Das deutet darauf hin, dass Prozessstart und JSON-Schnittstelle einen möglichen Vorteil des nativen Rechenkerns überdecken können. Eine überschlägige Differenzrechnung legt einen schnelleren C++-Kern nahe, misst ihn aber nicht isoliert. Zum dokumentierten Zwischenstand enthielt die Ergebnisdatei noch keine C++-Suchreihe; ob die vollständige Gen-DB-Suche mit C++ schneller wird und ob beide Backends dieselben Treffer liefern, blieb daher offen.
 
+\subsubsection{Kopplung und Beschreibungsgrenzen}
+\label{sec:zus_kopplung}
+
+Der Vergleich der Python- und C++-Implementierung hat über die Laufzeitfrage hinaus eine Gestaltungsfrage aufgeworfen, die Abschnitt~\ref{sec:fremde_beschreibungen} ausführt: Wie sollte ein Baustein, der in einer anderen Sprache und mit einem anderen Ausführungsmodell arbeitet, in Gen-DB eingebunden werden? Die vertretene Position lautet, dass die Einbindung als Fremdmodul in einer anderen Beschreibung unpassend ist und dass eine lose Kopplung über eine C++-Library einer Anbindung über die C++-CLI vorzuziehen ist, weil sie eine klarere Trennung erlaubt und allen Mitgestaltern ein klares Trennungsbewusstsein ermöglicht. Unter einer \emph{Beschreibung} wird dabei die Gesamtheit aus Sprache, Datentypen, Fehlermodell, Lebensdauer von Zuständen sowie Aufruf-, Test- und Auslieferungsweise eines Teils verstanden. Der Unterschied zwischen CLI und Library liegt damit nicht in der Sprache des Rechenkerns, sondern in der Frage, wo die Grenze zwischen zwei Beschreibungen verläuft.
+
+Die Untersuchung hat die Position an vier Beobachtungen aus den Messungen und dem Versuchsaufbau festgemacht:
+
+\begin{itemize}
+	\item \textbf{Der Messaufbau überwacht die Grenze selbst.} Die Prüfung der aktiven Implementierung in den Worker-Prozessen, die Fehlerzähler und der Abgleich der Treffer-IDs sind notwendig, weil ein stiller Rückfall auf Python sonst mit einem erfolgreichen C++-Lauf verwechselt werden könnte. Diese Fehlerklasse entsteht erst durch die Mischung zweier Beschreibungen.
+	\item \textbf{Fachliche Regeln liegen auf beiden Seiten der Grenze.} Die Abbildung der C++-Ergebniswerte und die Auswahl nach der Kantenzahl bei identischen Graphen geschehen im Übersetzungscode der Anwendung und nicht im Algorithmus. Eine fachliche Entscheidung ist damit auf zwei Orte verteilt.
+	\item \textbf{Die Grenzkosten dominieren die gemessene Zeit.} Der triviale CLI-Aufruf benötigt im Mittel $10{,}081$ Millisekunden und damit $88{,}3\,\%$ der $11{,}417$ Millisekunden eines regulären CLI-Vergleichs. Eine Überschlagsrechnung, die ausdrücklich keine Messung ist, ergibt für die sechs Queries mit $1.143.115$ Kandidaten allein für die Mindestlatenz rund $96$ Minuten bei zwei Workern, gegenüber $1.301$ Sekunden für die gesamte Python-Baseline.
+	\item \textbf{Zwei Prozessebenen überlagern sich.} Der langlebige Prozess-Pool amortisiert seine Startkosten, die CLI legt darunter pro Vergleich einen weiteren Prozess an, der das nicht tut. Eine Library im Worker-Prozess würde die Instanz wie beim Python-Algorithmus einmal pro Worker erzeugen.
+\end{itemize}
+
+Aus Sicht der Gesamtarbeit setzt die Position die Trennung fort, die auch die Architektur, die formale Analyse und die Messmethodik tragen. Tabelle~\ref{tab:grenzen_system} ordnet die Grenzen des Systems ein. Die Schichtgrenzen sind als solche entworfen und durch eigene Schnittstellen benannt. Die Position betrifft die Bausteine innerhalb einer Schicht: Ein Baustein des Backends sollte in der Beschreibung des Backends erscheinen, oder die Grenze zu ihm muss schmal und benannt sein.
+
+\begin{table}[!htbp]
+	\centering
+	\small
+	\caption{Grenzen im System Gen-DB und ihre Art. Die Zeile zur Library beschreibt die angestrebte Form; sie ist weder umgesetzt noch gemessen.}
+	\label{tab:grenzen_system}
+	\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{3.6cm}@{}}
+		\toprule
+		Grenze & Art & Verbindung & Einordnung \\
+		\midrule
+		Frontend -- Backend & Schichtgrenze & REST-Endpunkte unter \texttt{/api/networks} & entworfen, benannt \\
+		Backend -- Datenbank & Schichtgrenze & SQL über zwei verknüpfte Relationen & entworfen, benannt \\
+		Backend -- Subgraph Algorithmus (Python) & Baustein im Backend & öffentliche API \texttt{compare\_graphs} im selben Prozess & schmal, gemeinsame Beschreibung \\
+		Backend -- VF2 (\texttt{networkx}) & Baustein im Backend & Bibliotheksaufruf im selben Prozess & schmal, gemeinsame Beschreibung \\
+		Hauptprozess -- Worker & Prozessgrenze mit Zweck & blockweise je $256$ Vergleiche, langlebiger Pool & bewusst, Kosten amortisiert \\
+		Backend -- C++-CLI & Baustein im Backend & Prozess je Vergleich, JSON-Text, Exit-Code & breit, Übersetzungscode nötig \\
+		Backend -- C++-Library & Baustein im Backend & Funktionsschnittstelle im Worker-Prozess & angestrebt, nicht gemessen \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Die Untersuchung hat daraus drei weitere Ergebnisse abgeleitet. Erstens lässt sich das Kostenmodell aus Satz~\ref{satz:pipeline} um einen Schnittstellenterm $\delta$ je Vergleich erweitern (Bemerkung~\ref{bem:schnittstellenkosten}); die asymptotische Aussage bleibt erhalten, die Wahl der Anbindung bestimmt aber den konstanten Faktor. Zweitens vergleicht Tabelle~\ref{tab:fremde_kriterien} beide Anbindungsformen nach neun Gestaltungskriterien. Drittens nennen die Gegenargumente in Abschnitt~\ref{sec:fremde_gegen} die Isolation bei Abstürzen, die Sprachneutralität der CLI und den einmaligen Bauaufwand der Library; sie sprechen für die CLI als Werkzeug, nicht für den produktiven Suchpfad. Daraus ergaben sich fünf Folgerungen (Abschnitt~\ref{sec:fremde_folgerungen}): eine Schnittstelle mit mehreren Implementierungen, fachliche Regeln im Algorithmus, die Messung der Library zuerst, ein getrennter Ausweis der Schnittstellenkosten und die Beibehaltung der CLI als Werkzeug.
+
+Die Belastbarkeit ist begrenzt. Die C++-Suchreihe liegt zum ausgewerteten Zeitpunkt nicht vor, und die Library-Anbindung ist weder umgesetzt noch gemessen. Die Position stützt sich daher zuerst auf die Klarheit der Grenze und erst in zweiter Linie auf Messwerte. Welche Aussagen belegt sind und welche nicht, hält Abschnitt~\ref{sec:grenzen} fest.
+
 \subsubsection{Zentrale Erkenntnisse}
 
-Aus der Gesamtschau lassen sich sieben Erkenntnisse festhalten:
+Aus der Gesamtschau lassen sich neun Erkenntnisse festhalten:
 
 \begin{enumerate}
 	\item \textbf{Die Architektur trägt die Analyse.} Die klare Trennung zwischen relationaler Kandidatenreduktion und algorithmischem Strukturvergleich erlaubt es, beide Stufen getrennt zu beweisen, zu messen und zu optimieren.
@@ -1055,11 +1205,13 @@ Aus der Gesamtschau lassen sich sieben Erkenntnisse festhalten:
 	\item \textbf{Parallelisierung ist ein verlässlicher, aber begrenzter Hebel.} Sie senkt die Antwortzeit auf dem untersuchten System um einen konstanten Faktor nahe der Prozessorzahl, ändert aber nichts an der linearen Abhängigkeit von $C$. Sie ersetzt deshalb weder einen schärferen Pre-Filter noch ein Kandidatenlimit.
 	\item \textbf{Die Worker-Zahl muss zur Hardware passen.} Mehr Worker als logische Prozessoren verschlechtern die Laufzeit. Die mitgelieferte Voreinstellung von vierzehn Workern ist deshalb nur auf entsprechend ausgestatteten Rechnern sinnvoll.
 	\item \textbf{Vollständigkeit und Geschwindigkeit stehen im Spannungsfeld.} Ein Kandidatenlimit macht die Suchzeit unabhängig von $N$, kostet aber die Vollständigkeitsgarantie. Auch die Suchrichtung ist nur für $A_Q \preceq A_k$ abgesichert.
+	\item \textbf{Die Grenze zwischen Beschreibungen ist eine Entwurfsentscheidung mit Kosten.} Ein Baustein in einer anderen Beschreibung verlangt Übersetzungscode, verteilt fachliche Regeln auf beide Seiten und erzwingt Kontrollen gegen stille Abweichungen. Eine lose Kopplung über eine Library hält die Grenze schmal und erlaubt allen Mitgestaltern ein klares Trennungsbewusstsein (Abschnitt~\ref{sec:fremde_beschreibungen}).
+	\item \textbf{Schnittstellenkosten gehören ins Kostenmodell.} Im Mikrobenchmark entfallen $88{,}3\,\%$ der CLI-Zeit auf den trivialen Aufruf. Das Modell aus Satz~\ref{satz:pipeline} wird durch einen Term $\delta$ je Vergleich erweitert (Bemerkung~\ref{bem:schnittstellenkosten}); die Wahl der Anbindung bestimmt den konstanten Faktor, nicht die Asymptotik.
 \end{enumerate}
 
 \subsubsection{Abgleich mit den Beiträgen der Arbeit}
 
-In der Einleitung wurden acht Beiträge angekündigt. Sie sind wie folgt erfüllt: Die formale Beschreibung der Architektur und die Einbettung des Algorithmus in die relationale Datenbank sind in Abschnitt~\ref{sec:architektur} geleistet. Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, jedoch mit der ausdrücklichen Einschränkung auf die Richtung $A_Q \preceq A_k$ und den Fall ohne Kandidatenlimit. Die empirische Evaluation an einer Million Netzwerke und die zugehörigen Diagramme finden sich in Abschnitt~\ref{sec:evaluation}. Der Vergleich mit VF2 samt Ursachenanalyse folgt in Abschnitt~\ref{sec:vergleich}, die Untersuchung der Parallelisierung in Abschnitt~\ref{sec:parallel}. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Ein Unterschied in der Belastbarkeit ist zu beachten: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während die Abschnitte~\ref{sec:vergleich} und~\ref{sec:parallel} gemessene Werte zeigen. Dieser Punkt wird in Abschnitt~\ref{sec:grenzen} noch einmal aufgegriffen.
+In der Einleitung wurden acht Beiträge angekündigt. Sie sind wie folgt erfüllt: Die formale Beschreibung der Architektur und die Einbettung des Algorithmus in die relationale Datenbank sind in Abschnitt~\ref{sec:architektur} geleistet. Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, jedoch mit der ausdrücklichen Einschränkung auf die Richtung $A_Q \preceq A_k$ und den Fall ohne Kandidatenlimit. Die empirische Evaluation an einer Million Netzwerke und die zugehörigen Diagramme finden sich in Abschnitt~\ref{sec:evaluation}. Der Vergleich mit VF2 samt Ursachenanalyse folgt in Abschnitt~\ref{sec:vergleich}, die Untersuchung der Parallelisierung in Abschnitt~\ref{sec:parallel}. Der Vergleich der Python- und C++-Implementierung mit der Analyse des Schnittstellenaufwands und der begründeten Position zur Kopplung steht in Abschnitt~\ref{sec:backends}, dort insbesondere in Abschnitt~\ref{sec:fremde_beschreibungen}. Dieser Beitrag ist nur teilweise erfüllt, weil Mikrobenchmark und Analyse vorliegen, die Ende-zu-Ende-Suchmessung mit C++ jedoch aussteht. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Ein Unterschied in der Belastbarkeit ist zu beachten: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während die Abschnitte~\ref{sec:vergleich} und~\ref{sec:parallel} gemessene Werte zeigen. Dieser Punkt wird in Abschnitt~\ref{sec:grenzen} noch einmal aufgegriffen.
 
 % =====================================================================
 \subsection{Kritische Würdigung und Grenzen}
@@ -1077,13 +1229,17 @@ Die Ergebnisse dieser Arbeit sind belastbar, soweit es um die formalen Aussagen 
 	\item \textbf{Begrenzte Hardware.} Die Parallelisierung wurde auf einem Rechner mit zwei logischen Prozessoren gemessen, auf dem auch die Datenbank lief. Aussagen zur Skalierung auf viele Prozessoren oder auf getrennte Datenbankserver sind daher Extrapolationen.
 	\item \textbf{Ungenutzte Knotenlabels.} Die Relation $\preceq$ ignoriert Knotenlabels. Zwei strukturell gleiche, biologisch aber verschiedene Netzwerke gelten als äquivalent, was für die praktische Anwendung eine wesentliche Einschränkung ist.
 	\item \textbf{Referenzimplementierung ohne Optimierung.} Die Laufzeitwerte des Subgraph Algorithmus stammen aus einer in reinem Python geschriebenen Implementierung ohne vorzeitigen Abbruch. Sie sind daher eher eine obere Abschätzung des praktisch Erreichbaren.
+	\item \textbf{C++-Suchreihe und Library-Anbindung fehlen.} Zum ausgewerteten Zeitpunkt enthält die Ergebnisdatei nur die Python-Suchmessungen und den Mikrobenchmark (Abschnitt~\ref{sec:backend_zwischenstand}). Ob die vollständige Suche mit C++ schneller ist und ob beide Backends dieselben Treffer liefern, ist offen. Die Library-Anbindung, für die Abschnitt~\ref{sec:fremde_beschreibungen} eintritt, ist weder umgesetzt noch gemessen; ihre Vorteile beruhen auf der Struktur der Anbindung und nicht auf Messwerten.
+	\item \textbf{Überschlagsrechnung und erweitertes Kostenmodell sind nicht validiert.} Die Zeit von rund $96$ Minuten für die Mindestlatenz der CLI-Aufrufe ist eine Hochrechnung der trivialen CLI-Zeit auf die Kandidatenzahl; sie setzt voraus, dass die Latenz in der parallelen Suche unverändert anfällt. Der Term $\delta$ in Bemerkung~\ref{bem:schnittstellenkosten} ist ein Modellvorschlag, dessen Größe nur für die CLI und nur aus dem Mikrobenchmark abgeschätzt ist.
+	\item \textbf{Die Kopplungsposition ist eine Gestaltungsposition.} Begriffe wie Trennungsbewusstsein lassen sich in dieser Arbeit nicht messen. Die Fallbeispiele aus dem Versuchsaufbau machen die Position plausibel, belegen sie aber nicht durch eine Studie. Die Gegenargumente (Isolation, Sprachneutralität, Bauaufwand der Library) sind nicht entkräftet, sondern nur dem Einsatzzweck zugeordnet.
+	\item \textbf{Betriebssystemabhängigkeit der Schnittstellenkosten.} Die Messung stammt von einem Windows-11-Rechner. Die Kosten des Prozessstarts können auf anderen Betriebssystemen deutlich abweichen. Die Aussage, dass die Grenze der CLI breiter ist als die der Library, hängt davon nicht ab, ihre Größenordnung in Millisekunden jedoch schon.
 \end{enumerate}
 
 % =====================================================================
 \subsection{Ausblick}
 \label{sec:ausblick}
 
-Die Erweiterungsmöglichkeiten lassen sich in sechs Themenfelder ordnen: die Absicherung von Korrektheit und Suchsemantik, die Verschärfung der Vorauswahl und Indexierung, die Beschleunigung der Vergleiche, die Skalierung auf Systemebene, die Weiterentwicklung der Evaluation und die Anwendungsebene. Die folgenden Unterabschnitte behandeln jedes Feld einzeln. Wo eine Idee bereits durch die Ergebnisse dieser Arbeit gestützt oder relativiert wird, ist darauf verwiesen.
+Die Erweiterungsmöglichkeiten lassen sich in sieben Themenfelder ordnen: die Absicherung von Korrektheit und Suchsemantik, die Verschärfung der Vorauswahl und Indexierung, die Beschleunigung der Vergleiche, die Skalierung auf Systemebene, die Weiterentwicklung der Evaluation, die Anwendungsebene sowie die Kopplung und die Schnittstellen der Implementierungen. Die folgenden Unterabschnitte behandeln jedes Feld einzeln. Wo eine Idee bereits durch die Ergebnisse dieser Arbeit gestützt oder relativiert wird, ist darauf verwiesen.
 
 % ---------------------------------------------------------------------
 \subsubsection*{Themenfeld A: Korrektheit und Suchsemantik}
@@ -1151,12 +1307,12 @@ in dem der serielle Anteil nach dem Gesetz von Amdahl \cite{amdahl1967} den erre
 	\item \textbf{Gleichzeitige Suchanfragen.} Der Prozess-Pool wird von allen Anfragen gemeinsam genutzt. Laufen mehrere lange Suchen gleichzeitig, konkurrieren sie um dieselben Worker. Eine Warteschlange mit Priorisierung kurzer Suchen oder ein Limit gleichzeitiger Suchen würde die Antwortzeit kleiner Anfragen schützen.
 \end{itemize}
 
-Für sehr große Kandidatenmengen oder viele Nutzer kommt zusätzlich die Verteilung über mehrere Rechner in Betracht, etwa mit Apache Spark und einer benutzerdefinierten Funktion für \texttt{compare\_graphs}. Dabei muss der Kommunikationsaufwand für den Versand der Adjazenzmatrizen (je $O(n^2)$ Bit) gegen den Rechengewinn $O(n^3/p)$ abgewogen werden. Für $n\le 20$ stehen $n^2=400$ Bit nur $n^3=8000$ Operationen gegenüber, sodass sich die Verteilung bei $p\ll C$ lohnt. Das Gesetz von Gustafson \cite{gustafson1988} legt zudem nahe, bei mehr Prozessoren auch die Problemgröße zu steigern, also etwa größere Netzwerke oder Datenbanken zu bearbeiten, anstatt nur dieselbe Suche zu beschleunigen.
+Für sehr große Kandidatenmengen oder viele Nutzer kommt zusätzlich die Verteilung über mehrere Rechner in Betracht, etwa mit Apache Spark und einer benutzerdefinierten Funktion für \texttt{compare\_graphs}. Dabei muss der Kommunikationsaufwand für den Versand der Adjazenzmatrizen (je $O(n^2)$ Bit) gegen den Rechengewinn $O(n^3/p)$ abgewogen werden. Für $n\le 20$ stehen $n^2=400$ Bit nur $n^3=8000$ Operationen gegenüber, sodass sich die Verteilung bei $p\ll C$ lohnt. Eine solche Verteilung führt allerdings eine weitere Beschreibung in das System ein; ob sie diesen Bruch rechtfertigt, ist nach den Prüffragen in Abschnitt~\ref{sec:fremd_pruefung} zu klären. Das Gesetz von Gustafson \cite{gustafson1988} legt zudem nahe, bei mehr Prozessoren auch die Problemgröße zu steigern, also etwa größere Netzwerke oder Datenbanken zu bearbeiten, anstatt nur dieselbe Suche zu beschleunigen.
 
 \subsubsection{Optimierung der Implementierung des Vergleichs}
 \label{sec:impl_opt}
 
-Die Ursachenanalyse in Abschnitt~\ref{sec:ursachen} hat gezeigt, dass die Referenzimplementierung des Subgraph Algorithmus die Tabelle der längsten gemeinsamen Teilsequenz für jede Rotation vollständig aufbaut und in reinem Python arbeitet. Daraus ergeben sich drei Hebel, die die asymptotische Schranke $O(n^3)$ nicht verändern, die gemessene Zeit aber erheblich senken können. Erstens kann die Suche über die Rotationen abgebrochen werden, sobald eine Rotation die Bedingung erfüllt; im günstigen Fall genügt dann eine einzige Tabelle. Zweitens lässt sich die Tabelle zeilenweise abbrechen, wenn bereits feststeht, dass die geforderte Mindestlänge nicht mehr erreichbar ist. Drittens kann die innere Schleife mit \texttt{numpy} vektorisiert oder mit \texttt{numba} bzw.\ als C++-Erweiterung kompiliert werden. Da der Vergleich nach der Abschätzung in Abschnitt~\ref{sec:parallel} etwa $95\,\%$ der Laufzeit ausmacht, wirkt jede Beschleunigung des Einzelvergleichs fast vollständig auf die Gesamtzeit durch; zusammen mit den Prozessen multiplizieren sich die Gewinne. Diese Maßnahmen müssen allerdings durch die differenziellen Tests aus Abschnitt~\ref{sec:beide_richtungen} abgesichert werden, damit die Optimierung das Ergebnis nicht verändert.
+Die Ursachenanalyse in Abschnitt~\ref{sec:ursachen} hat gezeigt, dass die Referenzimplementierung des Subgraph Algorithmus die Tabelle der längsten gemeinsamen Teilsequenz für jede Rotation vollständig aufbaut und in reinem Python arbeitet. Daraus ergeben sich drei Hebel, die die asymptotische Schranke $O(n^3)$ nicht verändern, die gemessene Zeit aber erheblich senken können. Erstens kann die Suche über die Rotationen abgebrochen werden, sobald eine Rotation die Bedingung erfüllt; im günstigen Fall genügt dann eine einzige Tabelle. Zweitens lässt sich die Tabelle zeilenweise abbrechen, wenn bereits feststeht, dass die geforderte Mindestlänge nicht mehr erreichbar ist. Drittens kann die innere Schleife mit \texttt{numpy} vektorisiert oder mit \texttt{numba} bzw.\ als C++-Erweiterung kompiliert werden. Die Wahl der Anbindung ist beim C++-Weg keine Nebensache: Abschnitt~\ref{sec:lib_anbindung} begründet, weshalb eine Library der CLI vorzuziehen ist. Da der Vergleich nach der Abschätzung in Abschnitt~\ref{sec:parallel} etwa $95\,\%$ der Laufzeit ausmacht, wirkt jede Beschleunigung des Einzelvergleichs fast vollständig auf die Gesamtzeit durch; zusammen mit den Prozessen multiplizieren sich die Gewinne. Diese Maßnahmen müssen allerdings durch die differenziellen Tests aus Abschnitt~\ref{sec:beide_richtungen} abgesichert werden, damit die Optimierung das Ergebnis nicht verändert.
 
 \subsubsection{GPU-Beschleunigung der Signatur- und LCS-Berechnung}
 
@@ -1261,7 +1417,7 @@ Die in Abschnitt~\ref{sec:vergleich} durchgeführten Experimente beschränken si
 	\item \textbf{Reale biologische Netzwerke:} Statt $G(n,p)$-Zufallsgraphen sollten Benchmark-Datensätze wie die KEGG-Pathway-Datenbank (metabolische Netzwerke) oder der DIP/STRING-Datensatz (Protein-Interaktionsnetzwerke) verwendet werden, da reale biologische Netzwerke charakteristische Eigenschaften (Skalenfreiheit, hohe Clusterkoeffizienten, Hub-Knoten) aufweisen, die sowohl das Pruning-Verhalten von VF2/RI als auch die Verteilung der Zeilenkomponenten $\rho(A)$ des Subgraph Algorithmus systematisch beeinflussen können.
 	\item \textbf{Größere $n$:} Die hier durchgeführten Experimente decken $n\le 18$ ab (entsprechend dem Wertebereich $\{3,\ldots,20\}$ aus der Gen-DB-Generierung, Abschnitt~\ref{sec:evaluation}). Für $n>20$ (z.\,B.\ größere Stoffwechselnetzwerke mit $50$--$200$ Knoten) wäre zu erwarten, dass die kubische Schranke des Subgraph Algorithmus zunehmend dominiert, während VF2/RI auf solchen Graphen — je nach Dichte und Symmetriegrad — entweder weiterhin sub-exponentiell bleiben (geringe Dichte, viele eindeutige Labels) oder in den exponentiellen Worst Case geraten (hohe Symmetrie, viele Automorphismen). Eine systematische Messreihe für $n\in\{20,30,50,100\}$ wäre daher ein wichtiger nächster Schritt.
 	\item \textbf{Statistische Signifikanz:} Die hier verwendeten $8$ bzw.\ $5$ Wiederholungen pro Datenpunkt (Tabelle~\ref{tab:runtime}, Abbildung~\ref{fig:scaling_cmp}) genügen für eine erste Tendenzaussage, jedoch nicht für eine belastbare statistische Aussage (z.\,B.\ Konfidenzintervalle, $t$-Test auf Mittelwertunterschiede). Eine erweiterte Messreihe mit $\ge 100$ Wiederholungen pro Konfiguration und expliziter Angabe von Konfidenzintervallen ($95\,\%$) wäre für eine Publikation in einer Fachzeitschrift erforderlich.
-	\item \textbf{Implementierungssprache:} Die hier verwendete Referenzimplementierung des Subgraph Algorithmus ist reines Python mit \texttt{numpy}, während \texttt{networkx} ebenfalls in Python implementiert ist (mit C-Erweiterungen für einige Kernoperationen). Ein faircr Vergleich auf Implementierungsebene (z.\,B.\ beide Verfahren in C++ oder beide in einer JIT-kompilierten Umgebung wie \texttt{numba}) würde den Einfluss des Implementierungs-Overheads von der algorithmischen Komplexität trennen und die in Satz~\ref{satz:laufzeit} bewiesene asymptotische Aussage von konstanten Faktoren isolieren.
+	\item \textbf{Implementierungssprache:} Die hier verwendete Referenzimplementierung des Subgraph Algorithmus ist reines Python mit \texttt{numpy}, während \texttt{networkx} ebenfalls in Python implementiert ist (mit C-Erweiterungen für einige Kernoperationen). Ein faircr Vergleich auf Implementierungsebene (z.\,B.\ beide Verfahren in C++ oder beide in einer JIT-kompilierten Umgebung wie \texttt{numba}) würde den Einfluss des Implementierungs-Overheads von der algorithmischen Komplexität trennen und die in Satz~\ref{satz:laufzeit} bewiesene asymptotische Aussage von konstanten Faktoren isolieren. Für C++ ist dabei die Library-Anbindung (Abschnitt~\ref{sec:lib_anbindung}) die geeignete Messgrundlage, weil sie Prozessstart und JSON-Pfad aus dem Vergleich entfernt.
 \end{itemize}
 
 
@@ -1290,13 +1446,70 @@ Das aktuelle Frontend zeigt Adjazenzmatrizen als Zahlentabellen und Listen. Eine
 
 Der größte offene Punkt auf Anwendungsebene ist der Nachweis, dass die Suche für Biologinnen und Biologen nützliche Treffer liefert. Dazu sollten bekannte Motive (etwa Teilpfade der Glykolyse oder des p53-Netzwerks) gegen Datensätze aus öffentlichen Datenbanken gesucht und die Treffer von Fachleuten bewertet werden. Maßgeblich sind dabei die Präzision (wie viele Treffer sind fachlich sinnvoll) und die Vollständigkeit (werden bekannte Vorkommen gefunden). Die Ergebnisse ließen sich mit den Treffern etablierter Verfahren wie VF2 oder RI vergleichen und würden zeigen, an welchen Stellen die schwächere Relation $\preceq$ zu Abweichungen führt. Erst eine solche Validierung beantwortet, ob die zyklische Relation für die Praxis hinreichend ist oder ob die gefärbte Variante und eine Verfeinerung durch VF2 als Nachprüfung der Treffer nötig sind.
 
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld G: Kopplung und Schnittstellen}
+
+Dieses Themenfeld überträgt die Position aus Abschnitt~\ref{sec:fremde_beschreibungen} in konkrete Erweiterungen. Es ist so geordnet, dass jeder Schritt den nächsten absichert: Zuerst wird festgelegt, was jede Implementierung des Vergleichs zusichern muss, dann wird die Library-Anbindung gebaut, danach wird für den Fall, dass sie nicht tragfähig ist, eine Übergangslösung bewertet. Ein Messprogramm macht die Ergebnisse vergleichbar, und eine Kriterienliste prüft künftige Bausteine, bevor sie in das System aufgenommen werden.
+
+\subsubsection{Gemeinsame Schnittstellenspezifikation und Konformitätstests}
+\label{sec:konformitaet}
+
+Gegenwärtig ist die Gleichheit der beiden Backends eine Laufzeitprüfung des Experiments: Das Skript vergleicht die Treffer-IDs und die aktive Implementierung (Abschnitt~\ref{sec:backend_metriken}). Besser ist es, die Zusicherung an die Schnittstelle zu binden. Die Spezifikation legt fest, welche Ergebniswerte der Vergleich liefert (A ist in B enthalten, B ist in A enthalten, keine Teilgraph-Beziehung, strukturell gleich mit der jeweiligen Wahl des beizubehaltenden Graphen), nach welcher Regel bei identischen Graphen anhand der Kantenzahl entschieden wird, wie Fehler gemeldet werden und welche Eingaben zulässig sind (quadratische $0/1$-Matrizen).
+
+Aus der Spezifikation folgt eine Suite von Konformitätstests, die gegen \emph{jede} Implementierung läuft, also gegen den Python-Algorithmus, die Library und gegebenenfalls die CLI. Die Suite enthält feste Beispielpaare mit bekannten Ergebnissen, zufällige Paare mit festem Seed und die Eigenschaftstests aus Themenfeld A, etwa dass jedes Netzwerk Teil von sich selbst ist und dass der Vergleich nicht von der zyklischen Anordnung der Zeilenkomponenten abhängt. Zwei Implementierungen gelten als austauschbar, wenn sie die Suite bestehen. Der Abgleich der Treffer-IDs im Experiment wird dadurch von einer Laufzeitkontrolle zu einer zusätzlichen Absicherung. Zugleich wandert die fachliche Regel für identische Graphen an die Stelle, an der sie hingehört, nämlich in die Schnittstelle des Algorithmus.
+
+\subsubsection{Library-Anbindung des C++-Kerns}
+\label{sec:lib_anbindung}
+
+Die Library-Anbindung ersetzt den Prozess je Vergleich durch einen Funktionsaufruf im Worker-Prozess. Für den Entwurf sind vier Entscheidungen zu treffen.
+
+\begin{itemize}
+	\item \textbf{Granularität der Schnittstelle.} Die Funktion sollte nicht ein einzelnes Paar, sondern einen Block von Kandidaten gegen eine Query vergleichen. Der Block entspricht der Chunk-Größe von $256$ im Prozess-Pool. Dadurch fällt der Aufrufaufwand einmal je Block an, und die Query muss nicht für jeden Kandidaten übergeben werden, was zugleich die in Abschnitt~\ref{sec:weiter_parallel} beschriebene Maßnahme ``Query nur einmal pro Task übertragen'' umsetzt.
+	\item \textbf{Datenübergabe.} Die Matrizen sollten als zusammenhängender Speicher übergeben werden, etwa als \texttt{numpy}-Array vom Typ \texttt{uint8} mit Form $(C,n,n)$, statt als JSON-Text. Die Serialisierung entfällt, und die Übergabe benötigt keine Kopie der Daten, wenn die Anbindung den Speicher direkt liest.
+	\item \textbf{Anbindungsmechanismus.} Infrage kommen ein Erweiterungsmodul, das mit einem Werkzeug wie \texttt{pybind11} oder \texttt{nanobind} gebaut wird, oder eine Shared Library mit C-Schnittstelle, die über \texttt{ctypes} oder \texttt{cffi} geladen wird. Das Erweiterungsmodul erscheint in der Beschreibung des Aufrufers als gewöhnliches Python-Modul mit Ausnahmen; die C-Schnittstelle ist einfacher zu bauen, braucht aber eigenen Übersetzungscode für Fehler und Datentypen. Die Entscheidung sollte nach der Frage getroffen werden, welche Variante die Grenze am schmalsten hält.
+	\item \textbf{Auslieferung und Rückfall.} Die Binärdatei ist plattformabhängig. Die Konfiguration sollte wie bisher einen Pfad oder ein Paket benennen, und der Rückfall auf die Python-Implementierung bleibt erhalten. Er ist dann ein Wechsel hinter derselben Schnittstelle, den die Konformitätstests absichern.
+\end{itemize}
+
+Offen bleibt der Aufwand für Bau und Test je Plattform. Er fällt einmalig an und lässt sich in die Continuous-Integration-Pipeline aus Themenfeld D verlegen, die ohnehin um automatisierte Testläufe erweitert werden soll. Die Annahme, dass die Library schneller ist als die CLI, folgt aus der Struktur der Anbindung, ist aber nicht gemessen; sie wird mit dem Messprogramm in Abschnitt~\ref{sec:kopplung_messung} geprüft.
+
+\subsubsection{Batch- und persistente Prozessschnittstellen als Übergangslösung}
+\label{sec:batch_cli}
+
+Falls eine Library kurzfristig nicht umsetzbar ist, lässt sich die CLI-Anbindung entschärfen, ohne ihre Grenze zu ändern. Zwei Varianten stehen zur Wahl: ein Batch-Aufruf, bei dem ein Prozess viele Vergleiche bearbeitet und die Ergebnisse gesammelt zurückgibt, und ein persistenter Prozess, der Aufträge über \texttt{stdin} entgegennimmt und über \texttt{stdout} beantwortet. Bei $B$ Vergleichen je Prozessaufruf teilt sich der Prozessstart auf alle Vergleiche auf. Eine Modellrechnung, die auf der gemessenen Mindestlatenz von $10{,}081$ Millisekunden beruht und die Serialisierungskosten $\delta_{\mathrm{ser}}$ je Paar getrennt führt, ergibt
+\[
+	\delta_{\mathrm{eff}}(B) \approx \frac{10{,}081\,\mathrm{ms}}{B} + \delta_{\mathrm{ser}}.
+\]
+Mit $B=256$ läge der Prozessanteil rechnerisch bei rund $0{,}04$ Millisekunden je Vergleich. $\delta_{\mathrm{ser}}$ ist nicht gemessen; der Wert zeigt nur, dass sich der Prozessanteil durch Bündelung beseitigen lässt, während die JSON-Übersetzung bestehen bleibt. Die Übergangslösung löst damit das Kostenproblem der CLI, nicht aber das Beschreibungsproblem: Die fachlichen Regeln und die Fehlerabbildung bleiben im Übersetzungscode. Sie sollte deshalb nur gewählt werden, wenn die Library nach der Messung nicht tragfähig ist, und in diesem Fall ebenfalls gegen die Konformitätstests laufen.
+
+\subsubsection{Messprogramm für die Kopplungsfrage}
+\label{sec:kopplung_messung}
+
+Die ausstehende Untersuchung sollte vier Anbindungen mit denselben Queries, denselben Kandidaten und derselben Worker-Zahl vergleichen: den Python-Algorithmus, die Library, die Batch-CLI und die bisherige Prozess-pro-Vergleich-CLI. Sie ergänzt die in Abschnitt~\ref{sec:par_erweiterung} genannten Erweiterungen der Parallelisierungsmessung und folgt denselben Regeln: Wiederholungen je Konfiguration, damit Streuungsmaße und Konfidenzintervalle berechnet werden können, mehr als sechs Queries und die Angabe der Hard- und Softwareumgebung.
+
+Neu ist die Forderung, die Zeit nach Phasen auszuweisen: Datenbankabfrage, Übergabe der Daten an den Rechenkern, Rechenzeit des Kerns und Auswertung der Ergebnisse. Aus den Differenzen lässt sich $\delta$ aus Bemerkung~\ref{bem:schnittstellenkosten} je Anbindung bestimmen und das erweiterte Kostenmodell prüfen. Die Untersuchung sollte vier Hypothesen testen: Erstens ist $\delta$ bei der Library um Größenordnungen kleiner als bei der CLI. Zweitens ist die Gesamtsuche mit der Library schneller als mit dem Python-Algorithmus, falls der native Kern tatsächlich schneller ist. Drittens liefern alle Anbindungen für jede Query dieselben Treffer. Viertens bleiben die Skalierungsaussagen aus Abschnitt~\ref{sec:parallel} bei der Library erhalten, bei der CLI hingegen nicht notwendig. Die Messung sollte außerdem auf mindestens zwei Betriebssystemen laufen, weil die Kosten des Prozessstarts vom Betriebssystem abhängen können.
+
+\subsubsection{Prüfung künftiger Fremdmodule}
+\label{sec:fremd_pruefung}
+
+Mehrere Erweiterungen dieses Ausblicks führen weitere Bausteine in das System ein. Damit sie nicht jeweils neu begründet werden müssen, genügen fünf Prüffragen: Ist die Grenze schmal und benannt? Liegen fachliche Regeln, etwa die Ergebnisabbildung, auf einer Seite der Grenze? Ist der Schnittstellenaufwand $\delta$ im Kostenmodell ausgewiesen? Lässt sich der Baustein mit denselben Mitteln testen wie der Rest des Systems? Rechtfertigt der Zweck, etwa Isolation oder Skalierung über Rechner, einen Wechsel der Beschreibung? Für die Maßnahmen des Ausblicks ergibt sich folgende Einordnung:
+
+\begin{itemize}
+	\item \textbf{Vektorisierung mit \texttt{numpy} und Kompilierung mit \texttt{numba}} (Abschnitt~\ref{sec:impl_opt}): bleiben in der Beschreibung des Aufrufers und erfüllen die Fragen ohne Weiteres.
+	\item \textbf{C++-Erweiterung oder Library}: erfüllt die Fragen, sofern die fachliche Regel in die Schnittstelle wandert und die Konformitätstests bestehen.
+	\item \textbf{GPU-Beschleunigung}: Die Übergabe als Tensor der Form $(C,n,n)$ entspricht der blockweisen Schnittstelle und hält die Grenze schmal. Würde dagegen je Kandidat übertragen, überstiege der Transferaufwand voraussichtlich den Gewinn; die Frage nach $\delta$ ist deshalb vor der Umsetzung zu beantworten.
+	\item \textbf{Verteilung mit Apache Spark}: führt eine weitere Beschreibung mit eigenem Datenformat ein. Der Zweck, Skalierung über Rechner, kann den Bruch rechtfertigen, sofern die Grenze grob ist, also einmal je Partition und nicht je Vergleich verläuft.
+	\item \textbf{VF2 in der Hybridstrategie}: Über \texttt{networkx} bleibt der Baustein in der Beschreibung des Backends. Eine externe Implementierung wie RI \cite{bonnici2013} wäre je nach Anbindung ein Fremdmodul und würde dieselbe Prüfung durchlaufen.
+	\item \textbf{Asynchrone Suche und Metriken}: betreffen Schichtgrenzen, die ohnehin über benannte Schnittstellen laufen.
+\end{itemize}
+
+
 % =====================================================================
 \subsection{Priorisierung der nächsten Entwicklungsschritte}
 \label{sec:prio}
 
-Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert, danach die Messbarkeit herstellt und erst anschließend die Laufzeit optimiert. Die Parallelisierung der Vergleiche, die zuvor als eine von mehreren möglichen Optimierungen aufgeführt war, ist inzwischen umgesetzt und gemessen; sie entfällt daher als eigener Entwicklungsschritt, nicht jedoch ihre Verfeinerung.
+Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert, danach die Messbarkeit herstellt und erst anschließend die Laufzeit optimiert. Die Parallelisierung der Vergleiche, die zuvor als eine von mehreren möglichen Optimierungen aufgeführt war, ist inzwischen umgesetzt und gemessen; sie entfällt daher als eigener Entwicklungsschritt, nicht jedoch ihre Verfeinerung. Die Kopplungsfrage (Themenfeld G) steht früh in der Reihenfolge, weil sie bestimmt, auf welcher Anbindung spätere Messungen und Optimierungen aufbauen.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 	\centering
 	\small
 	\caption{Vorgeschlagene Reihenfolge der Weiterentwicklung.}
@@ -1306,22 +1519,25 @@ Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, d
 		Nr. & Maßnahme & Nutzen & Aufwand \\
 		\midrule
 		1 & Differenzielle Tests der Vorauswahl, Eigenschaftstests (Abschnitt~\ref{sec:ausblick}, Feld A) & sichert Korrektheit und alle weiteren Optimierungen ab & gering \\
-		2 & Phasen- und Metrikprotokollierung (Feld D) & macht seriellen Anteil messbar & gering \\
-		3 & Wiederholung der Parallelisierungsmessung (Feld E) & belastbare Aussagen zu $S(p)$ & gering bis mittel \\
-		4 & Suche in beide Richtungen (Feld A) & vollständige Suchsemantik & mittel \\
-		5 & Optimierung des Einzelvergleichs: Abbruch, Vektorisierung (Feld C) & wirkt fast vollständig auf die Gesamtzeit & mittel \\
-		6 & Verfeinerte Parallelisierung: strömendes Laden, Query pro Task, Blockgröße (Feld C) & kleinerer serieller Anteil & mittel \\
-		7 & Asynchrone Suche mit Teilergebnissen (Feld D) & bessere Bedienbarkeit bei langen Suchen & mittel \\
-		8 & Beschriftete Relation, Label-Indizes (Felder A und B) & fachlich sinnvollere und kleinere Trefferlisten & mittel bis hoch \\
-		9 & Mehrdimensionaler Index, Hash-Index (Feld B) & schärfere Vorauswahl & mittel \\
-		10 & Hybridstrategie mit VF2 und Fallback (Feld C) & Geschwindigkeit bei garantierter Schranke & hoch \\
-		11 & Validierung mit realen Netzwerken (Feld F) & Nachweis der Praxistauglichkeit & hoch \\
-		12 & GPU-Beschleunigung, verteilte Ausführung (Feld C) & Skalierung für sehr große Datenbanken & hoch \\
+		2 & Phasen- und Metrikprotokollierung (Feld D) & macht seriellen Anteil und Schnittstellenkosten messbar & gering \\
+		3 & Schnittstellenspezifikation und Konformitätstests der Backends (Feld G) & Ergebnisregeln an einer Stelle, austauschbare Implementierungen & gering bis mittel \\
+		4 & Wiederholung der Parallelisierungsmessung (Feld E) & belastbare Aussagen zu $S(p)$ & gering bis mittel \\
+		5 & Library-Anbindung des C++-Kerns und Messung der Kopplung (Feld G) & schmale Grenze, Rechenkern unter gleichen Bedingungen messbar & mittel \\
+		6 & Batch- oder persistente CLI-Schnittstelle, nur falls die Library nicht tragfähig ist (Feld G) & beseitigt den Prozessstart je Vergleich & gering bis mittel \\
+		7 & Suche in beide Richtungen (Feld A) & vollständige Suchsemantik & mittel \\
+		8 & Optimierung des Einzelvergleichs: Abbruch, Vektorisierung (Feld C) & wirkt fast vollständig auf die Gesamtzeit & mittel \\
+		9 & Verfeinerte Parallelisierung: strömendes Laden, Query pro Task, Blockgröße (Feld C) & kleinerer serieller Anteil & mittel \\
+		10 & Asynchrone Suche mit Teilergebnissen (Feld D) & bessere Bedienbarkeit bei langen Suchen & mittel \\
+		11 & Beschriftete Relation, Label-Indizes (Felder A und B) & fachlich sinnvollere und kleinere Trefferlisten & mittel bis hoch \\
+		12 & Mehrdimensionaler Index, Hash-Index (Feld B) & schärfere Vorauswahl & mittel \\
+		13 & Hybridstrategie mit VF2 und Fallback (Feld C) & Geschwindigkeit bei garantierter Schranke & hoch \\
+		14 & Validierung mit realen Netzwerken (Feld F) & Nachweis der Praxistauglichkeit & hoch \\
+		15 & GPU-Beschleunigung, verteilte Ausführung, jeweils nach den Prüffragen aus Feld G (Feld C) & Skalierung für sehr große Datenbanken & hoch \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-Die Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche (Nummern~1 und~4), empirisch belastbare Aussagen über ihre Leistung (Nummern~2, 3 und~11) sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen (Nummern~5 bis~10 und~12). Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke, etwa der Subgraph Algorithmus, als Fallback vorgesehen ist. Wo die Maßnahmen voneinander abhängen, gilt: Die Tests (Nr.~1) müssen vor jeder Optimierung des Vergleichs (Nr.~5 und~10) stehen, und die Protokollierung (Nr.~2) vor der Verfeinerung der Parallelisierung (Nr.~6), weil sonst nicht erkennbar ist, ob eine Änderung den seriellen Anteil tatsächlich senkt.
+Die Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche (Nummern~1, 3 und~7), empirisch belastbare Aussagen über ihre Leistung (Nummern~2, 4, 5 und~14) sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen (Nummern~6 sowie~8 bis~13 und~15). Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke, etwa der Subgraph Algorithmus, als Fallback vorgesehen ist. Wo die Maßnahmen voneinander abhängen, gilt: Die Tests (Nr.~1) und die Konformitätstests (Nr.~3) müssen vor jeder Optimierung des Vergleichs (Nr.~8 und~13) stehen, und die Protokollierung (Nr.~2) vor der Verfeinerung der Parallelisierung (Nr.~9), weil sonst nicht erkennbar ist, ob eine Änderung den seriellen Anteil tatsächlich senkt. Die Library-Messung (Nr.~5) geht der Entscheidung über die Übergangslösung (Nr.~6) voraus und liefert die Grundlage dafür, auf welchem Weg der native Rechenkern weiter beschleunigt wird (Nr.~8 und~15).
 
 % =====================================================================
 \subsection{Abschließende Bemerkung}
@@ -1331,7 +1547,9 @@ Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen N
 
 Die Ergebnisse zeigen aber auch, wo die Grenzen des gegenwärtigen Stands liegen. Eine vollständige Suche über eine Datenbank mit einer Million Einträgen dauert bei großen Suchräumen mehrere Minuten, und die Parallelisierung senkt diese Zeit um einen konstanten Faktor, nicht in der Größenordnung. Der Weg zu interaktiven Antwortzeiten führt deshalb über mehrere sich ergänzende Maßnahmen: eine schärfere Vorauswahl, einen schnelleren Einzelvergleich, eine Verfahrenswahl nach Graphgröße und eine Bedienung, die Teilergebnisse früh anzeigt. Zugleich bleibt zu klären, ob die zyklische Relation $\preceq$ die fachlichen Anforderungen biologischer Anwender erfüllt, was eine Validierung an realen Netzwerken und die Einbeziehung der Knotenlabels verlangt. Gen-DB bietet dafür eine modulare Architektur, eine nachvollziehbare Kandidatenreduktion und ein reproduzierbares Experimentierwerkzeug. Die Arbeit benennt zugleich die Korrektheits- und Evaluationsschritte, die für den Übergang von der prototypischen Realisierung zu einem belastbar validierten Suchsystem erforderlich sind.
 
-\begin{thebibliography}{9}
+Der zentrale Gedanke der Trennung gilt nicht nur für die beiden Stufen der Such-Pipeline, sondern auch für die Beschreibungen, in denen Gen-DB gebaut ist. Die Untersuchung der C++-Anbindung hat gezeigt, dass eine Grenze, die an den Prozess, das Textformat und den Exit-Code gelegt wird, Aufwand erzeugt, der weder zum Algorithmus noch zur Anwendung gehört: Übersetzungscode, doppelt verteilte fachliche Regeln, Kontrollen gegen stille Abweichungen und eine Mindestlatenz, die den Rechenkern in der Messung verdeckt. Eine lose Kopplung über eine Library hält die Grenze schmal und erlaubt es allen Beteiligten, das System mit einem klaren Trennungsbewusstsein zu analysieren, weiterzuentwickeln und wiederzuverwenden. Diese Position ist eine begründete Gestaltungsentscheidung und noch kein gemessenes Ergebnis; die Library-Anbindung und die C++-Suchreihe stehen aus, und der Ausblick benennt dafür die nächsten Schritte von der Schnittstellenspezifikation bis zum Messprogramm. Damit schließt sich der Bogen der Arbeit: Gen-DB gewinnt seine Analysierbarkeit daraus, dass seine Teile klar getrennt sind, und es behält sie nur, wenn auch künftige Erweiterungen ihre Grenzen schmal und benannt halten.
+
+\begin{thebibliography}{99}
 
 \bibitem{epp2026subgraph}
 Stephan Epp.
@@ -1412,6 +1630,91 @@ In: Proceedings of the AFIPS Spring Joint Computer Conference, 1967.
 John L. Gustafson.
 \emph{Reevaluating Amdahl's Law}.
 Communications of the ACM, 31(5):532--533, 1988.
+
+\bibitem{cook1971}
+Stephen A. Cook.
+\emph{The Complexity of Theorem-Proving Procedures}.
+In: Proceedings of the 3rd Annual ACM Symposium on Theory of Computing (STOC), S.~151--158, 1971.
+
+\bibitem{karp1972}
+Richard M. Karp.
+\emph{Reducibility Among Combinatorial Problems}.
+In: R. E. Miller, J. W. Thatcher (Hrsg.), Complexity of Computer Computations, Plenum Press, S.~85--103, 1972.
+
+\bibitem{garey1979}
+Michael R. Garey, David S. Johnson.
+\emph{Computers and Intractability: A Guide to the Theory of NP-Completeness}.
+W. H. Freeman, 1979.
+
+\bibitem{impagliazzo2001}
+Russell Impagliazzo, Ramamohan Paturi.
+\emph{On the Complexity of k-SAT}.
+Journal of Computer and System Sciences, 62(2):367--375, 2001.
+
+\bibitem{bringmann2015}
+Karl Bringmann, Marvin Künnemann.
+\emph{Quadratic Conditional Lower Bounds for String Problems and Dynamic Time Warping}.
+In: Proceedings of FOCS 2015, S.~79--97.
+
+\bibitem{hirschberg1975}
+Daniel S. Hirschberg.
+\emph{A Linear Space Algorithm for Computing Maximal Common Subsequences}.
+Communications of the ACM, 18(6):341--343, 1975.
+
+\bibitem{mckay2014}
+Brendan D. McKay, Adolfo Piperno.
+\emph{Practical Graph Isomorphism, II}.
+Journal of Symbolic Computation, 60:94--112, 2014.
+
+\bibitem{babai2016}
+László Babai.
+\emph{Graph Isomorphism in Quasipolynomial Time}.
+In: Proceedings of the 48th Annual ACM Symposium on Theory of Computing (STOC), S.~684--697, 2016.
+
+\bibitem{carletti2018}
+Vincenzo Carletti, Pasquale Foggia, Alessia Saggese, Mario Vento.
+\emph{Challenging the Time Complexity of Exact Subgraph Isomorphism for Huge and Dense Graphs with VF3}.
+IEEE Transactions on Pattern Analysis and Machine Intelligence, 40(4):804--818, 2018.
+
+\bibitem{lee2013}
+Jinsoo Lee, Wook-Shin Han, Romans Kasperovics, Jeong-Hoon Lee.
+\emph{An In-depth Comparison of Subgraph Isomorphism Algorithms in Graph Databases}.
+Proceedings of the VLDB Endowment, 6(2):133--144, 2013.
+
+\bibitem{yan2004}
+Xifeng Yan, Philip S. Yu, Jiawei Han.
+\emph{Graph Indexing: A Frequent Structure-based Approach}.
+In: Proceedings of ACM SIGMOD, S.~335--346, 2004.
+
+\bibitem{milo2002}
+Ron Milo, Shai Shen-Orr, Shalev Itzkovitz, Nadav Kashtan, Dmitri Chklovskii, Uri Alon.
+\emph{Network Motifs: Simple Building Blocks of Complex Networks}.
+Science, 298(5594):824--827, 2002.
+
+\bibitem{barabasi1999}
+Albert-László Barabási, Réka Albert.
+\emph{Emergence of Scaling in Random Networks}.
+Science, 286(5439):509--512, 1999.
+
+\bibitem{kanehisa2000}
+Minoru Kanehisa, Susumu Goto.
+\emph{KEGG: Kyoto Encyclopedia of Genes and Genomes}.
+Nucleic Acids Research, 28(1):27--30, 2000.
+
+\bibitem{szklarczyk2019}
+Damian Szklarczyk et al.
+\emph{STRING v11: Protein--Protein Association Networks with Increased Coverage, Supporting Functional Discovery in Genome-Wide Experimental Datasets}.
+Nucleic Acids Research, 47(D1):D607--D613, 2019.
+
+\bibitem{harris2020}
+Charles R. Harris et al.
+\emph{Array Programming with NumPy}.
+Nature, 585:357--362, 2020.
+
+\bibitem{lam2015}
+Siu Kwan Lam, Antoine Pitrou, Stanley Seibert.
+\emph{Numba: A LLVM-based Python JIT Compiler}.
+In: Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC, 2015.
 
 \end{thebibliography}
 
