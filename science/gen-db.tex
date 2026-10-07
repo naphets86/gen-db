@@ -499,7 +499,7 @@ als untere Näherung dargestellt (die zusätzliche Kantenbedingung reduziert die
 
 Die formalen Resultate aus Abschnitt~\ref{sec:pipeline} zeigen, dass die Kombination aus relationalem Pre-Filter (Lemma~\ref{lem:notwendig}, Korollar~\ref{kor:prefilter}) und dem $O(n^3)$-Subgraph Algorithmus \cite{epp2026subgraph} eine praktisch skalierbare Lösung für die Subgraph-Suche in Datenbanken mit $N=10^6$ Einträgen ermöglicht, \emph{sofern} eine Kandidatenobergrenze $K$ gewählt wird. Diese Obergrenze erkauft sich Konstantzeit-Verhalten (im Sinne von $N$) jedoch um den Preis einer potentiellen Unvollständigkeit (Verlust der Garantie aus Satz~\ref{satz:korrektheit}). Abschnitt~\ref{sec:schluss} adressiert dieses Spannungsfeld.
 
-\section{Experimenteller Vergleich}
+\section{Experimenteller Vergleich VF2-Algorithmus}
 \label{sec:vergleich}
 
 Die in Abschnitt~\ref{sec:evaluation} präsentierten Diagramme beruhen auf einem \emph{analytischen} Modell der Laufzeit gemäß Satz~\ref{satz:pipeline}. Um die praktische Relevanz dieses Modells zu untermauern, wird in diesem Abschnitt eine \emph{empirische} Messreihe durchgeführt, in der die Referenzimplementierung des Subgraph Algorithmus \cite{epp2026subgraph} direkt gegen eine etablierte Implementierung des VF2-Algorithmus \cite{cordella2004} (über die Bibliothek \texttt{networkx} \cite{networkx}) auf identischen Zufallsgraphen verglichen wird. Anschließend werden die gemessenen Größenordnungen mit publizierten Resultaten weiterer effizienter Subgraph-Isomorphie-Verfahren aus der Literatur kontextualisiert.
@@ -824,7 +824,7 @@ Die Ergebnisse sind als erste empirische Einordnung zu lesen und aus folgenden G
 
 Die parallele Ausführung der Kandidatenvergleiche über einen Prozess-Pool beschleunigt die Suche in Gen-DB auf dem untersuchten Rechner mit zwei logischen Prozessoren um den Faktor $1{,}90$ (Effizienz $95\,\%$); der Gewinn ist für alle sechs Anfragen nahezu gleich. Ein dritter Worker verschlechtert die Zeit um rund $8\,\%$, da keine zusätzliche Rechenkapazität zur Verfügung steht. Die Suchzeit wächst unabhängig von der Worker-Zahl linear mit der Kandidatenzahl und erreicht ohne Kandidatenlimit bei großen Suchräumen mehrere Minuten, sodass die Parallelisierung die Antwortzeit um einen konstanten Faktor senkt, aber die Notwendigkeit eines selektiveren Pre-Filters oder eines Kandidatenlimits nicht beseitigt. Für die Praxis folgt daraus die Empfehlung, die Worker-Anzahl an die Zahl der logischen Prozessoren anzupassen. Die offene Frage, wie weit sich der Gewinn auf Rechnern mit deutlich mehr Prozessoren fortsetzt, soll eine Wiederholung der Messreihe mit der vollen Anfragezahl klären.
 
-\section{Experimenteller Vergleich der Python- und C++-Implementierung}
+\section{Experimenteller Vergleich Python- und C++-Implementierung}
 \label{sec:backends}
 
 Die vorangegangene Untersuchung hat gezeigt, dass sich die Suchzeit durch mehrere Worker-Prozesse deutlich reduzieren lässt. Sie beantwortet jedoch nicht, ob auch der einzelne Subgraph-Vergleich schneller ausgeführt werden kann. Insbesondere verursacht die Python-Implementierung bei sehr vielen Kandidaten beträchtliche Gesamtkosten. Daher liegt die Vermutung nahe, dass eine native Implementierung in C++ die Vergleichsphase beschleunigt. Das lokale Repository \,\texttt{csubgraph} stellt hierfür eine C++17-Implementierung des in dieser Arbeit behandelten Algorithmus und ein Kommandozeilenprogramm zur Verfügung.
@@ -995,6 +995,9 @@ Für eine belastbare Folgeuntersuchung sollte der C++-Kern zunächst ohne Prozes
 Der bisherige Mikrobenchmark zeigt keinen Vorteil des C++-Backends auf der Ebene des vollständigen Einzelaufrufs: Die C++-CLI benötigt im Mittel $11{,}42$ Millisekunden gegenüber $2{,}70$ Millisekunden für den direkten Python-Aufruf. Zugleich beansprucht ein trivialer C++-CLI-Aufruf bereits rund $10{,}08$ Millisekunden. Das legt nahe, dass Prozessstart und JSON-Schnittstelle den möglichen Vorteil des nativen Algorithmuskerns überdecken. Die überschlägige Differenz der Mittelwerte ist jedoch keine isolierte Messung dieses Kerns.
 
 Zum ausgewerteten Zeitpunkt war der längere Suchvergleich noch im Gang. Die Python-Baseline über sechs Queries dauerte insgesamt $1.301$ Sekunden; C++-Gesamtzeit, Trefferübereinstimmung und Fehlerzahl standen noch aus. Damit bleibt die zentrale Erwartung dieser Untersuchung, dass C++ die tatsächliche Gen-DB-Suche beschleunigt, zunächst unbestätigt. Das Kapitel dokumentiert bewusst diesen Zwischenstand; eine endgültige Bewertung muss nach Abschluss der C++-Messreihe ergänzt werden.
+
+\subsection{Fremde Beschreibungen}
+Die Anreicherung mit einem Fremdmodul in einer anderen Beschreibung erscheint mir sehr unpassend und beschreibungstechnisch nicht durchgängig. Eine lose Kopplung dagegen, angenommen durch eine C++ Library und nicht durch eine C++ CLI, erlaubt eine klarere Trennung, bei der alle beteiligten Mitgestalter dieses Software Systems mit einem klaren Trennungsbewusstsein dieses System mitgestalten. Ein System, das aus Bereichen oder Teilen besteht, die durch unterschiedliche Beschreibungen entwickelt sind oder arbeiten, schafft Mitgestaltern dieses Systems ein eher unruhigeres Trennungsbewusstsein in der Analyse, Weiterentwicklung und Wiederverwendung.
 
 \section{Schluss}
 \label{sec:schluss}
