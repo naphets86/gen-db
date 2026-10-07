@@ -1003,10 +1003,16 @@ Die Ergebnisse sind positiv, müssen aber innerhalb des Versuchsaufbaus interpre
 	\item \textbf{Trefferabgleich ist kein universeller Nachweis.} Identische Treffer-IDs und null Fehler in dieser Stichprobe erhöhen das Vertrauen in die Integration, ersetzen aber keine gemeinsamen Konformitäts- und Eigenschaftstests für alle Eingabekombinationen.
 \end{itemize}
 
-\subsection{Zwischenfazit}
+\subsection{Fazit}
 \label{sec:backend_zwischenfazit}
 
 Der Wechsel von Python zur C++-Library beschleunigt in der gemessenen Konfiguration sowohl den direkten Vergleich als auch die vollständige Suche. Bei denselben sechs Anfragen und $931.899$ Kandidaten sinkt die Gesamtzeit um den Faktor $6{,}36$; in allen sechs Fällen stimmen die Treffer-IDs überein, und es gibt keine fehlgeschlagenen Vergleiche. Der Mikrobenchmark misst einen noch größeren Vorteil für direkte Aufrufe, während die Phasenanalyse zeigt, dass Laden, Übergabe und Ergebnisaufbau den Ende-zu-Ende-Speedup begrenzen. Die Messergebnisse stützen damit die Library-Integration als sinnvollen Beschleunigungsweg für diesen Anwendungsfall. Sie sind wegen Stichprobengröße, synthetischer Daten und einzelner Hardwarekonfiguration eine belastbare Tendenz, aber keine universelle Leistungsgarantie.
+
+Dass der Bytecode für die C++-Library größer ist, ist deshalb so, weil dadurch im Arbeitsspeicher ein größerer Bereich reserviert wird, der viel effizienter von der Architektur zur Ausführung prozessiert werden kann. Wenn der reservierte Bereich dagegen kleiner ist, wie für die Python Implementierung des Subgraph Algorithmus, ist der reservierte Speicherbereich kleiner.
+
+Der Strom im reservierten Bereich im Arbeitsspeicher für den Algorithmus liegt parallel an. Ist dieser Bereich kleiner, kann die effiziente Architektur mit Adressbus, Datenbus, Steuerbus und Controller diesen Bereich nicht so schnell ausführen und bearbeiten wie für reservierte Bereiche die größer sind.
+
+Es ist so, dass diese hochentwickelte und für Geschwindigkeit extrem ausgelegte Hardware-Architektur des Prozessors gerade darauf wartet, durch die parallele Bestromung der reservierten Bereiche im Arbeitsspeicher möglichst viele Instruktionen dadurch gleichzeitig prozessieren zu können. Etwas enttäuscht ist sie dann doch, wenn der reservierte Bereich kleiner ist und sie gerade für ihre eigentliche Bestimmung so  nicht so sehr zum Ziel kommen kann, was die Ausführung des Subgraph Algorithmus verzögert.
 
 \subsection{Fremde Beschreibungen}
 \label{sec:fremde_beschreibungen}
