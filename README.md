@@ -3,8 +3,8 @@
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-139%20passed-4c1)](tests/)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-93%25-brightgreen)](doc/coverage/index.html)
+[![Tests](https://img.shields.io/badge/Tests-145%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
 ## Inhaltsverzeichnis
@@ -64,15 +64,43 @@ Es wird die API des Subgraph Algorithmus genutzt mit `Subgraph().compare_graphs(
 
 ### Optional: C++-Implementierung (csubgraph)
 
-Die Suche nutzt zuerst die C++-Implementierung aus dem Repository `csubgraph`, wenn sie in der `.env` konfiguriert ist. Ist sie nicht konfiguriert, nicht auffindbar oder nicht ausführbar, wird automatisch die Python-Implementierung verwendet.
+Die Suche nutzt die C++-Implementierung aus dem Repository `csubgraph` als Bibliothek, wenn in der `.env` der Pfad zu `libsubgraphlib.a` gesetzt ist. Ist `CSUBGRAPH_LIB_PATH` nicht gesetzt (leer oder auskommentiert), wird die Python-Implementierung verwendet.
 
 ```env
-# Datei subgraph-cli(.exe) oder Projekt-/Build-Ordner von csubgraph
-CSUBGRAPH_PATH=C:/Users/<name>/Git/csubgraph/build
-CSUBGRAPH_TIMEOUT=30
+# Datei libsubgraphlib.a oder Projekt-/Build-Ordner von csubgraph; leer = Python
+CSUBGRAPH_LIB_PATH=C:/Users/<name>/Git/csubgraph/build/libsubgraphlib.a
 ```
 
-Der Pfad darf direkt auf `subgraph-cli(.exe)` zeigen oder auf einen Ordner, in dem das Executable liegt (Projektordner, `build/`, `build/Release`). Beim Start steht im Log, welcher Algorithmus verwendet wird (`Subgraph backend: csubgraph (C++)` bzw. `Python implementation`). Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` → `keep_B`, `IDENTICAL` → `equal_keep_A`/`equal_keep_B`), sodass die Suche in `crud.py` unverändert bleibt. Im Docker-Image ist csubgraph nicht enthalten; dort läuft die Python-Implementierung, solange kein Pfad gemountet und gesetzt wird.
+Der Pfad darf direkt auf `libsubgraphlib.a` zeigen oder auf einen Ordner, in dem sie liegt (Projektordner, `build/`, `build/Release`). Eine statische Bibliothek kann Python nicht direkt laden. Beim ersten Gebrauch linkt Gen-DB sie deshalb mit einem kleinen C-Wrapper (`src/backend/native/csubgraph_shim.cpp`) zu einer DLL/`.so` und ruft sie per `ctypes` direkt im Worker-Prozess auf, ohne Prozessstart und ohne JSON je Vergleich. Voraussetzungen:
+
+- ein C++-Compiler im `PATH` (oder über die Umgebungsvariable `CXX`), unter Windows derselbe MinGW-w64 `g++`, mit dem `libsubgraphlib.a` gebaut wurde
+- die Bibliothek muss mit diesem Compiler gebaut sein; der Header `SubgraphAlgorithm.h` wird neben der Bibliothek (Projektordner) gesucht, sonst wird die mitgelieferte Kopie in `src/backend/native/` verwendet
+
+Die gelinkte Wrapper-Bibliothek liegt im Cache-Ordner `<temp>/gen-db-csubgraph` (änderbar mit `GENDB_NATIVE_CACHE`) und wird nur neu gebaut, wenn sich `libsubgraphlib.a`, der Wrapper oder der Header ändern. Der Build läuft einmalig beim Start, bevor die Worker-Prozesse erzeugt werden. Ist die Bibliothek nicht auffindbar oder nicht nutzbar (kein Compiler, Link- oder Ladefehler), steht der Grund als Warnung im Log und es wird die Python-Implementierung verwendet. Beim Start steht im Log, welcher Algorithmus verwendet wird. Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` → `keep_B`, `IDENTICAL` → `equal_keep_A`/`equal_keep_B`), sodass die Suche in `crud.py` unverändert bleibt. Im Docker-Image ist csubgraph nicht enthalten; dort läuft die Python-Implementierung.
+
+Hinweis: Das CMake-Projekt von csubgraph baut die Bibliothek mit `--coverage` (gcov). Das wird beim Linken erkannt und berücksichtigt, die Bibliothek schreibt dann beim Prozessende `.gcda`-Dateien. Für den Produktivbetrieb und für Messungen ist eine Bibliothek ohne Coverage-Instrumentierung etwas schneller.
+
+#### Backend-Experiment
+
+Der Vergleich von Python und C++ lässt sich mit derselben Datenbank und denselben Queries ausführen:
+
+```powershell
+python src/experiment_search_backends.py
+```
+
+Das Experiment verwendet standardmäßig sechs mit Seed `42` ausgewählte Queries mit mindestens 15 Knoten und zwei Worker je Backend. Es prüft, welches Backend tatsächlich in den Workern aktiv ist, vergleicht die Treffer-IDs und zählt fehlgeschlagene Vergleiche. Die Laufzeit umfasst die vollständige Suche einschließlich Datenbankzugriff, Worker-Kommunikation und Ergebnisaufbau. Ein separater Mikrobenchmark vergleicht 200 identische Zufallsgraphpaare und misst zusätzlich einen trivialen Library-Aufruf.
+
+Im abgeschlossenen Messlauf vom 7. Oktober 2026 durchliefen beide Backends jeweils `931.899` Kandidaten. Python benötigte insgesamt `1.180,28 s`, die C++-Library `185,62 s`; das entspricht einem Ende-zu-Ende-Speedup von `6,36×`. Für jede der sechs Queries war die C++-Suche schneller, die Treffer-IDs waren identisch und es traten keine fehlgeschlagenen Vergleiche auf. Im Mikrobenchmark betrug die mittlere Zeit je Einzelvergleich `2,694 ms` für Python und `0,074 ms` für C++; ein trivialer `1×1`-Library-Aufruf lag bei `0,018 ms`.
+
+Diese Messwerte gelten für sechs einzelne Suchläufe auf synthetischen Daten unter Windows 11 mit zwei Workern. Sie sind ein Ergebnis dieses Versuchsaufbaus, keine allgemeine Leistungsgarantie; insbesondere fehlen Wiederholungen, Konfidenzintervalle, reale biologische Daten und Messungen auf weiteren Plattformen. Ältere Messungen über die C++-CLI verwendeten einen anderen Aufrufpfad mit Prozessstart und JSON je Vergleich und sind nicht mit dem hier beschriebenen Library-Ergebnis gleichzusetzen.
+
+Die Resultate werden unter `src/results/` mit Zeitstempel abgelegt. Die vorhandene JSON-Datei kann ohne erneuten Suchlauf für neue Diagramme und LaTeX-Tabellen verwendet werden:
+
+```powershell
+python src/experiment_search_backends.py --plot-from src/results/search_backends_20261007_104804.json
+```
+
+Mit `--queries 2` kann vor einer längeren Messung ein kleiner Vorabtest ausgeführt werden. Während des Experiments sollte der API-Server beendet sein, damit er nicht mit den Worker-Prozessen um Ressourcen konkurriert.
 
 ## SQL-Strutkur
 
@@ -245,20 +273,22 @@ Ausgabe:
 (venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app --reload
 INFO:     Will watch for changes in these directories: ['C:\\Users\\Internet\\Git\\gen-db']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [6472] using WatchFiles
-2026-10-05 11:51:16 [INFO] Configuration loaded (ENV=development)
-INFO:     Started server process [13868]
+INFO:     Started reloader process [4128] using WatchFiles
+2026-10-07 10:46:19 [INFO] Configuration loaded (ENV=development)
+INFO:     Started server process [7012]
 INFO:     Waiting for application startup.
-2026-10-05 11:51:16 [INFO] Starting Gen API - Environment: development
-2026-10-05 11:51:16 [INFO] ProcessPoolExecutor ready for Subgraph Executor
+2026-10-07 10:46:19 [INFO] Starting Gen API - Environment: development
+2026-10-07 10:46:19 [INFO] Subgraph algorithm selected: csubgraph (C++)
+2026-10-07 10:46:19 [INFO] ProcessPoolExecutor ready for Subgraph Executor
 INFO:     Application startup complete.
-2026-10-05 11:51:48 [INFO] GET / - Serving frontend
-INFO:     127.0.0.1:59981 - "GET / HTTP/1.1" 200 OK
-2026-10-05 11:51:48 [INFO] GET /api/networks limit=33 random=True
-2026-10-05 11:51:48 [INFO] get_all_networks: limit=33 random_sample=True
-2026-10-05 11:51:52 [INFO] get_all_networks: Fetched 33 records
-2026-10-05 11:51:52 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:59981 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+2026-10-07 10:46:52 [INFO] GET / - Serving frontend
+INFO:     127.0.0.1:51928 - "GET / HTTP/1.1" 200 OK
+2026-10-07 10:46:53 [INFO] GET /api/networks limit=33 random=True
+2026-10-07 10:46:53 [INFO] get_all_networks: limit=33 random_sample=True
+2026-10-07 10:46:58 [INFO] get_all_networks: Fetched 33 records
+2026-10-07 10:46:58 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57531 - "GET /favicon.ico HTTP/1.1" 204 No Content
 ```
 
 ## Suchen
@@ -270,32 +300,39 @@ Ausgabe:
 (venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app --reload
 INFO:     Will watch for changes in these directories: ['C:\\Users\\Internet\\Git\\gen-db']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [6472] using WatchFiles
-2026-10-05 11:51:16 [INFO] Configuration loaded (ENV=development)
-INFO:     Started server process [13868]
+INFO:     Started reloader process [4128] using WatchFiles
+2026-10-07 10:46:19 [INFO] Configuration loaded (ENV=development)
+INFO:     Started server process [7012]
 INFO:     Waiting for application startup.
-2026-10-05 11:51:16 [INFO] Starting Gen API - Environment: development
-2026-10-05 11:51:16 [INFO] ProcessPoolExecutor ready for Subgraph Executor
+2026-10-07 10:46:19 [INFO] Starting Gen API - Environment: development
+2026-10-07 10:46:19 [INFO] Subgraph algorithm selected: csubgraph (C++)
+2026-10-07 10:46:19 [INFO] ProcessPoolExecutor ready for Subgraph Executor
 INFO:     Application startup complete.
-2026-10-05 11:51:48 [INFO] GET / - Serving frontend
-INFO:     127.0.0.1:59981 - "GET / HTTP/1.1" 200 OK
-2026-10-05 11:51:48 [INFO] GET /api/networks limit=33 random=True
-2026-10-05 11:51:48 [INFO] get_all_networks: limit=33 random_sample=True
-2026-10-05 11:51:52 [INFO] get_all_networks: Fetched 33 records
-2026-10-05 11:51:52 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:59981 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
-2026-10-05 11:52:57 [INFO] GET /api/networks/226554
-2026-10-05 11:52:57 [INFO] get_network_by_id: network_id=226554
-2026-10-05 11:52:57 [INFO] get_network_by_id: Found network 'metabolic_E._coli_226554'
-2026-10-05 11:52:57 [INFO] GET /api/networks/226554 - Found: metabolic_E._coli_226554
-INFO:     127.0.0.1:54783 - "GET /api/networks/226554 HTTP/1.1" 200 OK
-2026-10-05 11:53:00 [INFO] POST /api/networks/search - nodes=15
-2026-10-05 11:53:00 [INFO] search_subgraph: Starting search for subgraph with 15 nodes
-2026-10-05 11:53:29 [INFO] search_subgraph: 280310 candidates for query (n=15, e=67)
-2026-10-05 11:53:29 [INFO] ProcessPoolExecutor initialized with 2 workers
-2026-10-05 11:58:36 [INFO] search_subgraph: Found 2 matches
-2026-10-05 11:58:37 [INFO] POST /api/networks/search - Found 2 matches
-INFO:     127.0.0.1:54783 - "POST /api/networks/search HTTP/1.1" 200 OK
+2026-10-07 10:46:52 [INFO] GET / - Serving frontend
+INFO:     127.0.0.1:51928 - "GET / HTTP/1.1" 200 OK
+2026-10-07 10:46:53 [INFO] GET /api/networks limit=33 random=True
+2026-10-07 10:46:53 [INFO] get_all_networks: limit=33 random_sample=True
+2026-10-07 10:46:58 [INFO] get_all_networks: Fetched 33 records
+2026-10-07 10:46:58 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57531 - "GET /favicon.ico HTTP/1.1" 204 No Content
+2026-10-07 10:47:03 [INFO] GET /api/networks/205670
+2026-10-07 10:47:03 [INFO] get_network_by_id: network_id=205670
+2026-10-07 10:47:03 [INFO] get_network_by_id: Found network 'gene_regulation_E._coli_205670'
+2026-10-07 10:47:03 [INFO] GET /api/networks/205670 - Found: gene_regulation_E._coli_205670
+INFO:     127.0.0.1:51928 - "GET /api/networks/205670 HTTP/1.1" 200 OK
+2026-10-07 10:47:07 [INFO] GET /api/networks/718195
+2026-10-07 10:47:07 [INFO] get_network_by_id: network_id=718195
+2026-10-07 10:47:08 [INFO] get_network_by_id: Found network 'protein_Homo_sapiens_718195'
+2026-10-07 10:47:08 [INFO] GET /api/networks/718195 - Found: protein_Homo_sapiens_718195
+INFO:     127.0.0.1:51928 - "GET /api/networks/718195 HTTP/1.1" 200 OK
+2026-10-07 10:47:10 [INFO] POST /api/networks/search - nodes=16
+2026-10-07 10:47:10 [INFO] search_subgraph: Starting search for subgraph with 16 nodes
+2026-10-07 10:47:45 [INFO] search_subgraph: 277270 candidates for query (n=16, e=58)
+2026-10-07 10:47:45 [INFO] ProcessPoolExecutor initialized with 2 workers
+2026-10-07 10:48:01 [INFO] search_subgraph: Found 4 matches
+2026-10-07 10:48:02 [INFO] POST /api/networks/search - Found 4 matches
+INFO:     127.0.0.1:51928 - "POST /api/networks/search HTTP/1.1" 200 OK
 ```
 
 ## Testen
@@ -309,7 +346,7 @@ Der Coverage-Report wird automatisch generiert nach `doc/coverage/index.html`.
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 3.145.000,00 EUR.
+Der Preis für diese Software beträgt 3.745.000,00 EUR.
 
 ### Zahlungsinformationen
 

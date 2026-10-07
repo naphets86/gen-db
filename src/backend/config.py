@@ -61,11 +61,10 @@ class Config(BaseSettings):
     # SUBGRAPH CONFIGURATION (ZENTRAL!)
     # ========================================
     subgraph_max_workers: Optional[int] = Field(default=None, ge=1, description="Max parallel workers")
-    csubgraph_path: Optional[str] = Field(
+    csubgraph_lib_path: Optional[str] = Field(
         default=None,
-        description="Pfad zur csubgraph-CLI (Datei oder Ordner); leer = Python-Implementierung"
+        description="Pfad zu libsubgraphlib.a (Datei oder Ordner); leer = Python-Implementierung"
     )
-    csubgraph_timeout: float = Field(default=30.0, gt=0, description="Timeout je csubgraph-Vergleich (Sekunden)")
     
     # ========================================
     # API CONFIGURATION

@@ -6,7 +6,8 @@ wird hier die Implementierung des Subgraph Algorithmus verglichen, die der
 Executor in den Worker-Prozessen verwendet:
 
 - python : Dependency ``subgraph`` (naphets86/subgraph, ``Subgraph().compare_graphs``)
-- cpp    : csubgraph (naphets86/csubgraph), ``subgraph-cli`` über CSUBGRAPH_PATH
+- cpp    : csubgraph (naphets86/csubgraph), statische Bibliothek ``libsubgraphlib.a``
+           über CSUBGRAPH_LIB_PATH, direkt im Worker-Prozess aufgerufen (ctypes)
 
 Versuchsaufbau (identisch zu experiment_search_workers.py, damit die Ergebnisse
 in science/gen-db.tex direkt neben der Worker-Messreihe stehen können):
@@ -25,19 +26,21 @@ Zusätzlich zur Messung der Gesamtsuche:
   Fallback von cpp auf python), in jedem Lauf und in den Worker-Prozessen
 - Zählung fehlgeschlagener Einzelvergleiche (z.B. csubgraph-Timeout)
 - Mikro-Benchmark ohne Datenbank: Zeit je Einzelvergleich beider Implementierungen
-  auf denselben Zufallsgraphen sowie die reine Aufrufkosten der CLI
-  (Prozessstart + JSON) mit einem trivialen 1x1-Vergleich
+  auf denselben Zufallsgraphen sowie die reinen Aufrufkosten der Bibliothek
+  (Marshalling + Funktionsaufruf) mit einem trivialen 1x1-Vergleich
 
-Hinweis zur Deutung: In Gen-DB wird csubgraph je Vergleich als eigener Prozess
-gestartet (JSON über stdin/stdout). Die gemessene Zeit der cpp-Variante enthält
-damit Prozessstart und JSON-Kodierung je Kandidat. Das ist die Variante, die
-Gen-DB tatsächlich ausführt; der Mikro-Benchmark trennt Algorithmus und
-Aufrufkosten.
+Hinweis zur Deutung: Gen-DB bindet csubgraph als Bibliothek ein. Die statische
+Bibliothek wird beim ersten Gebrauch mit einem C-Wrapper zu einer DLL/.so gelinkt
+(Compiler, z.B. MinGW g++, nötig) und je Worker-Prozess einmal geladen; ein
+Vergleich ist ein direkter Funktionsaufruf ohne Prozessstart und ohne JSON. Der
+einmalige Link-Build findet vor dem Start des Prozess-Pools statt und ist nicht
+Teil der Messung. Frühere Messläufe (JSON mit ``csubgraph_cli``) stammen von der
+CLI-Variante und sind mit diesen Werten nicht direkt vergleichbar.
 
 Aufruf (im Projektordner, damit die .env gefunden wird):
     python src/experiment_search_backends.py
     python src/experiment_search_backends.py --queries 2          # Vorab-Test
-    python src/experiment_search_backends.py --csubgraph-path C:\\...\\subgraph-cli.exe
+    python src/experiment_search_backends.py --csubgraph-lib-path C:\\...\\libsubgraphlib.a
     python src/experiment_search_backends.py --backends cpp python --workers 2
 
 Ergebnisse (src/results/, Dateiname mit Zeitstempel):
@@ -76,7 +79,7 @@ SRC_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SRC_DIR))
 
 from backend import config as backend_config  # noqa: E402
-from backend import crud, subgraph_executor  # noqa: E402
+from backend import crud, csubgraph_native, subgraph_executor  # noqa: E402
 
 DEFAULT_RESULTS_DIR = SRC_DIR / "results"
 BACKENDS = ("python", "cpp")
@@ -98,33 +101,43 @@ SINGLE_PLOTS = {
 # Auswahl der Implementierung
 # ---------------------------------------------------------------------------
 
-def resolve_cli(path_argument):
+def resolve_lib(path_argument):
     """
-    Findet das csubgraph-Executable: --csubgraph-path, sonst CSUBGRAPH_PATH aus .env.
+    Findet libsubgraphlib.a: --csubgraph-lib-path, sonst CSUBGRAPH_LIB_PATH aus .env.
 
     Muss vor configure_backend() aufgerufen werden, solange die Konfiguration
     noch den Wert aus der .env enthält.
+
+    Returns:
+        (Pfad zur Bibliothek oder None, ursprüngliche Einstellung)
     """
     setting = path_argument
     if not setting:
-        setting = getattr(backend_config.get_config(), "csubgraph_path", None)
-    return subgraph_executor.find_csubgraph_cli(setting), setting
+        setting = getattr(backend_config.get_config(), "csubgraph_lib_path", None)
+    lib = csubgraph_native.find_static_library(setting)
+    return (str(lib) if lib else None), setting
 
 
-def configure_backend(backend, cli):
+def configure_backend(backend, lib):
     """
     Stellt die Implementierung für den nächsten Prozess-Pool ein.
 
-    CSUBGRAPH_PATH wird über die Umgebung gesetzt (leer = Python). Umgebungs-
+    CSUBGRAPH_LIB_PATH wird über die Umgebung gesetzt (leer = Python). Umgebungs-
     variablen haben Vorrang vor der .env und werden von Worker-Prozessen
     geerbt, egal ob sie per fork oder spawn (Windows) gestartet werden.
+    Der Link-Build der Wrapper-Bibliothek läuft hier (über get_backend_name),
+    also vor jeder Messung.
     """
-    os.environ["CSUBGRAPH_PATH"] = cli if backend == "cpp" else ""
+    os.environ["CSUBGRAPH_LIB_PATH"] = lib if backend == "cpp" else ""
     backend_config.reload_config()
     subgraph_executor.reset_backend()
     actual = subgraph_executor.get_backend_name()
     if actual != EXPECTED_NAME[backend]:
-        raise SystemExit(f"Implementierung '{backend}' angefordert, aufgelöst wurde '{actual}'.")
+        reason = subgraph_executor.get_native_error()
+        raise SystemExit(
+            f"Implementierung '{backend}' angefordert, aufgelöst wurde '{actual}'."
+            + (f"\nGrund: {reason}" if reason else "")
+        )
 
 
 def _probe_backend(_):
@@ -249,7 +262,7 @@ def run_search(timer, failures, matrix, labels):
     }
 
 
-def run_experiment(queries, backends, workers_list, warmup, cli, meta, json_path):
+def run_experiment(queries, backends, workers_list, warmup, lib, meta, json_path):
     """
     Führt das Experiment aus und schreibt nach jeder Anfrage die JSON-Datei.
 
@@ -271,7 +284,7 @@ def run_experiment(queries, backends, workers_list, warmup, cli, meta, json_path
     rows = []
     try:
         for backend in backends:
-            configure_backend(backend, cli)
+            configure_backend(backend, lib)
             for workers in workers_list:
                 pids = start_pool(workers, backend)
                 meta.setdefault("worker_pids", {})[f"{backend}/{workers}"] = pids
@@ -316,14 +329,15 @@ def _random_graph(rng, n, p=0.3):
     return matrix
 
 
-def calibrate(backends, cli, pairs, seed):
+def calibrate(backends, lib, pairs, seed):
     """
     Zeit je Einzelvergleich im Hauptprozess (ohne Pool, ohne Datenbank).
 
     Gemessen werden dieselben Zufallspaare (A mit 15 bis 19 Knoten, B mit 20
     Knoten, Kantenwahrscheinlichkeit 0,3) für jede Implementierung. Für cpp
     wird zusätzlich ein trivialer 1x1-Vergleich gemessen: das sind die
-    Aufrufkosten der CLI (Prozessstart und JSON), nahezu ohne Rechenzeit.
+    Aufrufkosten der Bibliothek (Marshalling und Funktionsaufruf), nahezu ohne
+    Rechenzeit.
     """
     rng = np.random.default_rng(seed)
     sample = [(_random_graph(rng, int(rng.integers(15, 20))), _random_graph(rng, 20)) for _ in range(pairs)]
@@ -339,13 +353,14 @@ def calibrate(backends, cli, pairs, seed):
                 "max_ms": max(values)}
 
     if "python" in backends:
-        configure_backend("python", cli)
+        configure_backend("python", lib)
         subgraph_executor._compare_with_python(*sample[0])  # Instanz erzeugen, nicht mitmessen
         result["python"] = timed(subgraph_executor._compare_with_python, sample)
 
-    if "cpp" in backends and cli:
-        configure_backend("cpp", cli)
-        call = lambda a, b: subgraph_executor._compare_with_csubgraph(cli, a, b)  # noqa: E731
+    if "cpp" in backends and lib:
+        configure_backend("cpp", lib)
+        native = subgraph_executor._get_native()
+        call = lambda a, b: subgraph_executor._compare_with_csubgraph(native, a, b)  # noqa: E731
         call(*sample[0])
         result["cpp"] = timed(call, sample)
         trivial = np.zeros((1, 1), dtype=int)
@@ -447,12 +462,12 @@ def print_summary(summary, ref):
               "nicht vollständig vergleichbar.")
 
 
-def print_calibration(calibration):
+def print_calibration(calibration, cpp_variant="Bibliothek"):
     if not calibration:
         return
     print(f"\n=== Mikro-Benchmark ({calibration['pairs']} Zufallspaare, im Hauptprozess) ===")
-    labels = [("python", "Python, Einzelvergleich"), ("cpp", "C++ (CLI), Einzelvergleich"),
-              ("cpp_overhead", "C++ (CLI), trivialer 1x1-Aufruf")]
+    labels = [("python", "Python, Einzelvergleich"), ("cpp", f"C++ ({cpp_variant}), Einzelvergleich"),
+              ("cpp_overhead", f"C++ ({cpp_variant}), trivialer 1x1-Aufruf")]
     for key, label in labels:
         if key in calibration:
             c = calibration[key]
@@ -660,6 +675,11 @@ def _num(value, digits=1):
     return text
 
 
+def cpp_variant_name(meta):
+    """Name der Variante: "CLI" für ältere Messläufe (Prozess je Vergleich), sonst "Bibliothek"."""
+    return "CLI" if meta.get("csubgraph_cli") and not meta.get("csubgraph_lib") else "Bibliothek"
+
+
 def write_latex_tables(data, path):
     """Schreibt Kennzahlen- und Mikro-Benchmark-Tabelle als \\input-fähiges Fragment."""
     summary = data["summary"]
@@ -706,8 +726,9 @@ def write_latex_tables(data, path):
             "\t\tMessung & Median [ms] & Mittel [ms] & Max. [ms] \\\\",
             "\t\t\\midrule",
         ]
-        for key, label in [("python", "Python, Einzelvergleich"), ("cpp", "C++ (CLI), Einzelvergleich"),
-                           ("cpp_overhead", "C++ (CLI), trivialer $1\\times1$-Aufruf")]:
+        variant = cpp_variant_name(meta)
+        for key, label in [("python", "Python, Einzelvergleich"), ("cpp", f"C++ ({variant}), Einzelvergleich"),
+                           ("cpp_overhead", f"C++ ({variant}), trivialer $1\\times1$-Aufruf")]:
             if key in calibration:
                 c = calibration[key]
                 lines.append(f"\t\t{label} & {_num(c['median_ms'], 3)} & {_num(c['mean_ms'], 3)} & "
@@ -738,8 +759,8 @@ def main():
     parser.add_argument("--workers", type=int, nargs="+", default=[2], help="Worker-Anzahlen (Standard: 2)")
     parser.add_argument("--backends", nargs="+", choices=BACKENDS, default=list(BACKENDS),
                         help="Reihenfolge der Implementierungen (Standard: python cpp)")
-    parser.add_argument("--csubgraph-path", default=None,
-                        help="Pfad zu subgraph-cli (Datei oder Ordner); Standard: CSUBGRAPH_PATH aus .env")
+    parser.add_argument("--csubgraph-lib-path", default=None,
+                        help="Pfad zu libsubgraphlib.a (Datei oder Ordner); Standard: CSUBGRAPH_LIB_PATH aus .env")
     parser.add_argument("--min-nodes", type=int, default=15, help="Mindestanzahl Knoten der Query")
     parser.add_argument("--max-nodes", type=int, default=None, help="Optionale Obergrenze der Knotenanzahl")
     parser.add_argument("--seed", type=int, default=42)
@@ -767,11 +788,11 @@ def main():
     if len(set(args.backends)) != len(args.backends):
         parser.error("--backends enthält eine Implementierung doppelt")
 
-    cli, cli_setting = resolve_cli(args.csubgraph_path)
-    if "cpp" in args.backends and not cli:
+    lib, lib_setting = resolve_lib(args.csubgraph_lib_path)
+    if "cpp" in args.backends and not lib:
         raise SystemExit(
-            f"csubgraph-Executable nicht gefunden (Einstellung: {cli_setting!r}). "
-            "CSUBGRAPH_PATH in der .env oder --csubgraph-path auf subgraph-cli setzen, "
+            f"libsubgraphlib.a nicht gefunden (Einstellung: {lib_setting!r}). "
+            "CSUBGRAPH_LIB_PATH in der .env oder --csubgraph-lib-path auf libsubgraphlib.a setzen, "
             "oder --backends python wählen. Ein stiller Fallback auf Python würde den Vergleich verfälschen."
         )
 
@@ -782,8 +803,8 @@ def main():
     queries = load_queries_from_db(args.queries, args.min_nodes, args.max_nodes, args.seed)
     print(f"{len(queries)} Anfragen aus der Datenbank (mind. {args.min_nodes} Knoten), Seed {args.seed}, "
           f"Implementierungen {args.backends}, Worker {args.workers}, Warm-up {args.warmup}")
-    if cli:
-        print(f"csubgraph: {cli}")
+    if lib:
+        print(f"csubgraph: {lib}")
 
     meta = {
         "created": datetime.now().isoformat(timespec="seconds"),
@@ -794,7 +815,7 @@ def main():
         "min_nodes": args.min_nodes,
         "max_nodes": args.max_nodes,
         "warmup": args.warmup,
-        "csubgraph_cli": cli,
+        "csubgraph_lib": lib,
         "logical_cpus": os.cpu_count(),
         "python": platform.python_version(),
         "platform": platform.platform(),
@@ -803,10 +824,10 @@ def main():
 
     if args.calibration_pairs > 0:
         print("\nMikro-Benchmark ...", flush=True)
-        meta["calibration"] = calibrate(args.backends, cli, args.calibration_pairs, args.seed)
+        meta["calibration"] = calibrate(args.backends, lib, args.calibration_pairs, args.seed)
         print_calibration(meta["calibration"])
 
-    rows = run_experiment(queries, args.backends, args.workers, args.warmup, cli, meta, json_path)
+    rows = run_experiment(queries, args.backends, args.workers, args.warmup, lib, meta, json_path)
     print_summary(compute_summary(rows, args.backends, args.workers), reference_backend(args.backends))
 
     print(f"\nJSON: {json_path}")

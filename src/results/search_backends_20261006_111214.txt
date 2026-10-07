@@ -1,18 +1,37 @@
 (venv) PS C:\Users\Internet\Git\gen-db> python.exe .\src\experiment_search_backends.py
 6 Anfragen aus der Datenbank (mind. 15 Knoten), Seed 42, Implementierungen ['python', 'cpp'], Worker [2], Warm-up 1
-csubgraph: C:\Users\Internet\Git\csubgraph\build\subgraph-cli.exe
+csubgraph: C:\Users\Internet\Git\csubgraph\build\libsubgraphlib.a
 
 Mikro-Benchmark ...
 
 === Mikro-Benchmark (200 Zufallspaare, im Hauptprozess) ===
-  Python, Einzelvergleich            Median    2.769 ms  Mittel    2.698 ms  Max    4.006 ms
-  C++ (CLI), Einzelvergleich         Median   11.184 ms  Mittel   11.417 ms  Max   14.439 ms
-  C++ (CLI), trivialer 1x1-Aufruf    Median    9.953 ms  Mittel   10.081 ms  Max   11.903 ms
+  Python, Einzelvergleich            Median    2.793 ms  Mittel    2.694 ms  Max    3.703 ms
+  C++ (Bibliothek), Einzelvergleich  Median    0.068 ms  Mittel    0.074 ms  Max    0.331 ms
+  C++ (Bibliothek), trivialer 1x1-Aufruf Median    0.018 ms  Mittel    0.018 ms  Max    0.073 ms
 
 === Python, 2 Worker ===
-  Anfrage   1/6: Netzwerk 655359 n=15 e= 59 Kandidaten=317772 Treffer=3 Fehler=0 362.0s (Rest ca. 30 min)
-  Anfrage   2/6: Netzwerk 774601 n=15 e= 54 Kandidaten=328808 Treffer=7 Fehler=0 352.0s (Rest ca. 24 min)
-  Anfrage   3/6: Netzwerk 433490 n=18 e= 88 Kandidaten=147814 Treffer=1 Fehler=0 164.7s (Rest ca. 15 min)
-  Anfrage   4/6: Netzwerk 859418 n=15 e= 76 Kandidaten=227780 Treffer=1 Fehler=0 285.8s (Rest ca. 10 min)
-  Anfrage   5/6: Netzwerk 439395 n=18 e= 97 Kandidaten=111466 Treffer=1 Fehler=0 125.5s (Rest ca. 4 min)
-  Anfrage   6/6: Netzwerk 88980 n=20 e=123 Kandidaten=9475 Treffer=1 Fehler=0 10.8s (Rest ca. 0 min)
+  Anfrage   1/6: Netzwerk 654525 n=18 e=106 Kandidaten=69173 Treffer=1 Fehler=0 97.4s (Rest ca. 8 min)
+  Anfrage   2/6: Netzwerk 773692 n=19 e=104 Kandidaten=74482 Treffer=1 Fehler=0 85.2s (Rest ca. 6 min)
+  Anfrage   3/6: Netzwerk 432763 n=15 e= 63 Kandidaten=302555 Treffer=1 Fehler=0 379.2s (Rest ca. 9 min)
+  Anfrage   4/6: Netzwerk 858300 n=20 e=110 Kandidaten=38496 Treffer=1 Fehler=0 50.7s (Rest ca. 5 min)
+  Anfrage   5/6: Netzwerk 438602 n=15 e= 66 Kandidaten=287228 Treffer=1 Fehler=0 374.6s (Rest ca. 3 min)
+  Anfrage   6/6: Netzwerk 89411 n=18 e= 83 Kandidaten=159965 Treffer=1 Fehler=0 193.2s (Rest ca. 0 min)
+
+=== C++, 2 Worker ===
+  Anfrage   1/6: Netzwerk 654525 n=18 e=106 Kandidaten=69173 Treffer=1 Fehler=0 11.1s (Rest ca. 1 min)
+  Anfrage   2/6: Netzwerk 773692 n=19 e=104 Kandidaten=74482 Treffer=1 Fehler=0 12.3s (Rest ca. 1 min)
+  Anfrage   3/6: Netzwerk 432763 n=15 e= 63 Kandidaten=302555 Treffer=1 Fehler=0 51.1s (Rest ca. 1 min)
+  Anfrage   4/6: Netzwerk 858300 n=20 e=110 Kandidaten=38496 Treffer=1 Fehler=0 7.3s (Rest ca. 1 min)
+  Anfrage   5/6: Netzwerk 438602 n=15 e= 66 Kandidaten=287228 Treffer=1 Fehler=0 63.6s (Rest ca. 0 min)
+  Anfrage   6/6: Netzwerk 89411 n=18 e= 83 Kandidaten=159965 Treffer=1 Fehler=0 40.2s (Rest ca. 0 min)
+
+=== Zusammenfassung ===
+  Impl. Worker  Summe[s]  Mittel[s]  Median[s]   Max[s]  Speedup  ms/Kand.  seriell%  Fehler  Treffer=
+ Python      2      1180      196.7      145.3    379.2    1.00x     1.267       12%       0        ja
+    C++      2       186       30.9       26.2     63.6    6.36x     0.199       67%       0        ja
+
+Speedup = Gesamtzeit von Python / Gesamtzeit dieser Zeile (gleiche Worker-Anzahl).
+seriell% = Anteil der Gesamtzeit außerhalb von compare_many (Laden, Treffer bauen).
+Treffer= : gleiche network_id je Anfrage wie Python.
+
+JSON: C:\Users\Internet\Git\gen-db\src\results\search_backends_20261007_104804.json

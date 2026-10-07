@@ -1,0 +1,32 @@
+% Automatisch erzeugt von src/experiment_search_backends.py -- nicht von Hand ändern.
+% Messlauf: 2026-10-07T10:48:05, Seed 42
+\begin{table}[h]
+	\centering
+	\small
+	\caption{Kennzahlen der Suche je Implementierung (jeweils $6$ Anfragen, $C_\Sigma = 931.899$ Kandidaten, Speedup $S$ relativ zu Python).}
+	\label{tab:backend_summary}
+	\begin{tabular}{@{}lrrrrrrrrr@{}}
+		\toprule
+		Variante & $p$ & $T$ [s] & Mittel [s] & Median [s] & Max. [s] & $S$ & $\Theta$ [1/s] & $\kappa$ [ms] & seriell [\%] \\
+		\midrule
+		Python & 2 & 1.180 & 196{,}7 & 145{,}3 & 379{,}2 & 1{,}00 & 790 & 1{,}267 & 11{,}6 \\
+		C++ & 2 & 186 & 30{,}9 & 26{,}2 & 63{,}6 & 6{,}36 & 5.020 & 0{,}199 & 66{,}7 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\begin{table}[h]
+	\centering
+	\small
+	\caption{Zeit je Einzelvergleich im Hauptprozess (200 Zufallspaare mit $n_A\in\{15,\dots,19\}$, $n_B=20$, Kantenwahrscheinlichkeit $0{,}3$).}
+	\label{tab:backend_calibration}
+	\begin{tabular}{@{}lrrr@{}}
+		\toprule
+		Messung & Median [ms] & Mittel [ms] & Max. [ms] \\
+		\midrule
+		Python, Einzelvergleich & 2{,}793 & 2{,}694 & 3{,}703 \\
+		C++ (Bibliothek), Einzelvergleich & 0{,}068 & 0{,}074 & 0{,}331 \\
+		C++ (Bibliothek), trivialer $1\times1$-Aufruf & 0{,}018 & 0{,}018 & 0{,}073 \\
+		\bottomrule
+	\end{tabular}
+\end{table}

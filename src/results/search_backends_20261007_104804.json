@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "created": "2026-10-07T10:48:05",
+    "seed": 42,
+    "queries": 6,
+    "backends": [
+      "python",
+      "cpp"
+    ],
+    "workers": [
+      2
+    ],
+    "min_nodes": 15,
+    "max_nodes": null,
+    "warmup": 1,
+    "csubgraph_lib": "C:\\Users\\Internet\\Git\\csubgraph\\build\\libsubgraphlib.a",
+    "logical_cpus": 4,
+    "python": "3.14.8",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "query_network_ids": [
+      654525,
+      773692,
+      432763,
+      858300,
+      438602,
+      89411
+    ],
+    "calibration": {
+      "pairs": 200,
+      "seed": 42,
+      "python": {
+        "mean_ms": 2.6944620000085706,
+        "median_ms": 2.7928499998779444,
+        "max_ms": 3.7031000001661596
+      },
+      "cpp": {
+        "mean_ms": 0.07373450000613957,
+        "median_ms": 0.06839999991825607,
+        "max_ms": 0.3308999998807849
+      },
+      "cpp_overhead": {
+        "mean_ms": 0.018300500009900134,
+        "median_ms": 0.017700000171316788,
+        "max_ms": 0.07310000000870787
+      }
+    },
+    "worker_pids": {
+      "python/2": [
+        5848
+      ],
+      "cpp/2": [
+        8176,
+        14504
+      ]
+    },
+    "complete": true,
+    "reference_backend": "python"
+  },
+  "summary": [
+    {
+      "backend": "python",
+      "workers": 2,
+      "queries": 6,
+      "sum_s": 1180.2791076000008,
+      "mean_s": 196.71318460000012,
+      "median_s": 145.29997905000005,
+      "p95_s": 379.17851310000015,
+      "max_s": 379.17851310000015,
+      "candidates_sum": 931899,
+      "pairs_per_s": 789.5581595906912,
+      "ms_per_candidate": 1.2665311451133663,
+      "compare_share": 0.883677820342704,
+      "serial_share": 0.11632217965729597,
+      "speedup": 1.0,
+      "speedup_min": 1.0,
+      "speedup_max": 1.0,
+      "matches_equal": true,
+      "failed": 0,
+      "slope_ms_per_candidate": 1.27353677669573,
+      "corr_candidates_time": 0.9981526713712524
+    },
+    {
+      "backend": "cpp",
+      "workers": 2,
+      "queries": 6,
+      "sum_s": 185.62160600000016,
+      "mean_s": 30.936934333333358,
+      "median_s": 26.247262150000097,
+      "p95_s": 63.6220429,
+      "max_s": 63.6220429,
+      "candidates_sum": 931899,
+      "pairs_per_s": 5020.423107426402,
+      "ms_per_candidate": 0.19918639895525178,
+      "compare_share": 0.3333965238938831,
+      "serial_share": 0.6666034761061169,
+      "speedup": 6.358522227202364,
+      "speedup_min": 4.810527561985505,
+      "speedup_max": 8.763585892290655,
+      "matches_equal": true,
+      "failed": 0,
+      "slope_ms_per_candidate": 0.19926363928275223,
+      "corr_candidates_time": 0.9629212499346513
+    }
+  ],
+  "measurements": [
+    {
+      "nodes": 18,
+      "edges": 106,
+      "candidates": 69173,
+      "matches": 1,
+      "match_ids": [
+        654525
+      ],
+      "failed": 0,
+      "total_s": 97.3883295999999,
+      "compare_s": 90.4205863000002,
+      "serial_s": 6.967743299999711,
+      "backend": "python",
+      "workers": 2,
+      "query": 1,
+      "network_id": 654525
+    },
+    {
+      "nodes": 19,
+      "edges": 104,
+      "candidates": 74482,
+      "matches": 1,
+      "match_ids": [
+        773692
+      ],
+      "failed": 0,
+      "total_s": 85.22036600000001,
+      "compare_s": 72.9722468,
+      "serial_s": 12.24811920000002,
+      "backend": "python",
+      "workers": 2,
+      "query": 2,
+      "network_id": 773692
+    },
+    {
+      "nodes": 15,
+      "edges": 63,
+      "candidates": 302555,
+      "matches": 1,
+      "match_ids": [
+        432763
+      ],
+      "failed": 0,
+      "total_s": 379.17851310000015,
+      "compare_s": 330.73708780000015,
+      "serial_s": 48.44142529999999,
+      "backend": "python",
+      "workers": 2,
+      "query": 3,
+      "network_id": 432763
+    },
+    {
+      "nodes": 20,
+      "edges": 110,
+      "candidates": 38496,
+      "matches": 1,
+      "match_ids": [
+        858300
+      ],
+      "failed": 0,
+      "total_s": 50.65636040000027,
+      "compare_s": 40.209318500000336,
+      "serial_s": 10.447041899999931,
+      "backend": "python",
+      "workers": 2,
+      "query": 4,
+      "network_id": 858300
+    },
+    {
+      "nodes": 15,
+      "edges": 66,
+      "candidates": 287228,
+      "matches": 1,
+      "match_ids": [
+        438602
+      ],
+      "failed": 0,
+      "total_s": 374.62391000000025,
+      "compare_s": 339.5553153000001,
+      "serial_s": 35.068594700000176,
+      "backend": "python",
+      "workers": 2,
+      "query": 5,
+      "network_id": 438602
+    },
+    {
+      "nodes": 18,
+      "edges": 83,
+      "candidates": 159965,
+      "matches": 1,
+      "match_ids": [
+        89411
+      ],
+      "failed": 0,
+      "total_s": 193.2116285000002,
+      "compare_s": 169.0919144999998,
+      "serial_s": 24.119714000000386,
+      "backend": "python",
+      "workers": 2,
+      "query": 6,
+      "network_id": 89411
+    },
+    {
+      "nodes": 18,
+      "edges": 106,
+      "candidates": 69173,
+      "matches": 1,
+      "match_ids": [
+        654525
+      ],
+      "failed": 0,
+      "total_s": 11.112840199999937,
+      "compare_s": 4.534522999999808,
+      "serial_s": 6.578317200000129,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 1,
+      "network_id": 654525
+    },
+    {
+      "nodes": 19,
+      "edges": 104,
+      "candidates": 74482,
+      "matches": 1,
+      "match_ids": [
+        773692
+      ],
+      "failed": 0,
+      "total_s": 12.330191800000193,
+      "compare_s": 5.306701399999838,
+      "serial_s": 7.023490400000355,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 2,
+      "network_id": 773692
+    },
+    {
+      "nodes": 15,
+      "edges": 63,
+      "candidates": 302555,
+      "matches": 1,
+      "match_ids": [
+        432763
+      ],
+      "failed": 0,
+      "total_s": 51.07867639999995,
+      "compare_s": 16.290213900000253,
+      "serial_s": 34.788462499999696,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 3,
+      "network_id": 432763
+    },
+    {
+      "nodes": 20,
+      "edges": 110,
+      "candidates": 38496,
+      "matches": 1,
+      "match_ids": [
+        858300
+      ],
+      "failed": 0,
+      "total_s": 7.3135222000000795,
+      "compare_s": 3.625946499999827,
+      "serial_s": 3.6875757000002523,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 4,
+      "network_id": 858300
+    },
+    {
+      "nodes": 15,
+      "edges": 66,
+      "candidates": 287228,
+      "matches": 1,
+      "match_ids": [
+        438602
+      ],
+      "failed": 0,
+      "total_s": 63.6220429,
+      "compare_s": 19.18899790000023,
+      "serial_s": 44.433044999999765,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 5,
+      "network_id": 438602
+    },
+    {
+      "nodes": 18,
+      "edges": 83,
+      "candidates": 159965,
+      "matches": 1,
+      "match_ids": [
+        89411
+      ],
+      "failed": 0,
+      "total_s": 40.1643325,
+      "compare_s": 12.939215500000046,
+      "serial_s": 27.225116999999955,
+      "backend": "cpp",
+      "workers": 2,
+      "query": 6,
+      "network_id": 89411
+    }
+  ]
+}

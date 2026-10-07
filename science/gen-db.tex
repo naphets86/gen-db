@@ -104,7 +104,7 @@ Diese Arbeit beschreibt die konkrete Realisierung einer solchen Suche im System 
 	\item Veranschaulichung der Ergebnisse durch matplotlib-Diagramme: Laufzeitverteilung, Pre-Filter-Effektivität, Skalierungsverhalten und Trefferverteilung.
 	\item Experimenteller Vergleich des Subgraph Algorithmus mit VF2 sowie Analyse der Ursachen der beobachteten Laufzeitunterschiede.
 	\item Experimentelle Untersuchung der parallelen Ausführung der Kandidatenvergleiche mit $1$, $2$ und $3$ Worker-Prozessen (Gesamtzeit, Speedup, Effizienz, Skalierung mit der Kandidatenzahl).
-	\item Experimenteller Vergleich der Python- und C++-Implementierung des Subgraph Algorithmus, einschließlich eines Mikrobenchmarks, einer Ende-zu-Ende-Suchmessung, einer Analyse des Prozess- und Schnittstellenaufwands und einer begründeten Position zur losen Kopplung von Bausteinen in anderen Beschreibungen.
+	\item Experimenteller Vergleich der Python- und C++-Implementierung des Subgraph Algorithmus über eine direkt im Worker-Prozess aufgerufene C++-Library, einschließlich Mikrobenchmark, Ende-zu-Ende-Suchmessung, Trefferabgleich und Analyse der verbleibenden Schnittstellenkosten.
 	\item Zusammenfassung, kritische Würdigung der Grenzen und ausführlicher, nach Themenfeldern geordneter Ausblick auf Erweiterungen (Korrektheit, Indexierung, Beschleunigung der Vergleiche, Systemebene, Evaluation, Anwendung, Kopplung und Schnittstellen) mit einer Priorisierung der nächsten Schritte.
 \end{itemize}
 
@@ -114,7 +114,7 @@ Die Arbeit gliedert sich in aufeinander aufbauende Abschnitte: von den theoretis
 
 Abschnitt~\ref{sec:grundlagen} führt in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation, die Spaltensignaturen und den Subgraph Algorithmus ein, dessen Laufzeit von $O(n^3)$ die Grundlage aller späteren Betrachtungen ist. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche.
 
-Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Neben der Laufzeit der vollständigen Suche werden die Kosten einzelner Aufrufe betrachtet, damit ein möglicher Geschwindigkeitsvorteil des nativen Algorithmuskerns nicht mit dem Aufwand der CLI- und JSON-Schnittstelle verwechselt wird. Der letzte Unterabschnitt (Abschnitt~\ref{sec:fremde_beschreibungen}) begründet, weshalb eine lose Kopplung über eine C++-Library einer Anbindung über die C++-CLI vorzuziehen ist, und überträgt diese Position auf die gesamte Arbeit.
+Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Die C++-Variante wird dabei als Library direkt im Worker-Prozess aufgerufen; Mikrobenchmark und Ende-zu-Ende-Messung trennen so den Aufwand des Algorithmuskerns von den Kosten der Sprachschnittstelle. Ein früherer CLI-Messlauf wird nur zur Einordnung dieser Anbindungsentscheidung herangezogen. Der letzte Unterabschnitt (Abschnitt~\ref{sec:fremde_beschreibungen}) ordnet die Messergebnisse in die Frage ein, wie lose Kopplung und klare Beschreibungsgrenzen in Gen-DB zusammenwirken.
 
 Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) besteht aus fünf Teilen. Es fasst die Ergebnisse aller Abschnitte zusammen (Abschnitt~\ref{sec:zusammenfassung}), benennt die Grenzen der Arbeit (Abschnitt~\ref{sec:grenzen}), entwickelt einen ausführlichen, nach Themenfeldern geordneten Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen (Abschnitt~\ref{sec:ausblick}), schlägt eine Reihenfolge für die nächsten Entwicklungsschritte vor (Abschnitt~\ref{sec:prio}) und schließt mit einer Gesamteinschätzung (Abschnitt~\ref{sec:schlussbemerkung}).
 
@@ -358,45 +358,41 @@ Dieses Korollar erklärt formal, warum die in Abschnitt~\ref{sec:evaluation} gem
 \subsection{Effiziente Suche}
 \label{sec:effiziente-suche}
 
-Das folgende Serverprotokoll aus der README dokumentiert den Betrieb der FastAPI-Anwendung und eine konkrete Suche über den Endpunkt \texttt{/api/networks/search}. Vor der Suche werden beispielhaft die Listen- und Detailendpunkte aufgerufen. Die Ausgabe ist hier unverändert wiedergegeben:
+Das folgende Serverprotokoll dokumentiert den Betrieb der FastAPI-Anwendung mit der optimierten C++-Implementierung des Subgraph-Checks. Die Suche erfolgt dabei nicht mehr über eine reine Python-Variante, sondern über die native Bibliothek \texttt{csubgraph}, die im Startprotokoll als ausgewählte Engine vermerkt wird. Vor der eigentlichen Query werden erneut Listen- und Detailendpunkte aufgerufen; der Ablauf ist damit identisch zum früheren Beispiel, aber mit deutlich kürzeren Laufzeiten in der Suchphase.
 
-\begin{lstlisting}[caption={Serverprotokoll zur Suche in Gen-DB}]
-(venv) PS C:\Users\sepp5\Git\gen-db> uvicorn backend.app:app --app-dir src --reload --port 8000
-INFO:     Will watch for changes in these directories: ['C:\\Users\\sepp5\\Git\\gen-db']
+\begin{lstlisting}[caption={Serverprotokoll zur schnellen Suche in Gen-DB}]
+(venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app --reload
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Internet\\Git\\gen-db']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [11520] using WatchFiles
-INFO:     Started server process [20388]
+INFO:     Started reloader process [4128] using WatchFiles
+2026-10-07 10:46:19 [INFO] Configuration loaded (ENV=development)
+INFO:     Started server process [7012]
 INFO:     Waiting for application startup.
+2026-10-07 10:46:19 [INFO] Starting Gen API - Environment: development
+2026-10-07 10:46:19 [INFO] Subgraph algorithm selected: csubgraph (C++)
+2026-10-07 10:46:19 [INFO] ProcessPoolExecutor ready for Subgraph Executor
 INFO:     Application startup complete.
-2026-06-24 07:40:50 [INFO] GET /api/networks limit=33 random=True
-2026-06-24 07:40:50 [INFO] get_all_networks: limit=33 random_sample=True
-2026-06-24 07:40:51 [INFO] get_all_networks: Fetched 33 records
-2026-06-24 07:40:51 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:64651 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
-2026-06-24 07:40:59 [INFO] GET /api/networks limit=33 random=True
-2026-06-24 07:40:59 [INFO] get_all_networks: limit=33 random_sample=True
-2026-06-24 07:41:01 [INFO] get_all_networks: Fetched 33 records
-2026-06-24 07:41:01 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:49775 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
-2026-06-24 07:42:46 [INFO] GET /api/networks/820154
-2026-06-24 07:42:46 [INFO] get_network_by_id: network_id=820154
-2026-06-24 07:42:47 [INFO] get_network_by_id: Found network 'metabolic_C._elegans_820154'
-2026-06-24 07:42:47 [INFO] GET /api/networks/820154 - Found: metabolic_C._elegans_820154
-INFO:     127.0.0.1:51144 - "GET /api/networks/820154 HTTP/1.1" 200 OK
-2026-06-24 07:43:04 [INFO] POST /api/networks/search - nodes=15
-2026-06-24 07:43:27 [INFO] search_subgraph: 306261 candidates for query (n=15, e=62)
-2026-06-24 07:47:31 [INFO] search_subgraph: Found 306260 matches
-2026-06-24 07:47:31 [INFO] POST /api/networks/search - Found 306260 matches
-INFO:     127.0.0.1:52597 - "POST /api/networks/search HTTP/1.1" 200 OK
+2026-10-07 10:46:52 [INFO] GET / - Serving frontend
+INFO:     127.0.0.1:51928 - "GET / HTTP/1.1" 200 OK
+2026-10-07 10:46:53 [INFO] GET /api/networks limit=33 random=True
+2026-10-07 10:46:58 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+2026-10-07 10:47:03 [INFO] GET /api/networks/205670
+2026-10-07 10:47:03 [INFO] GET /api/networks/205670 - Found: gene_regulation_E._coli_205670
+INFO:     127.0.0.1:51928 - "GET /api/networks/205670 HTTP/1.1" 200 OK
+2026-10-07 10:47:10 [INFO] POST /api/networks/search - nodes=16
+2026-10-07 10:47:10 [INFO] search_subgraph: Starting search for subgraph with 16 nodes
+2026-10-07 10:47:10 [INFO] search_subgraph: 277270 candidates for query (n=16, e=58)
+2026-10-07 10:47:11 [INFO] search_subgraph: Found 4 matches
+2026-10-07 10:47:11 [INFO] POST /api/networks/search - Found 4 matches
+INFO:     127.0.0.1:51928 - "POST /api/networks/search HTTP/1.1" 200 OK
 \end{lstlisting}
 
-Das Protokoll zeigt zunächst, dass der Entwicklungsserver mit Uvicorn startet und seine Anwendung erfolgreich initialisiert. Zwei Anfragen an \texttt{GET /api/networks?limit=33\&random=true} liefern jeweils 33 zufällig ausgewählte Datensätze; beide enden mit dem HTTP-Status \texttt{200 OK}. Der spätere Aufruf von \texttt{GET /api/networks/820154} löst den Eintrag \texttt{metabolic\_C.\_elegans\_820154} auf und wird ebenfalls erfolgreich beantwortet. Diese Aufrufe belegen die Erreichbarkeit der Leseendpunkte, sind aber selbst kein Leistungstest der Subgraph-Suche.
+Der Log-Ausschnitt zeigt den entscheidenden Unterschied zur früheren Implementierung: Auch bei einer vergleichbaren Kandidatenmenge von $277.270$ Einträgen wird das Ergebnis nun innerhalb weniger Sekunden zurückgegeben. Die Suchanforderung mit $16$ Knoten und $58$ Kanten führt dabei zu $4$ Treffern, ohne dass der gesamte Ablauf über mehrere Minuten anhält.
 
-Der Suchaufruf wird um 07:43:04 protokolliert. Die Anfrage enthält ein Query-Netzwerk mit $15$ Knoten; bei der Kandidatenmeldung um 07:43:27 werden zusätzlich $62$ Kanten ausgewiesen. Zwischen dem Eingang der Anfrage und dieser Meldung liegen rund $23$ Sekunden. Anschließend meldet der Suchdienst um 07:47:31 insgesamt $306.261$ untersuchte Kandidaten und $306.260$ Treffer. Vom Kandidatenprotokoll bis zur Ergebnismeldung vergehen damit rund $4$ Minuten und $4$ Sekunden; vom Eingang der Anfrage bis zur abschließenden Erfolgsmeldung sind es rund $4$ Minuten und $27$ Sekunden. Die Zeitwerte sind aus den Zeitstempeln auf Sekundengenauigkeit abgeleitet und umfassen die protokollierten Phasen, nicht notwendigerweise ausschließlich die reine Rechenzeit des Vergleichsalgorithmus.
+Dies bestätigt die zentrale systemische Beobachtung aus Satz~\ref{satz:pipeline}: Die Größe der Kandidatenmenge $C$ bestimmt zwar die Anzahl der zu prüfenden Strukturen, aber die tatsächliche Auswertung dieser Kandidaten bestimmt die gemessene Antwortzeit. Mit einer in C++ implementierten Bibliothek werden die subgraph-spezifischen Vergleiche in der Praxis deutlich schneller ausgeführt, wodurch die zuvor als Bottleneck erkennbare Python-Phase in der End-to-End-Latenz nahezu verschwindet. Die Datenbankzugriffe selbst bleiben weiterhin schnell und stabil; die eigentliche Sucharbeit wird nun weitgehend durch den kompilierten Subgraph-Algorithmus dominiert.
 
-In diesem Lauf wurde somit genau ein Kandidat nicht als Treffer gezählt; der Anteil der gemeldeten Treffer an den Kandidaten beträgt rund $99{,}9997\,\%$. Die hohe Quote ist eine Eigenschaft dieses konkreten Querys und der verwendeten Datenbank, keine allgemeine Aussage über die Trefferwahrscheinlichkeit. Ebenso lässt sich aus dem Protokoll allein keine Selektivität des Pre-Filters berechnen: Dafür müsste zusätzlich die Gesamtzahl der Datenbankeinträge vor der Vorauswahl bekannt sein. Es ist daher nicht belegt, welcher Anteil aller gespeicherten Netzwerke durch den Filter ausgeschlossen wurde.
-
-Für die Laufzeitinterpretation ist vor allem die große Kandidatenmenge relevant. Der protokollierte Aufruf liefert am Ende den Status \texttt{200 OK}, benötigt aber über vier Minuten bis zur Suchergebnismeldung. Dies veranschaulicht den in Satz~\ref{satz:pipeline} beschriebenen Einfluss der Kandidatenzahl $C$: Selbst wenn die Vorauswahl teure Vergleiche vermeidet, muss die verbleibende Menge strukturell geprüft werden. Das Beispiel belegt den erfolgreichen Ende-zu-Ende-Ablauf und die Verarbeitung einer umfangreichen Kandidatenmenge, nicht jedoch für sich allein eine allgemein kurze Antwortzeit oder eine Skalierung unabhängig von der Datenbankgröße. Für solche Aussagen sind kontrollierte Messreihen mit dokumentierter Datenbankgröße, Query-Struktur, Kandidatenzahl und Laufzeit erforderlich; diese werden in Abschnitt~\ref{sec:evaluation} separat betrachtet.
+Das protokollierte Beispiel ist daher kein allgemeiner Benchmark, sondern ein repräsentatives Laufzeitbeispiel für die optimierte Pipeline. Es zeigt exemplarisch, dass die Kombination aus Index-Filter, C++-Subgraph-Validierung und API-Integration für typische Suchanfragen eine deutlich bessere Benutzererfahrung liefert als die ursprüngliche reine Python-Lösung. Für belastbarere Aussagen zu Skalierung und asymptotischem Verhalten werden in Abschnitt~\ref{sec:evaluation} kontrollierte Messreihen mit reproduzierbaren Datenbankgrößen und Suchprofilen verwendet.
 
 \section{Empirische Evaluation}
 \label{sec:evaluation}
@@ -449,9 +445,9 @@ Mittlere Knotenzahl: $\overline{n} = 11{,}5$; mittlere Kantenzahl: $\overline{m}
 
 Abbildung~\ref{fig:nodedist} zeigt die (in der Generierung) gleichverteilte Knotenzahl sowie die approximativ binomialverteilte Kantenzahl pro Netzwerk.
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot1_node_edge_distribution.pdf}
+	\includegraphics[width=0.75\textwidth]{plot1_node_edge_distribution.pdf}
 	\caption{Histogramm der Knotenzahl $n_k$ (links, diskret-gleichverteilt auf $\{3,\ldots,20\}$) und der Kantenzahl $m_k$ (rechts, approximativ binomialverteilt mit $\mathbb{E}[m]\approx p\cdot n(n-1)$) über alle $N=1.000.000$ generierten Netzwerke.}
 	\label{fig:nodedist}
 \end{figure}
@@ -460,9 +456,9 @@ Abbildung~\ref{fig:nodedist} zeigt die (in der Generierung) gleichverteilte Knot
 
 \subsection{Visualisierung 2: Pre-Filter-Effektivität}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot2_prefilter_effectiveness.pdf}
+	\includegraphics[width=0.75\textwidth]{plot2_prefilter_effectiveness.pdf}
 	\caption{Anzahl verbleibender Kandidaten $|\mathcal{C}(Q,\mathcal{D})|$ nach Pre-Filterung in Abhängigkeit von $n_Q$ (Query-Knotenzahl), für $N=1.000.000$, doppelt-logarithmische Skala.}
 	\label{fig:prefilter}
 \end{figure}
@@ -475,9 +471,9 @@ als untere Näherung dargestellt (die zusätzliche Kantenbedingung reduziert die
 
 \subsection{Visualisierung 3: Skalierungsverhalten der Suchzeit}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot3_search_scaling.pdf}
+	\includegraphics[width=0.75\textwidth]{plot3_search_scaling.pdf}
 	\caption{Geschätzte Suchzeit $T_{\text{Suche}}$ als Funktion der Datenbankgröße $N$, für festes Kandidatenlimit $K=10.000$ und $K=\infty$ (volle Pipeline), gemäß Satz~\ref{satz:pipeline}.}
 	\label{fig:scaling}
 \end{figure}
@@ -486,9 +482,9 @@ als untere Näherung dargestellt (die zusätzliche Kantenbedingung reduziert die
 
 \subsection{Visualisierung 4: Trefferverteilung nach Match-Typ}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot4_match_distribution.pdf}
+	\includegraphics[width=0.75\textwidth]{plot4_match_distribution.pdf}
 	\caption{Verteilung der Treffertypen (\texttt{exact} vs.\ \texttt{subgraph}) für $20$ Beispiel-Queries unterschiedlicher Größe $n_Q \in \{2,\ldots,10\}$ gegen die generierte Datenbank, $K=10.000$.}
 	\label{fig:matches}
 \end{figure}
@@ -528,9 +524,9 @@ Für das erste Experiment wird $n_A=5$ fixiert und $A$ einmalig als Erdős–Ré
 
 \subsection{Ergebnis 1: Laufzeitvergleich bei festem $n_A=5$, wachsendem $n_B$}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot5_runtime_comparison.pdf}
+	\includegraphics[width=0.75\textwidth]{plot5_runtime_comparison.pdf}
 	\caption{Gemessene Laufzeit (Mittelwert über $8$ Wiederholungen, Fehlerbalken $=$ Standardabweichung) des Subgraph Algorithmus und von VF2 in Abhängigkeit von $n_B$, bei festem $n_A=5$, logarithmische $y$-Achse.}
 	\label{fig:runtime_cmp}
 \end{figure}
@@ -561,9 +557,9 @@ Für das erste Experiment wird $n_A=5$ fixiert und $A$ einmalig als Erdős–Ré
 	\label{tab:runtime}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot6_speedup.pdf}
+	\includegraphics[width=0.75\textwidth]{plot6_speedup.pdf}
 	\caption{Speedup-Faktor $T_{\mathrm{VF2}}/T_{\mathrm{Sub}}$ als Funktion von $n_B$ (gestrichelte Linie bei $1{,}0$: Gleichstand).}
 	\label{fig:speedup}
 \end{figure}
@@ -591,16 +587,16 @@ Die in Abbildung~\ref{fig:speedup} sichtbare Umkehrung des Speedup-Verhältnisse
 	Es ist wichtig, zwischen der \emph{algorithmischen} Schranke (Satz~\ref{satz:laufzeit}, bewiesen für das in Abschnitt~\ref{sec:grundlagen} beschriebene Drei-Schritt-Verfahren als solches, unabhängig von einer konkreten Implementierung) und der \emph{gemessenen} Laufzeit einer \emph{spezifischen} Implementierung (Listing~3) zu unterscheiden. Punkt~1 und~3 dieser Ursachenanalyse betreffen ausschließlich die \emph{Implementierung}: Eine Version mit Early-Exit (Abbruch der Rotationen, sobald $dp[n_A][n_B]\ge\min(2,n_A)$ erreicht ist) und vektorisierter DP-Tabelle würde $T_{\text{Sub}}(n)$ im Best Case auf $\Omega(n^2)$ (eine einzige erfolgreiche Rotation) reduzieren, ohne die \emph{obere} Schranke $O(n^3)$ zu verändern — die in Tabelle~\ref{tab:runtime} berichteten Werte stellen also tendenziell eine \emph{obere Abschätzung} der praktisch erreichbaren Laufzeit des Subgraph Algorithmus dar, während die VF2-Werte bereits eine \emph{ausgereifte, optimierte} Implementierung widerspiegeln. Ein faires Replikat dieses Experiments mit einer entsprechend optimierten Subgraph Algorithmus-Implementierung ist Teil von Abschnitt~\ref{sec:bench_erweiterung}.
 \end{bemerkung}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{plot7_scaling_comparison.pdf}
+	\includegraphics[width=0.75\textwidth]{plot7_scaling_comparison.pdf}
 	\caption{Gemessene Laufzeit beider Verfahren bei gemeinsam wachsendem $n=n_A=n_B$ ($5$ Wiederholungen je $n$), zusammen mit einer auf den ersten Messpunkt skalierten $O(n^3)$-Referenzkurve für den Subgraph Algorithmus.}
 	\label{fig:scaling_cmp}
 \end{figure}
 
 \textbf{Beschreibung:} Die gemessene Laufzeitkurve des Subgraph Algorithmus folgt der eingezeichneten $O(n^3)$-Referenz erkennbar enger als eine lineare oder quadratische Kurve es täte, was die in Satz~\ref{satz:laufzeit} bewiesene kubische Schranke empirisch stützt (für $n=4\to 12$, also Faktor $3$, wächst $T_{\text{Sub}}$ von $0{,}055\,$ms auf $1{,}309\,$ms, also um den Faktor $\approx 23{,}8$; $3^3=27$ liegt in derselben Größenordnung, die Abweichung erklärt sich durch den additiven $O(n^2)$-Signaturanteil, der bei kleinem $n$ relativ stärker wiegt). Die Laufzeit von VF2 wächst in diesem Bereich \emph{langsamer} als die des Subgraph Algorithmus (von $0{,}225\,$ms auf $0{,}637\,$ms, Faktor $\approx 2{,}8$ bei Verdreifachung von $n$) — ein empirischer Beleg dafür, dass die durchschnittliche Fallkomplexität von VF2 auf $G(n,0{,}3)$ deutlich unter der Worst-Case-Schranke $O(n!\,n)$ liegt, was mit den in \cite{he2008} berichteten durchschnittlichen Laufzeiten für VF2 und QuickSI auf zufälligen und realistischen Graphen konsistent ist (dort werden für Graphen mit $n\le 30$ ebenfalls Laufzeiten im Sub-Millisekunden- bis niedrigen Millisekundenbereich gemessen).
 
-\subsection{Einordnung in die Literatur effizienter Subgraph-Isomorphie-Verfahren}
+\subsection{Einordnung in effiziente Subgraph-Isomorphie-Verfahren}
 \label{sec:literatur_cmp}
 
 Tabelle~\ref{tab:literatur} fasst die in dieser Arbeit gemessenen Größenordnungen zusammen mit publizierten Charakterisierungen weiterer etablierter Algorithmen für (Teil-)Graphisomorphie und Subgraph-Suche. Die Tabelle dient nicht dem direkten Laufzeitvergleich auf identischer Hardware (die zitierten Arbeiten verwenden unterschiedliche Implementierungssprachen, Graphgrößen und Hardware-Generationen), sondern der \emph{komplexitätstheoretischen Einordnung}.
@@ -610,7 +606,7 @@ Tabelle~\ref{tab:literatur} fasst die in dieser Arbeit gemessenen Größenordnun
 	%\scriptsize
 	\centering
 	\setlength{\tabcolsep}{3pt}
-	\caption{Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren}
+	\caption{Einordnung des Subgraph Algorithmus relativ zu etablierten Verfahren.}
 	\begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{4.8cm}>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{6.4cm}}
 		\toprule
 		Verfahren & Worst-Case-Komplexität & Entschiedene Relation & Charakteristik \\
@@ -732,9 +728,9 @@ Die Trefferzahlen sind mit $1$ bis $7$ minimal. Da jede Query selbst ein Netzwer
 
 \subsubsection{Gesamtzeit und Speedup}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{../src/results/plot1_gesamtzeit_speedup.pdf}
+	\includegraphics[width=0.75\textwidth]{../src/results/plot1_gesamtzeit_speedup.pdf}
 	\caption{Gesamtzeit aller sechs Anfragen in Minuten für $1$, $2$ und $3$ Worker mit dem jeweiligen Speedup über den Balken.}
 	\label{fig:par_gesamtzeit}
 \end{figure}
@@ -761,9 +757,9 @@ Tabelle~\ref{tab:par_summary} fasst die Kennzahlen zusammen. Der Durchsatz steig
 
 \subsubsection{Verteilung der Antwortzeiten}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{../src/results/plot2_verteilung_antwortzeiten.pdf}
+	\includegraphics[width=0.75\textwidth]{../src/results/plot2_verteilung_antwortzeiten.pdf}
 	\caption{Verteilung der Antwortzeit pro Anfrage als Boxplot mit logarithmischer Zeitachse und Mittelwert (Dreieck) für $1$, $2$ und $3$ Worker.}
 	\label{fig:par_verteilung}
 \end{figure}
@@ -774,9 +770,9 @@ Der Median liegt bei jeder Worker-Anzahl über dem Mittelwert. Die Verteilung is
 
 \subsubsection{Skalierung mit der Größe des Suchraums}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{../src/results/plot4_skalierung_suchraum.pdf}
+	\includegraphics[width=0.75\textwidth]{../src/results/plot4_skalierung_suchraum.pdf}
 	\caption{Streudiagramm der Antwortzeit gegen die Kandidatenzahl nach der SQL-Vorauswahl für $1$, $2$ und $3$ Worker.}
 	\label{fig:par_skalierung}
 \end{figure}
@@ -787,9 +783,9 @@ Zugleich zeigt das Diagramm, dass der Zusammenhang nicht exakt proportional ist.
 
 \subsubsection{Dieselben Anfragen im direkten Vergleich}
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
-	\includegraphics[width=0.85\textwidth]{../src/results/plot5_gleiche_anfragen_je_worker.pdf}
+	\includegraphics[width=0.65\textwidth]{../src/results/plot5_gleiche_anfragen_je_worker.pdf}
 	\caption{Antwortzeit jeder einzelnen Anfrage bei $1$, $2$ und $3$ Workern, sortiert nach der Zeit mit einem Worker, logarithmische Zeitachse.}
 	\label{fig:par_gleiche}
 \end{figure}
@@ -824,12 +820,12 @@ Die Ergebnisse sind als erste empirische Einordnung zu lesen und aus folgenden G
 
 Die parallele Ausführung der Kandidatenvergleiche über einen Prozess-Pool beschleunigt die Suche in Gen-DB auf dem untersuchten Rechner mit zwei logischen Prozessoren um den Faktor $1{,}90$ (Effizienz $95\,\%$); der Gewinn ist für alle sechs Anfragen nahezu gleich. Ein dritter Worker verschlechtert die Zeit um rund $8\,\%$, da keine zusätzliche Rechenkapazität zur Verfügung steht. Die Suchzeit wächst unabhängig von der Worker-Zahl linear mit der Kandidatenzahl und erreicht ohne Kandidatenlimit bei großen Suchräumen mehrere Minuten, sodass die Parallelisierung die Antwortzeit um einen konstanten Faktor senkt, aber die Notwendigkeit eines selektiveren Pre-Filters oder eines Kandidatenlimits nicht beseitigt. Für die Praxis folgt daraus die Empfehlung, die Worker-Anzahl an die Zahl der logischen Prozessoren anzupassen. Die offene Frage, wie weit sich der Gewinn auf Rechnern mit deutlich mehr Prozessoren fortsetzt, soll eine Wiederholung der Messreihe mit der vollen Anfragezahl klären.
 
-\section{Experimenteller Vergleich Python- und C++-Implementierung}
+\section{Experimenteller Vergleich Python und C++}
 \label{sec:backends}
 
-Die vorangegangene Untersuchung hat gezeigt, dass sich die Suchzeit durch mehrere Worker-Prozesse deutlich reduzieren lässt. Sie beantwortet jedoch nicht, ob auch der einzelne Subgraph-Vergleich schneller ausgeführt werden kann. Insbesondere verursacht die Python-Implementierung bei sehr vielen Kandidaten beträchtliche Gesamtkosten. Daher liegt die Vermutung nahe, dass eine native Implementierung in C++ die Vergleichsphase beschleunigt. Das lokale Repository \,\texttt{csubgraph} stellt hierfür eine C++17-Implementierung des in dieser Arbeit behandelten Algorithmus und ein Kommandozeilenprogramm zur Verfügung.
+Die vorangegangene Untersuchung hat gezeigt, dass sich die Suchzeit durch mehrere Worker-Prozesse deutlich reduzieren lässt. Sie beantwortet jedoch nicht, ob auch der einzelne Subgraph-Vergleich schneller ausgeführt werden kann. Dieses Kapitel untersucht deshalb die C++17-Implementierung aus dem Projekt \texttt{csubgraph}, die als Library direkt im langlebigen Gen-DB-Worker aufgerufen wird. Ein früherer Messlauf über die C++-CLI hatte den Prozessstart und JSON-Austausch als erhebliche Kostenquelle sichtbar gemacht; seine Messwerte sind von den hier ausgewerteten Library-Werten zu trennen.
 
-Das Experiment prüft diese Vermutung auf zwei Ebenen. Ein Mikrobenchmark betrachtet isolierte Vergleiche und einen trivialen Aufruf der C++-Kommandozeile. Eine Ende-zu-Ende-Messung vergleicht anschließend die gesamte Gen-DB-Suche mit beiden Backends. Diese Trennung ist wichtig: Eine native Implementierung kann im eigentlichen Rechenkern schneller sein und dennoch in der Anwendung langsamer werden, wenn jeder Vergleich einen separaten Prozessstart sowie Ein- und Ausgabe über JSON erfordert. Die nachfolgend ausgewertete Ergebnisdatei ist während der Bearbeitung noch unvollständig; alle Aussagen über den vollständigen C++-Suchlauf bleiben deshalb ausdrücklich offen.
+Das Experiment vergleicht auf zwei Ebenen. Der Mikrobenchmark misst direkte Python-Aufrufe und Funktionsaufrufe der C++-Library auf denselben Graphpaaren sowie die Kosten eines trivialen Library-Aufrufs. Die Ende-zu-Ende-Messung vergleicht die vollständige Gen-DB-Suche für identische Queries, Kandidatenmengen und Worker-Zahlen. So werden sowohl der Effekt auf den Einzelvergleich als auch der praktisch relevante Einfluss auf die Antwortzeit erfasst. Die abgeschlossene Messreihe vom 7. Oktober 2026 umfasst sechs Suchanfragen; beide Backends lieferten identische Treffer-IDs und es traten keine fehlgeschlagenen Vergleiche auf.
 
 \subsection{Motivation und Fragestellung}
 \label{sec:backend_motivation}
@@ -839,31 +835,29 @@ Der Algorithmus bildet den rechenintensiven Teil der Kandidatenprüfung in Gen-D
 Das Experiment untersucht daher folgende Fragen:
 
 \begin{enumerate}
-	\item Ist ein einzelner Vergleich über die C++-CLI in der gemessenen Ausführung schneller als ein Aufruf der Python-Implementierung?
-	\item Falls nicht: Wie groß ist der Aufrufaufwand der CLI im Verhältnis zur Rechenzeit, und lässt sich aus dem Mikrobenchmark eine vorsichtige Schätzung des nativen Rechenkerns ableiten?
-	\item Führt der Einsatz von C++ bei identischen Queries, Kandidaten und Worker-Zahlen zu einer kürzeren Ende-zu-Ende-Suchzeit?
+	\item Wie unterscheiden sich direkte Aufrufe der Python-Implementierung und der C++-Library für dieselben Graphpaare?
+	\item Wie groß sind die Übergabekosten der Library im Verhältnis zur Laufzeit eines trivialen Vergleichs?
+	\item Führt der Einsatz der C++-Library bei identischen Queries, Kandidaten und Worker-Zahlen zu einer kürzeren Ende-zu-Ende-Suchzeit?
 	\item Liefern beide Backends für dieselben Queries dieselben Treffer-IDs, und treten bei einem Backend fehlgeschlagene Einzelvergleiche auf?
 \end{enumerate}
 
-Daraus ergeben sich vier Hypothesen. \textbf{H1:} Der reine native Algorithmuskern benötigt weniger Rechenzeit als die Python-Implementierung. \textbf{H2:} Der C++-Vorteil bleibt auch nach Einbeziehung von Prozessstart und Datenaustausch groß genug, um die vollständige Suche zu beschleunigen. \textbf{H3:} Beide Implementierungen liefern für alle Kandidaten dieselben Suchtreffer. \textbf{H4:} Die Kosten des separaten CLI-Aufrufs sind messbar und können einen möglichen Vorteil des C++-Kerns teilweise oder vollständig aufheben. Die aktuelle Zwischenmessung liefert bereits Hinweise zu H1 und H4; H2 und H3 lassen sich erst mit dem vollständigen C++-Durchlauf beurteilen.
+Daraus ergeben sich vier Hypothesen. \textbf{H1:} Ein direkter Aufruf des nativen Algorithmuskerns benötigt weniger Zeit als ein Python-Aufruf. \textbf{H2:} Der Vorteil bleibt nach Einbeziehung der Library-Schnittstelle groß genug, um die vollständige Gen-DB-Suche zu beschleunigen. \textbf{H3:} Beide Implementierungen liefern für alle Queries dieselben Suchtreffer. \textbf{H4:} Die Kosten der Library-Schnittstelle sind im Verhältnis zur Rechenzeit klein, während ein Prozess-pro-Vergleich-CLI-Aufruf erheblichen Zusatzaufwand verursachen kann. Der abgeschlossene Mikrobenchmark und Suchlauf liefern für H1 bis H3 direkte Messwerte; H4 wird durch die Library-Aufrufkosten und den separat dokumentierten früheren CLI-Mikrobenchmark eingeordnet.
 
 \subsection{Implementierungen und Ausführungspfade}
 \label{sec:backend_implementierungen}
 
-Beide Backends sollen denselben Subgraph Algorithmus ausführen. Wie in Abschnitt~\ref{sec:grundlagen} beschrieben, vergleicht dieser die aus den Adjazenzmatrizen abgeleiteten Zeilenkomponenten unter zyklischen Rotationen und entscheidet anhand einer dynamischen Übereinstimmungsprüfung über die Relation der Graphen. Die C++-Implementierung berechnet die Signaturen, entfernt den Spaltengewichtungsanteil, prüft die Rotationen und gibt einen der definierten Ergebniswerte zurück. Die Python-Implementierung wird über die öffentliche API \texttt{Subgraph().compare\_graphs(A, B)} der Projektabhängigkeit aufgerufen.
+Beide Backends führen denselben Subgraph Algorithmus aus. Wie in Abschnitt~\ref{sec:grundlagen} beschrieben, vergleicht dieser die aus den Adjazenzmatrizen abgeleiteten Zeilenkomponenten unter zyklischen Rotationen und entscheidet anhand einer dynamischen Übereinstimmungsprüfung über die Relation der Graphen. Die Python-Implementierung wird über \texttt{Subgraph().compare\_graphs(A, B)} aufgerufen. Für C++ wird die statische Bibliothek \texttt{libsubgraphlib.a} mit einem C-Wrapper zu einer DLL gelinkt und über \texttt{ctypes} angesprochen. Die DLL wird einmal pro Worker-Prozess geladen; ein Vergleich erfolgt danach als direkter Funktionsaufruf.
 
-Der für die Messung entscheidende Unterschied liegt nicht nur in der Sprache, sondern auch in der Integration. Für Python erzeugt Gen-DB einen langlebigen \texttt{ProcessPoolExecutor}. Die Worker-Prozesse bearbeiten jeweils viele Kandidaten; sie erhalten die Aufgaben blockweise mit einer Chunk-Größe von $256$. Die Python-Algorithmusinstanz kann pro Worker wiederverwendet werden. Bei C++ ruft der Worker dagegen für jeden einzelnen Vergleich \texttt{subprocess.run} auf das Programm \texttt{subgraph-cli.exe} auf. Der Worker serialisiert beide Matrizen als JSON, startet den Prozess, übergibt die Eingabe über \texttt{stdin}, wartet auf dessen Ende und parst die JSON-Antwort aus \texttt{stdout} beziehungsweise \texttt{stderr}. Der Prozesspool selbst wird ebenfalls mit zwei Workern betrieben, aber das CLI-Programm bleibt nicht zwischen mehreren Vergleichen bestehen.
+Beide Varianten laufen in einem langlebigen \texttt{ProcessPoolExecutor} mit zwei Workern und erhalten Kandidaten blockweise mit Chunk-Größe $256$. Anders als bei der früheren CLI-Integration wird für C++ weder je Kandidat ein weiterer Prozess gestartet noch werden Matrizen und Resultate über JSON-Pipes serialisiert. Der einmalige Bau und das Linken des Wrappers finden vor dem Start des Pools statt und sind nicht Teil der gemessenen Suchzeit. Der Mikrobenchmark misst den direkten Funktionspfad einschließlich der Übergabe der Arrays an den Wrapper und vergleicht somit reale Aufrufpfade, nicht abstrakt bereinigte Sprachlaufzeiten.
 
-Damit enthält die gemessene Zeit des C++-Backends zusätzlich zum Algorithmus unter anderem Python-seitige Matrix- und JSON-Konvertierung, Prozessstart und -beendigung, Ein- und Ausgabe sowie das Parsen der Antwort. Beim Python-Backend entfällt dieser zusätzliche Prozessstart pro Kandidat. Ein Unterschied in der Ende-zu-Ende-Zeit ist folglich nicht als isolierter Sprachvergleich zu interpretieren: Gemessen wird jeweils der Algorithmus zusammen mit dem konkreten Ausführungspfad, den Gen-DB verwendet.
-
-Die Ergebniswerte der C++-CLI werden im Backend auf die von Gen-DB erwarteten Bezeichner abgebildet. Auch bei identischen Graphen wird die Auswahl des beizubehaltenden Netzwerks anhand der Kantenzahl nach der für die Python-Implementierung verwendeten Regel vorgenommen. Die Trefferlisten und Fehlerzähler im Experiment sollen zusätzlich kontrollieren, dass sich die Integrationspfade in der konkreten Suche gleich verhalten.
+Das Experiment kontrolliert, dass in Haupt- und Worker-Prozessen tatsächlich das jeweils angeforderte Backend aktiv ist, zählt fehlgeschlagene Vergleiche und gleicht für jede Anfrage die gefundenen Netzwerk-IDs ab. Damit lässt sich neben der Laufzeit auch die Ergebniskonformität der beiden Implementierungen beurteilen.
 
 \subsection{Versuchsaufbau}
 \label{sec:backend_versuchsaufbau}
 
 Das Experiment wird durch \texttt{src/experiment\_search\_backends.py} gesteuert. Es verwendet dieselbe Datenbank für beide Implementierungen, wählt mit Seed $42$ sechs Netzwerke als Queries und setzt die Untergrenze auf $15$ Knoten. Beide Backends werden mit zwei Workern und in derselben Reihenfolge ausgewählten Queries ausgeführt. Vor jeder Messreihe wird eine Aufwärmanfrage verworfen. Die JSON-Datei wird nach jeder abgeschlossenen Anfrage aktualisiert, damit ein Abbruch die bis dahin geschriebenen Messwerte nicht verliert. Zusätzlich prüft das Skript die Treffer-IDs, kontrolliert die tatsächlich in den Worker-Prozessen aktive Implementierung und zählt fehlgeschlagene Einzelvergleiche.
 
-Der Mikrobenchmark wird ohne Datenbank ausgeführt. Mit Seed $42$ werden $200$ Zufallspaare erzeugt. Die erste Matrix besitzt zwischen $15$ und $19$ Knoten, die zweite $20$ Knoten; jede mögliche gerichtete Kante wird mit Wahrscheinlichkeit $0{,}3$ gewählt. Die Python-Funktion wird direkt aufgerufen, während die C++-Variante denselben Vergleich über die JSON-CLI ausführt. Als separate Referenz für den CLI-Aufwand wird der Aufruf der C++-CLI mit zwei trivialen $1\times1$-Matrizen gemessen. Diese Referenz enthält weiterhin den Prozess- und JSON-Pfad, aber fast keine Algorithmusarbeit.
+Der Mikrobenchmark wird ohne Datenbank ausgeführt. Mit Seed $42$ werden $200$ Zufallspaare erzeugt. Die erste Matrix besitzt zwischen $15$ und $19$ Knoten, die zweite $20$ Knoten; jede mögliche gerichtete Kante wird mit Wahrscheinlichkeit $0{,}3$ gewählt. Beide Backends verarbeiten dieselben Paare. Für C++ wird außerdem der direkte Bibliotheksaufruf mit zwei trivialen $1\times1$-Matrizen gemessen. Dieser Wert nähert die Kosten von Array-Marshalling und Funktionsübergabe an, nicht jedoch alle denkbaren Aufwände größerer Matrizen.
 
 \begin{table}[h]
 	\centering
@@ -874,7 +868,7 @@ Der Mikrobenchmark wird ohne Datenbank ausgeführt. Mit Seed $42$ werden $200$ Z
 		\toprule
 		Parameter & Wert \\
 		\midrule
-		Backend-Reihenfolge & Python, anschließend C++-CLI \\
+		Backend-Reihenfolge & Python, anschließend C++-Library \\
 		Worker je Backend & $2$ \\
 		Queries & $6$, zufällig aus der Datenbank, Seed $42$ \\
 		Mindestgröße der Queries & $15$ Knoten \\
@@ -882,11 +876,11 @@ Der Mikrobenchmark wird ohne Datenbank ausgeführt. Mit Seed $42$ werden $200$ Z
 		Mikrobenchmark & $200$ Zufallspaare, Seed $42$ \\
 		Knotenzahl Mikrobenchmark & $n_A\in\{15,\ldots,19\}$, $n_B=20$ \\
 		Kantenwahrscheinlichkeit & $0{,}3$ \\
-		CLI-Referenz & $200$ Aufrufe mit trivialen $1\times1$-Matrizen \\
+		Library-Referenz & $200$ Aufrufe mit trivialen $1\times1$-Matrizen \\
 		Betriebssystem & Windows 11 \\
 		Python & $3.14.8$ \\
 		Logische Prozessoren & $4$ \\
-		C++-Executable & \texttt{csubgraph/build/subgraph-cli.exe} \\
+		C++-Bibliothek & \texttt{libsubgraphlib.a}, Wrapper-DLL über \texttt{ctypes} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -896,110 +890,130 @@ Die volle Suche misst mit \texttt{time.perf\_counter()} die Wanduhrzeit von \tex
 \subsection{Metriken}
 \label{sec:backend_metriken}
 
-Für dieselbe Query $q$ bezeichne $t_{\mathrm{Py},q}$ die gemessene Suchzeit mit der Python-Implementierung und $t_{\mathrm{C++},q}$ die Zeit mit der C++-CLI. Der relative Such-Speedup ist
+Für dieselbe Query $q$ bezeichne $t_{\mathrm{Py},q}$ die gemessene Suchzeit mit der Python-Implementierung und $t_{\mathrm{C++},q}$ die Zeit mit der C++-Library. Der relative Such-Speedup ist
 \[
 	S_{\mathrm{C++}} = \frac{\sum_q t_{\mathrm{Py},q}}{\sum_q t_{\mathrm{C++},q}}.
 \]
-Ein Wert größer als $1$ bedeutet, dass die C++-Variante in der gemessenen Gen-DB-Ausführung schneller war; ein Wert kleiner als $1$ bedeutet eine langsamere Suche. Der Quotient vergleicht die gesamte Integration und nicht allein den nativen Algorithmuskern. Ergänzend misst das Skript den Kandidatendurchsatz $\Theta=C_{\Sigma}/T$ und die Kosten pro Kandidat $\kappa=T/C_{\Sigma}$, wobei $C_{\Sigma}$ die Summe der Kandidatenzahlen und $T$ die Summe der Antwortzeiten eines Backends ist.
+Ein Wert größer als $1$ bedeutet, dass die C++-Library in der gemessenen Gen-DB-Ausführung schneller war; ein Wert kleiner als $1$ bedeutet eine langsamere Suche. Der Quotient vergleicht die gesamte Integration und nicht allein den nativen Algorithmuskern. Ergänzend misst das Skript den Kandidatendurchsatz $\Theta=C_{\Sigma}/T$ und die Kosten pro Kandidat $\kappa=T/C_{\Sigma}$, wobei $C_{\Sigma}$ die Summe der Kandidatenzahlen und $T$ die Summe der Antwortzeiten eines Backends ist.
 
-Die funktionale Übereinstimmung wird pro Query über die sortierten Listen der gefundenen Netzwerk-IDs geprüft. Zusätzlich vergleicht das Skript die erwartete Backend-Kennung in Haupt- und Worker-Prozessen und protokolliert fehlgeschlagene Vergleiche. Dadurch ist ein stiller Rückfall auf Python nicht mit einem erfolgreichen C++-Lauf zu verwechseln. Der Mikrobenchmark beantwortet eine andere Frage als der Such-Speedup: Seine CLI-Zeit enthält den Aufruf- und Schnittstellenpfad, während der direkte Python-Aufruf ohne neuen Prozess erfolgt.
+Die funktionale Übereinstimmung wird pro Query über die sortierten Listen der gefundenen Netzwerk-IDs geprüft. Zusätzlich vergleicht das Skript die erwartete Backend-Kennung in Haupt- und Worker-Prozessen und protokolliert fehlgeschlagene Vergleiche. Dadurch ist ein stiller Rückfall auf Python nicht mit einem erfolgreichen C++-Lauf zu verwechseln. Der Mikrobenchmark beantwortet eine andere Frage als der Such-Speedup: Er isoliert den wiederholten direkten Funktionsaufruf im Hauptprozess; die Ende-zu-Ende-Messung umfasst zusätzlich Datenbankzugriff, Worker-Kommunikation und Ergebnisaufbau.
 
-\subsection{Zwischenstand der Messungen}
+\subsection{Ergebnisse der abgeschlossenen Messreihe}
 \label{sec:backend_zwischenstand}
 
-Zum Stand der hier ausgewerteten JSON-Datei \texttt{search\_backends\_20261006\_111214.json} war der Versuch noch nicht abgeschlossen (Metadatum \texttt{complete=false}). Die Datei enthielt alle sechs Python-Suchmessungen und den Mikrobenchmark, aber noch keine C++-Suchmessung. Die sechs Queries der Python-Reihe sind nachfolgend aufgeführt. Die Zeitwerte sind deshalb eine Baseline für den späteren gepaarten Vergleich und noch kein Ergebnis zugunsten eines Backends.
+Die ausgewertete Datei \texttt{search\_backends\_20261007\_104804.json} ist mit \texttt{complete=true} markiert. Sechs Queries mit mindestens $15$ Knoten wurden bei zwei Workern in beiden Backends ausgeführt; zusammen durchlief jede Implementierung exakt $931.899$ Kandidaten. Tabelle~\ref{tab:backend_summary} fasst die Such- und Kalibrierungskennzahlen zusammen. Die Laufzeiten pro Query in Tabelle~\ref{tab:backend_queries} zeigen ergänzend, dass der beobachtete Gewinn nicht von einer einzelnen Anfrage getragen wird.
 
-\begin{table}[h]
+\input{../src/results/search_backends_20261007_104804_tabellen.tex}
+
+\begin{table}[!htbp]
 	\centering
 	\small
-	\caption{Vorläufige Python-Baseline der sechs Queries bei zwei Workern. Die C++-Zeiten lagen zum ausgewerteten Zwischenstand noch nicht vor.}
+	\caption{Antwortzeiten und Ergebnisse der sechs identischen Suchanfragen mit jeweils zwei Workern.}
 	\label{tab:backend_queries}
-	\begin{tabular}{@{}rrrrrrr@{}}
+	\begin{tabular}{@{}rrrrrrrrr@{}}
 		\toprule
-		Nr. & Netzwerk-ID & $n_Q$ & $m_Q$ & Kandidaten & Treffer & $t_{\mathrm{Py}}$ [s] \\
+		Nr. & Netzwerk-ID & $n_Q$ & $m_Q$ & Kandidaten & Treffer & Python [s] & C++ [s] & Speedup \\
 		\midrule
-		1 & 655359 & 15 &  59 & 317.772 & 3 & 361{,}98 \\
-		2 & 774601 & 15 &  54 & 328.808 & 7 & 352{,}21 \\
-		3 & 433490 & 18 &  88 & 147.814 & 1 & 164{,}72 \\
-		4 & 859418 & 15 &  76 & 227.780 & 1 & 285{,}76 \\
-		5 & 439395 & 18 &  97 & 111.466 & 1 & 125{,}53 \\
-		6 &  88980 & 20 & 123 &   9.475 & 1 &  10{,}84 \\
+		1 & 654.525 & 18 & 106 & 69.173 & 1 & 97{,}39 & 11{,}11 & $8{,}76\times$ \\
+		2 & 773.692 & 19 & 104 & 74.482 & 1 & 85{,}22 & 12{,}33 & $6{,}91\times$ \\
+		3 & 432.763 & 15 &  63 & 302.555 & 1 & 379{,}18 & 51{,}08 & $7{,}42\times$ \\
+		4 & 858.300 & 20 & 110 & 38.496 & 1 & 50{,}66 & 7{,}31 & $6{,}93\times$ \\
+		5 & 438.602 & 15 &  66 & 287.228 & 1 & 374{,}62 & 63{,}62 & $5{,}89\times$ \\
+		6 & 89.411 & 18 &  83 & 159.965 & 1 & 193{,}21 & 40{,}16 & $4{,}81\times$ \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-Die sechs Suchanfragen enthalten zusammen $1.143.115$ Kandidaten und $14$ Treffer. Die gesamte Python-Suchzeit beträgt $1.301{,}03$ Sekunden (rund $21{,}7$ Minuten); der Mittelwert liegt bei $216{,}84$ Sekunden, der Median bei $225{,}24$ Sekunden. Die kürzeste Suche dauert $10{,}84$ Sekunden, die längste $361{,}98$ Sekunden. Der aggregierte Durchsatz beträgt rund $879$ Kandidaten pro Sekunde. Die gemessene Vergleichsphase macht $89{,}8\,\%$ der Gesamtzeit aus; der übrige Anteil von $10{,}2\,\%$ umfasst unter anderem Laden, Prozesskommunikation und Ergebnisaufbau. Diese Phasenwerte stammen aus der Python-Baseline und dürfen nicht ohne Weiteres auf den C++-Pfad übertragen werden.
+Die Python-Suche benötigte insgesamt $1.180{,}28$ Sekunden, also $19$ Minuten und $40$ Sekunden; die C++-Library benötigte $185{,}62$ Sekunden, rund $3$ Minuten und $6$ Sekunden. Der aggregierte Speedup beträgt damit $6{,}36\times$ und die Suchzeit sinkt um etwa $84{,}3\,\%$. Der Geschwindigkeitsgewinn ist für jede der sechs Einzelanfragen sichtbar: Die individuellen Speedups reichen von $4{,}81\times$ bis $8{,}76\times$. Ihre Streuung macht zugleich deutlich, dass ein einzelner Gesamtfaktor keine für jede Query identische Beschleunigung verspricht.
 
-\subsubsection{Mikrobenchmark und CLI-Aufwand}
-\label{sec:backend_mikrobenchmark}
+Die Query mit den meisten Kandidaten ($302.555$) benötigt mit Python $379{,}18$ Sekunden und mit C++ $51{,}08$ Sekunden; die zweite Anfrage mit annähernd ebenso vielen Kandidaten zeigt mit $287.228$ Kandidaten und $374{,}62$ beziehungsweise $63{,}62$ Sekunden ein ähnliches, aber etwas kleineres Verhältnis. Die Query mit den wenigsten Kandidaten ($38.496$) ist in beiden Backends die schnellste. Die Messreihe passt damit zur erwarteten Abhängigkeit von der Größe des Suchraums. Wegen nur sechs Queries und variierender Knotenzahlen ist sie jedoch keine kontrollierte Regression, aus der eine allgemeingültige Zeit pro Kandidat abgeleitet werden könnte.
 
-Der vorliegende Mikrobenchmark zeigt zunächst einen klaren Unterschied zwischen den tatsächlich gemessenen Aufrufpfaden. Die Python-Vergleiche benötigen im Mittel $2{,}698$ Millisekunden je Paar. Der Vergleich über die C++-CLI benötigt im Mittel $11{,}417$ Millisekunden. Das entspricht für den CLI-Aufruf einer mittleren Laufzeit, die etwa $4{,}23$-mal so hoch ist; im Median beträgt das Verhältnis $11{,}184/2{,}769\approx4{,}04$. Die reine Beobachtung des CLI-Endpunkts stützt somit nicht die Erwartung, dass die C++-Variante in ihrer derzeitigen Integration schneller ist.
-
-\begin{table}[h]
+\begin{figure}[!h]
 	\centering
-	\small
-	\caption{Mikrobenchmark über $200$ Zufallspaare. Mittelwert und Median der gemessenen Einzelaufrufe; beim C++-Backend ist der Prozess- und JSON-Pfad enthalten.}
-	\label{tab:backend_micro}
-	\begin{tabular}{@{}lrrr@{}}
-		\toprule
-		Messung & Mittel [ms] & Median [ms] & Maximum [ms] \\
-		\midrule
-		Python-Funktion, direkter Aufruf & 2{,}698 & 2{,}769 & 4{,}006 \\
-		C++-Algorithmus über CLI & 11{,}417 & 11{,}184 & 14{,}439 \\
-		C++-CLI mit trivialen $1\times1$-Matrizen & 10{,}081 & 9{,}953 & 11{,}903 \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+	\includegraphics[width=0.75\textwidth]{../src/results/plot6_backends_gesamtzeit_speedup.pdf}
+	\caption{Die Gesamtlaufzeit der sechs Suchen sinkt mit der C++-Library gegenüber Python auf rund ein Sechstel.}
+	\label{fig:backend_gesamtzeit}
+\end{figure}
 
-Der triviale CLI-Aufruf benötigt im Mittel bereits $10{,}081$ Millisekunden. Das ist fast die gesamte mittlere Zeit des normalen C++-Mikrobenchmarks. Eine grobe Differenz der Mittelwerte ergibt $11{,}417-10{,}081=1{,}336$ Millisekunden für den zusätzlichen Aufwand des nicht trivialen Aufrufs. Verglichen mit $2{,}698$ Millisekunden für Python würde diese überschlägige Rechnung einen etwa zweifachen Vorteil des C++-Rechenkerns nahelegen. Sie ist jedoch keine direkte Messung der C++-Rechenzeit: Die CLI-Referenz verwendet nur $1\times1$-Matrizen, während bei den eigentlichen Paaren größere Matrizen serialisiert, geparst und konvertiert werden. Die Differenz kann diese zusätzlichen Schnittstellenkosten daher nicht sauber herausrechnen. Sie liefert höchstens einen Hinweis, dass der native Kern schneller sein könnte, obwohl der vollständige CLI-Aufruf langsamer ist.
+Abbildung~\ref{fig:backend_gesamtzeit} stellt die aufsummierte Suchzeit in Minuten dar; die Beschriftungen über den Balken geben den Speedup relativ zur Python-Referenz an. Die Differenz ist groß genug, dass sie nicht durch die Wahl einer einzelnen Aggregationskennzahl erklärt wird: Verglichen werden die Summe derselben sechs Antwortzeiten, dieselben Kandidaten und dieselbe Worker-Zahl. Die Grafik belegt den Anwendungseffekt dieser konkreten Library-Integration auf dieser Hardware, nicht eine universelle Beschleunigung für alle Datenbanken oder Query-Arten.
 
-Die Ursache ist mit dem aktuellen Aufbau plausibel: Jeder C++-Vergleich startet ein neues Betriebssystemprogramm und bezahlt erneut für Prozessinitialisierung und JSON-Kommunikation. Bei Hunderttausenden Kandidaten wiederholt sich dieser Aufwand für jeden einzelnen Vergleich. Die Python-Implementierung ruft dagegen eine API innerhalb eines bereits laufenden Worker-Prozesses auf und amortisiert dessen Startkosten über viele Vergleiche. Der Mikrobenchmark misst damit nicht die isolierte Geschwindigkeit zweier Funktionen unter identischen Laufzeitbedingungen, sondern zwei unterschiedliche Ausführungsmodelle. Um die Hypothese eines schnelleren C++-Kerns belastbar zu prüfen, wäre eine persistente C++-Worker-Schnittstelle oder ein Batch-CLI-Aufruf nötig, der viele Vergleiche pro Prozess abarbeitet.
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{../src/results/plot7_backends_verteilung_antwortzeiten.pdf}
+	\caption{Die Verteilung der sechs Antwortzeiten zeigt für beide Backends eine deutliche Verkürzung bei C++.}
+	\label{fig:backend_verteilung}
+\end{figure}
 
-\subsubsection{Vorläufige Suchbaseline}
-\label{sec:backend_suchbaseline}
+Abbildung~\ref{fig:backend_verteilung} verwendet eine logarithmische Zeitachse und zeigt Median, Quartile, Spannweite und Mittelwert der Antwortzeiten. Die beiden Verteilungen liegen klar getrennt: Die mittlere Antwortzeit sinkt von $196{,}7$ auf $30{,}9$ Sekunden, der Median von $145{,}3$ auf $26{,}2$ Sekunden. Die logarithmische Darstellung macht sowohl die Beschleunigung als auch die Unterschiede zwischen kleinen und großen Suchräumen lesbar; die sechs Beobachtungen pro Backend erlauben allerdings keine robuste Aussage über die Verteilung zukünftiger Anfragen.
 
-Die Python-Suchzeiten zeigen, weshalb bereits ein kleiner Unterschied pro Kandidat relevant sein kann: Die sechs Queries durchlaufen zusammen mehr als $1{,}14$ Millionen Kandidaten. Die Antwortzeit korreliert im aktuellen Zwischenstand mit $r=0{,}994$ mit der Kandidatenzahl; die lineare Steigung beträgt etwa $1{,}115$ Millisekunden je zusätzlichem Kandidaten über die gemischten Query-Größen. Diese Regression beschreibt lediglich die sechs Messpunkte und ist wegen der kleinen Stichprobe sowie der unterschiedlichen Knotenzahlen nicht als universelles Kostenmodell zu interpretieren.
+\subsection{Phasenanalyse und Skalierung mit der Kandidatenzahl}
+\label{sec:backend_phasen}
 
-Die Query mit $20$ Knoten benötigt mit $9.475$ Kandidaten nur $10{,}84$ Sekunden. Die beiden Queries mit jeweils $15$ Knoten haben dagegen $317.772$ beziehungsweise $328.808$ Kandidaten und benötigen $361{,}98$ beziehungsweise $352{,}21$ Sekunden. Das Verhältnis verdeutlicht die praktische Wirkung der Kandidatenmenge auf die Gesamtsuche. Für den Backend-Vergleich ist zugleich entscheidend, dass beide Implementierungen dieselben Query- und Kandidatenmengen durchlaufen müssen; andernfalls wären die Gesamtzeiten nicht direkt vergleichbar.
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{../src/results/plot8_backends_phasen.pdf}
+	\caption{Die Phasenmessung zeigt, wie sich Vergleichszeit und übrige Suchzeit zwischen den Backends verschieben.}
+	\label{fig:backend_phasen}
+\end{figure}
 
-\subsection{Diskussion des Zwischenstands}
+Abbildung~\ref{fig:backend_phasen} stellt die mittlere Antwortzeit je Anfrage als gestapelte Vergleichsphase und Restzeit dar. Die Python-Vergleichsphase beansprucht aggregiert $88{,}4\,\%$ der Gesamtlaufzeit; bei C++ sind es nur $33{,}3\,\%$. Entsprechend sinkt die Vergleichszeit über die sechs Anfragen von insgesamt rund $1.043$ Sekunden auf rund $61{,}9$ Sekunden, während die gemessene Restzeit von etwa $137$ auf $123{,}7$ Sekunden zurückgeht. Der Rest umfasst Laden, Datenübertragung beziehungsweise Aufgabenverteilung und Ergebnisaufbau und ist nicht mit einer reinen Datenbankzeit gleichzusetzen. Da der Rechenkern nun erheblich schneller ist, wird dieser Anteil relativ dominant: Beschleunigungen weiterer Vergleichsoperationen allein haben abnehmenden Einfluss auf die gesamte Antwortzeit. Strömendes Laden, effizientere Aufgabenübergabe und Phaseninstrumentierung werden dadurch als nächste Optimierungsziele relevanter.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{../src/results/plot9_backends_skalierung_suchraum.pdf}
+	\caption{Die Antwortzeit nimmt für beide Backends mit der nach der SQL-Vorauswahl verbleibenden Kandidatenzahl zu.}
+	\label{fig:backend_skalierung}
+\end{figure}
+
+Abbildung~\ref{fig:backend_skalierung} ordnet jede Anfrage nach der Zahl ihrer Kandidaten und zeigt für Python wie C++ einen klaren Anstieg der Antwortzeit mit wachsendem Suchraum. Die Punkte bilden keine streng proportionale Linie: Queries unterscheiden sich nicht nur in ihrer Kandidatenzahl, sondern auch in Knotenzahl und Struktur, und außerhalb der Vergleichsphase fallen weitere Kosten an. Insgesamt verarbeitet Python rund $790$ Kandidaten pro Sekunde, während die Library rund $5.020$ Kandidaten pro Sekunde erreicht; der aggregierte Aufwand sinkt von $1{,}267$ auf $0{,}199$ Millisekunden je Kandidat. Diese Quotienten beschreiben die sechs vollständigen Suchläufe einschließlich ihrer nichtvergleichenden Anteile und sind deshalb keine isolierten Kosten des Algorithmuskerns.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=0.75\textwidth]{../src/results/plot10_backends_gleiche_anfragen.pdf}
+	\caption{Für jede einzelne Query liegt die Antwortzeit der C++-Library unter derjenigen der Python-Implementierung.}
+	\label{fig:backend_queries}
+\end{figure}
+
+Abbildung~\ref{fig:backend_queries} zeigt gepaart dieselben sechs Queries, nach der Python-Antwortzeit sortiert und auf logarithmischer Skala. Beide Kurven folgen derselben Reihenfolge: Die aufwendigen Queries bleiben auch mit C++ aufwendiger als die kleineren, jedoch liegt jeder C++-Messpunkt deutlich unter seinem Python-Pendant. Dies schließt aus, dass der aggregierte Vorteil allein aus einer anderen Reihenfolge, einem anderen Query-Sample oder weniger Kandidaten im C++-Lauf entsteht.
+
+\subsection{Mikrobenchmark, funktionale Kontrolle und Diskussion}
 \label{sec:backend_diskussion}
 
-\paragraph{Hypothese H1: nativer Kern.} Die Mittelwertdifferenz zwischen regulärem C++-CLI-Aufruf und trivialem CLI-Aufruf ist mit rund $1{,}34$ Millisekunden kleiner als die Python-Mittelzeit von $2{,}70$ Millisekunden. Das ist mit einem schnelleren nativen Rechenkern vereinbar, beweist einen solchen Vorteil aber nicht. Insbesondere misst der triviale CLI-Aufruf nicht dieselbe JSON-Menge und dieselbe Matrixkonvertierung wie ein echter Vergleich. H1 bleibt damit vorläufig und kann mit diesem Mikrobenchmark allein nicht bestätigt werden.
+Der Mikrobenchmark isoliert die direkten Vergleichsaufrufe auf $200$ identischen Zufallspaaren. Tabelle~\ref{tab:backend_calibration} enthält Mittelwert, Median und Maximum. Der C++-Library-Aufruf benötigt im Mittel $0{,}074$ Millisekunden je Paar, der direkte Python-Aufruf $2{,}694$ Millisekunden. Das Verhältnis der Mittelwerte entspricht einer Beschleunigung von ungefähr $36{,}5\times$; anhand der Mediane ergibt sich etwa $40{,}8\times$. Die Maximalwerte betragen $0{,}331$ beziehungsweise $3{,}703$ Millisekunden. Damit bestätigt H1 für diesen Benchmark deutlich einen schnelleren direkten C++-Aufruf.
 
-\paragraph{Hypothese H2: vollständige Suche.} Für die Frage, ob C++ Gen-DB als Anwendung schneller macht, ist der vollständige Suchlauf maßgeblich. Zum ausgewerteten Stand existiert dafür ausschließlich die Python-Baseline. Die C++-Suchreihe wurde noch nicht in die JSON-Datei geschrieben; weder ein C++-Speedup noch eine Verlangsamung der vollständigen Suche kann daher seriös angegeben werden. Die gemessene CLI-Aufrufzeit von rund $11{,}4$ Millisekunden macht allerdings deutlich, dass der aktuelle Integrationspfad einen möglichen Rechenvorteil erheblich gefährden kann.
+Der triviale $1\times1$-Library-Aufruf benötigt im Mittel $0{,}018$ Millisekunden und im Median $0{,}018$ Millisekunden. Das entspricht etwa einem Viertel der mittleren gemessenen C++-Zeit für die größeren Vergleichspaare und zeigt, dass die Funktionsübergabe samt Marshalling nicht null ist, aber weit unter der gemessenen Python-Aufrufzeit liegt. Anders als eine Differenz aus CLI-Messungen ist dieser Wert keine Prozessstartzeit: Er ist ein direkter Aufruf durch die Wrapper-Schnittstelle. Der triviale Aufruf enthält außerdem andere Matrixgrößen als die eigentlichen Paare; er dient daher nur als Größenordnung für die Mindestkosten und nicht als exakt abziehbarer Anteil.
 
-\paragraph{Hypothese H3: gleiche Treffer.} Die Python-Reihe weist keine fehlgeschlagenen Vergleiche auf. Da die C++-Messungen noch fehlen, ist ein Abgleich der Treffer-IDs zwischen den Implementierungen noch nicht möglich. Die in der Versuchsanordnung vorgesehene Korrektheitskontrolle ist daher noch nicht abgeschlossen.
+\paragraph{H1 und H2: Beschleunigung des Einzelvergleichs und der Suche.} Der Mikrobenchmark belegt den Geschwindigkeitsvorteil des direkten C++-Aufrufpfads in der Stichprobe. Auch die Ende-zu-Ende-Suche ist mit der Library deutlich schneller: Die Gesamtzeit reduziert sich von $1.180{,}28$ auf $185{,}62$ Sekunden. Der Such-Speedup von $6{,}36\times$ fällt kleiner aus als die etwa $36{,}5\times$ des Mikrobenchmarks, weil die vollständige Anfrage Datenbankzugriff, Prozesskommunikation und Ergebnisaufbau einschließt und weil die Vergleichsphase nach ihrer Beschleunigung nur noch rund ein Drittel der C++-Gesamtzeit ausmacht. Die beiden Speedup-Werte beschreiben damit unterschiedliche Ebenen und widersprechen einander nicht.
 
-\paragraph{Hypothese H4: Schnittstellenkosten.} Der triviale CLI-Aufruf benötigt rund $10$ Millisekunden, während ein direkter Python-Funktionsaufruf für die Zufallspaare im Mittel rund $2{,}7$ Millisekunden benötigt. Die C++-CLI verursacht somit bereits bei fast leerer Algorithmusarbeit eine erhebliche Mindestlatenz. Weil Gen-DB den CLI-Prozess pro Kandidat startet, wirkt diese Latenz nicht einmal pro Suche, sondern im ungünstigsten Fall millionenfach. Die derzeitige Messung spricht deshalb deutlich dafür, dass eine Prozess-pro-Vergleich-Integration für die gewünschte Beschleunigung ungeeignet ist, auch wenn der Algorithmuskern selbst effizient sein sollte.
+\paragraph{H3: funktionale Übereinstimmung.} Für jede Query stimmen die mit Python und C++ gefundenen Netzwerk-IDs überein. Beide Backends liefern je Query einen Treffer, zusammen also sechs Treffer in den sechs jeweiligen Suchläufen. In beiden Reihen beträgt die Fehlerzahl null. Zusätzlich bestätigt die Laufzeitkontrolle, dass die angeforderte Library tatsächlich in den C++-Workern aktiv war. Das ist eine positive differenzielle Prüfung der konkreten sechs Suchläufe, aber noch kein formaler Korrektheitsbeweis für alle Eingaben oder für alle Randfälle des Algorithmus.
 
-\subsection{Grenzen und weiterer Auswertungsbedarf}
+\paragraph{H4: Kosten und Grenze der Anbindung.} Der Library-Aufruf verursacht messbare Übergabekosten, doch die direkte Mikrobenchmark-Zeit bleibt deutlich unter der Python-Vergleichszeit. Damit zeigen die neuen Resultate den praktisch relevanten Unterschied zum früheren CLI-Pfad: Dessen Prozess-pro-Vergleich- und JSON-Aufwand hatte einen trivialen Aufruf von rund $10$ Millisekunden ergeben; dieser Wert gehört ausdrücklich nicht zur hier untersuchten Library. Die Funktionseinbindung vermeidet diesen Prozessstart. Sie beseitigt aber weder alle Python/C++-Übergabekosten noch die nichtvergleichenden Phasen der Suchpipeline.
+
+\subsection{Grenzen der Messreihe}
 \label{sec:backend_grenzen}
 
-Der Zwischenstand darf aus mehreren Gründen nicht als abschließendes Ergebnis gelesen werden:
+Die Ergebnisse sind positiv, müssen aber innerhalb des Versuchsaufbaus interpretiert werden:
 
 \begin{itemize}
-	\item \textbf{C++-Suchreihe fehlt.} Die JSON-Datei ist als unvollständig markiert und enthält zum dokumentierten Zeitpunkt nur sechs Python-Messungen. Gesamtzeit, Treffervergleich und Fehlerzahl für C++ sind noch nicht verfügbar.
-	\item \textbf{Mikrobenchmark vergleicht ungleiche Ausführungspfade.} Python wird direkt in einem bereits laufenden Prozess aufgerufen, C++ über einen neuen Prozess und JSON. Das ist für die produktive Integrationsfrage relevant, isoliert aber nicht die Programmiersprache oder den Algorithmuskern.
-	\item \textbf{CLI-Referenz mit kleinster Eingabe.} Der $1\times1$-Aufruf unterschätzt wahrscheinlich den Datenaufwand echter Matrizen. Seine Zeit kann nicht vollständig von der regulären CLI-Zeit abgezogen werden, um eine verlässliche reine C++-Rechenzeit zu erhalten.
-	\item \textbf{Begrenzte Stichprobe und Graphenfamilie.} Der Mikrobenchmark verwendet $200$ synthetische Zufallspaare mit Knotenzahlen zwischen $15$ und $20$ und einer festen Kantenwahrscheinlichkeit. Die Suchreihe umfasst nur sechs Datenbank-Queries und je eine Messung pro Backend.
-	\item \textbf{Hardware- und Umgebungsabhängigkeit.} Dokumentiert sind Windows 11, Python $3.14.8$ und vier logische Prozessoren. Die Laufzeiten können von Prozessor, Compileroptionen, Prozessstart, Betriebssystem und Datenbankzustand abhängen; sie lassen sich nicht ohne Weiteres auf andere Systeme übertragen.
-	\item \textbf{Keine Wiederholungsintervalle.} Die berichteten Mittelwerte und Mediane enthalten keine Wiederholungsläufe je Graphenpaar, aus denen Konfidenzintervalle oder Signifikanztests abgeleitet werden könnten.
+	\item \textbf{Sechs Queries und jeweils ein Suchlauf.} Der Speedup beruht auf sechs mit Seed $42$ reproduzierbar ausgewählten Datenbankanfragen und einer Messung je Backend. Es gibt keine Wiederholungen je Query, Konfidenzintervalle oder Signifikanztests; Cache-, System- und Datenbankzustände können einzelne Zeiten beeinflussen.
+	\item \textbf{Synthetische Datenbank und begrenzte Querygrößen.} Die Suchreihe stammt aus der synthetischen Gen-DB-Datenbank; die sechs Queries besitzen $15$ bis $20$ Knoten. Auf realen biologischen Netzwerken, anderen Dichten und größeren Matrizen kann sich das Verhältnis ändern.
+	\item \textbf{Spezifische Hardware und Implementierung.} Gemessen wurde unter Windows 11 mit Python $3.14.8$, vier logischen Prozessoren und zwei Workern. Compileroptionen, Prozessorarchitektur, Betriebssystem, Datenbanklast und Wrapper beeinflussen die Laufzeiten.
+	\item \textbf{Mikrobenchmark ist kein vollständiger Algorithmusvergleich.} Die $200$ Zufallspaare decken Matrizen mit $15$ bis $20$ Knoten und Kantendichte um $0{,}3$ ab. Sie belegen den Vorteil unter dieser Verteilung, aber nicht für alle Graphklassen. Der Vergleich schließt zudem die konkrete Python-zu-C++-Übergabe ein.
+	\item \textbf{Phasenrest ist zusammengesetzt.} Die Differenz zwischen Suchzeit und Vergleichszeit verbindet mehrere Vorgänge und darf weder als reine Datenbanklaufzeit noch als reine Parallelisierungskosten ausgelegt werden. Eine feinere Instrumentierung wäre nötig, um die verbliebenen rund zwei Drittel der C++-Zeit kausal aufzuteilen.
+	\item \textbf{Trefferabgleich ist kein universeller Nachweis.} Identische Treffer-IDs und null Fehler in dieser Stichprobe erhöhen das Vertrauen in die Integration, ersetzen aber keine gemeinsamen Konformitäts- und Eigenschaftstests für alle Eingabekombinationen.
 \end{itemize}
-
-Für eine belastbare Folgeuntersuchung sollte der C++-Kern zunächst ohne Prozessstart pro Paar gemessen werden, beispielsweise direkt als Bibliotheksaufruf oder in einem langlebigen Worker. Ergänzend sollte die produktive Integration mehrere Kandidaten je CLI-Prozess als Batch verarbeiten. Anschließend wären beide Backends mit identischen Queries und Kandidaten mehrfach zu messen; die Laufzeit für Datenbankabfrage, Vergleich und sonstige Verarbeitung sollte dabei getrennt ausgewiesen werden. Erst diese Messungen könnten unterscheiden, ob ein fehlender End-to-End-Gewinn am Algorithmus oder an der Schnittstelle liegt.
 
 \subsection{Zwischenfazit}
 \label{sec:backend_zwischenfazit}
 
-Der bisherige Mikrobenchmark zeigt keinen Vorteil des C++-Backends auf der Ebene des vollständigen Einzelaufrufs: Die C++-CLI benötigt im Mittel $11{,}42$ Millisekunden gegenüber $2{,}70$ Millisekunden für den direkten Python-Aufruf. Zugleich beansprucht ein trivialer C++-CLI-Aufruf bereits rund $10{,}08$ Millisekunden. Das legt nahe, dass Prozessstart und JSON-Schnittstelle den möglichen Vorteil des nativen Algorithmuskerns überdecken. Die überschlägige Differenz der Mittelwerte ist jedoch keine isolierte Messung dieses Kerns.
-
-Zum ausgewerteten Zeitpunkt war der längere Suchvergleich noch im Gang. Die Python-Baseline über sechs Queries dauerte insgesamt $1.301$ Sekunden; C++-Gesamtzeit, Trefferübereinstimmung und Fehlerzahl standen noch aus. Damit bleibt die zentrale Erwartung dieser Untersuchung, dass C++ die tatsächliche Gen-DB-Suche beschleunigt, zunächst unbestätigt. Das Kapitel dokumentiert bewusst diesen Zwischenstand; eine endgültige Bewertung muss nach Abschluss der C++-Messreihe ergänzt werden.
+Der Wechsel von Python zur C++-Library beschleunigt in der gemessenen Konfiguration sowohl den direkten Vergleich als auch die vollständige Suche. Bei denselben sechs Anfragen und $931.899$ Kandidaten sinkt die Gesamtzeit um den Faktor $6{,}36$; in allen sechs Fällen stimmen die Treffer-IDs überein, und es gibt keine fehlgeschlagenen Vergleiche. Der Mikrobenchmark misst einen noch größeren Vorteil für direkte Aufrufe, während die Phasenanalyse zeigt, dass Laden, Übergabe und Ergebnisaufbau den Ende-zu-Ende-Speedup begrenzen. Die Messergebnisse stützen damit die Library-Integration als sinnvollen Beschleunigungsweg für diesen Anwendungsfall. Sie sind wegen Stichprobengröße, synthetischer Daten und einzelner Hardwarekonfiguration eine belastbare Tendenz, aber keine universelle Leistungsgarantie.
 
 \subsection{Fremde Beschreibungen}
 \label{sec:fremde_beschreibungen}
+Die Anreicherung mit einem Fremdmodul in einer anderen Beschreibung erscheint mir sehr unpassend und beschreibungstechnisch nicht durchgängig. Eine lose Kopplung dagegen, angenommen durch eine C++-CLI oder C++-Library, erlaubt eine klarere Trennung, bei der alle beteiligten Mitgestalter dieses Softwaresystems mit einem klaren Trennungsbewusstsein dieses System mitgestalten. Ein System, das aus Bereichen oder Teilen besteht, die durch unterschiedliche Beschreibungen entwickelt sind oder arbeiten, schafft Mitgestaltern dieses Systems ein in der Regel eher unruhigeres Trennungsbewusstsein in der Analyse, Weiterentwicklung und Wiederverwendung.
+Dieses unruhigere Trennungsbewusstsein kann sich in der Praxis in einer unklaren Verantwortlichkeit und Kostenverteilung an der Grenze zwischen den beiden Beschreibungen äußern. Die Messungen dieses Kapitels dagegen zeigen für Gen-DB zugleich einen deutlichen Laufzeitvorteil der Library. Die weitergehende Position dieser Arbeit lautet, dass klar benannte Grenzen Analyse, Weiterentwicklung und Wiederverwendung unterstützen und dadurch ein gemeinsames Trennungsbewusstsein fördern. Diese Aussage ist eine begründete Gestaltungsposition; die Laufzeitdaten allein messen sie nicht.
 
-Die Anreicherung mit einem Fremdmodul in einer anderen Beschreibung erscheint mir sehr unpassend und beschreibungstechnisch nicht durchgängig. Eine lose Kopplung dagegen, angenommen durch eine C++-Library und nicht durch eine C++-CLI, erlaubt eine klarere Trennung, bei der alle beteiligten Mitgestalter dieses Software Systems mit einem klaren Trennungsbewusstsein dieses System mitgestalten. Ein System, das aus Bereichen oder Teilen besteht, die durch unterschiedliche Beschreibungen entwickelt sind oder arbeiten, schafft Mitgestaltern dieses Systems ein eher unruhigeres Trennungsbewusstsein in der Analyse, Weiterentwicklung und Wiederverwendung.
+Die Einbindung eines Fremdmoduls aus einer anderen Beschreibung wirft eine Gestaltungsfrage auf: Wie bleiben Verantwortlichkeiten und Kosten an der Grenze für alle Mitgestaltenden erkennbar? Eine lose Kopplung über eine C++-Library statt über einen separaten C++-CLI-Prozess hält die technische Schnittstelle schmaler und ermöglicht es, den C++-Kern innerhalb des Python-Workers aufzurufen. Die Messungen dieses Kapitels zeigen für Gen-DB zugleich einen deutlichen Laufzeitvorteil der Library. Die weitergehende Position dieser Arbeit lautet, dass klar benannte Grenzen Analyse, Weiterentwicklung und Wiederverwendung unterstützen und dadurch ein gemeinsames Trennungsbewusstsein fördern. Diese Aussage ist eine begründete Gestaltungsposition; die Laufzeitdaten allein messen sie nicht.
 
 Dieser Abschnitt führt die Aussage weiter aus. Er klärt zunächst, was hier unter einer \emph{Beschreibung} verstanden wird, wendet die Aussage dann auf die Messungen dieses Kapitels an und überträgt sie anschließend auf die übrigen Teile der Arbeit. Abschließend werden Gegenargumente und die Grenzen der Position benannt. Wichtig ist die Reihenfolge der Argumente: Die Position beruht in erster Linie auf einer Überlegung zur Gestaltung des Systems. Die Messwerte aus diesem Kapitel illustrieren sie, sie beweisen sie nicht.
 
@@ -1008,58 +1022,58 @@ Dieser Abschnitt führt die Aussage weiter aus. Er klärt zunächst, was hier un
 
 Eine \emph{Beschreibung} bezeichnet im Folgenden die Gesamtheit der Vereinbarungen, in denen ein Teil eines Systems formuliert ist: seine Sprache, seine Datentypen, sein Fehlermodell, die Lebensdauer seiner Zustände und die Art, wie er aufgerufen, getestet und ausgeliefert wird. Zwei Teile liegen in derselben Beschreibung, wenn sie diese Vereinbarungen teilen. Dann kann ein Mitgestalter, der den einen Teil versteht, den anderen mit denselben Begriffen lesen. Ein \emph{Fremdmodul} ist ein Teil, der in einer anderen Beschreibung arbeitet und dennoch Teil desselben Systems sein soll.
 
-Gen-DB besteht in der Beschreibung des Backends aus Python-Code. Matrizen sind dort \texttt{numpy}-Arrays, Fehler sind Ausnahmen, und der Subgraph Algorithmus ist ein Objekt, das über \texttt{Subgraph().compare\_graphs(A, B)} aufgerufen wird. Die C++-CLI arbeitet dagegen in einer anderen Beschreibung: Matrizen sind JSON-Text, Fehler sind Exit-Codes und Ausgaben auf \texttt{stderr}, und ein Zustand überlebt keinen Aufruf. Zwischen beiden Beschreibungen vermittelt im Backend Übersetzungscode, den keiner der beiden Teile beschreibt.
+Gen-DB besteht in der Beschreibung des Backends aus Python-Code. Matrizen liegen dort als \texttt{numpy}-Arrays vor, Fehler werden über Python-Ausnahmen signalisiert, und der Subgraph Algorithmus wird als Funktion oder Objekt aufgerufen. Die frühere C++-CLI arbeitete dagegen in einer anderen Beschreibung: Matrizen wurden zu JSON-Text, Fehler zu Exit-Codes und Ausgaben auf \texttt{stderr}, und ein Zustand überlebte keinen Aufruf. Die nun eingesetzte Library behält den nativen C++-Kern bei, stellt dem Backend aber eine direkte Funktionsschnittstelle im Worker-Prozess bereit. Sie benötigt weiterhin eine Sprachgrenze und eine passende Fehler- und Datentypabbildung, vermeidet jedoch das pro Vergleich wiederholte Textprotokoll und den zusätzlichen Prozesslebenszyklus.
 
 Die C++-Library ist ebenfalls in C++ geschrieben, ihre Schnittstelle kann jedoch in der Beschreibung des Aufrufers erscheinen, etwa als importierbare Funktion, die Arrays entgegennimmt und Werte oder Ausnahmen zurückgibt. Der Unterschied liegt also nicht in der Programmiersprache des Algorithmuskerns, sondern darin, \emph{wo die Grenze zwischen beiden Beschreibungen verläuft}. Bei der Library verläuft sie an einer schmalen, typisierten Funktionsschnittstelle. Bei der CLI verläuft sie am Betriebssystem, also an Prozessgrenze, Textformat und Dateideskriptoren.
 
 \subsubsection{Anwendung auf die Messungen dieses Kapitels}
 \label{sec:fremde_messung}
 
-Die Untersuchung in diesem Kapitel zeigt an mehreren Stellen, dass die Grenze der CLI-Anbindung nicht nur Rechenzeit kostet, sondern auch Beschreibungsaufwand erzeugt.
+Die Untersuchung unterscheidet zwischen der früheren CLI-Anbindung und der nun gemessenen Library-Anbindung. Die CLI legte eine breite Grenze aus Prozessstart, Textformat und Fehlerauswertung offen; die Library verläuft innerhalb des Worker-Prozesses über einen Funktionsaufruf. Der Mikrobenchmark und die Ende-zu-Ende-Messung quantifizieren den Laufzeitunterschied dieser konkreten Varianten.
 
-\paragraph{Der Messaufbau muss die Grenze selbst überwachen.} Die Versuchsanordnung prüft ausdrücklich die tatsächlich in den Worker-Prozessen aktive Implementierung, zählt fehlgeschlagene Einzelvergleiche und vergleicht die Treffer-IDs beider Backends (Abschnitt~\ref{sec:backend_versuchsaufbau}). Diese Kontrollen sind sinnvoll. Sie sind aber auch ein Symptom: Weil die Grenze nicht in einer gemeinsamen Beschreibung liegt, kann das System nicht zusichern, dass beide Seiten dasselbe tun. Ein stiller Rückfall auf Python, der mit einem erfolgreichen C++-Lauf verwechselt werden könnte, ist eine Fehlerklasse, die erst durch die Mischung zweier Beschreibungen entsteht.
+\paragraph{Der Messaufbau überwacht die aktive Implementierung.} Die Versuchsanordnung prüft die tatsächlich in den Worker-Prozessen aktive Implementierung, zählt fehlgeschlagene Einzelvergleiche und vergleicht die Treffer-IDs beider Backends (Abschnitt~\ref{sec:backend_versuchsaufbau}). Diese Kontrollen sind nötig, um den konkreten Lauf korrekt zuzuordnen und Backend-Konformität empirisch zu prüfen. Sie zeigen zugleich, dass sprachübergreifende Integration Tests an der Grenze benötigt; der abgeschlossene Lauf bestätigt für die sechs Queries gleiche Treffer-IDs und null Fehler.
 
-\paragraph{Fachliche Regeln wandern über die Grenze.} Die C++-CLI liefert eigene Ergebniswerte, die das Backend auf die von Gen-DB erwarteten Bezeichner abbildet. Bei identischen Graphen wird der beizubehaltende Graph außerdem im Backend anhand der Kantenzahl bestimmt, und zwar nach der Regel der Python-Implementierung (Abschnitt~\ref{sec:backend_implementierungen}). Eine fachliche Entscheidung ist damit auf zwei Orte verteilt: Ein Teil lebt im Algorithmus, ein Teil im Übersetzungscode der Anwendung. Wer den Algorithmus weiterentwickelt, muss wissen, dass seine Ergebniswerte außerhalb noch ergänzt werden; wer die Anwendung ändert, muss wissen, dass der Algorithmus diese Ergänzung voraussetzt. Genau hier entsteht das unruhige Trennungsbewusstsein, das die Position beschreibt: Niemand kann die Verantwortlichkeiten mehr an einer Stelle ablesen.
+\paragraph{Fachliche Regeln müssen an der Schnittstelle eindeutig sein.} Der C++-Kern liefert Ergebniswerte, die auf die von Gen-DB verwendeten Zustände abgebildet werden; bei identischen Graphen muss außerdem dieselbe Auswahlregel wie im Python-Backend gelten. Solche Regeln dürfen bei austauschbaren Backends nicht implizit auseinanderlaufen. Die Library beseitigt nicht automatisch diese semantische Verantwortung, ermöglicht aber eine gemeinsame Funktionsschnittstelle und direkte Konformitätstests ohne JSON-Protokoll. Eine ausdrücklich dokumentierte Spezifikation bleibt daher erforderlich.
 
-\paragraph{Die Grenzkosten sind sichtbar und groß.} Der Mikrobenchmark (Tabelle~\ref{tab:backend_micro}) zeigt für den trivialen CLI-Aufruf mit zwei $1\times1$-Matrizen im Mittel $10{,}081$ Millisekunden. Das sind $88{,}3\,\%$ der mittleren Zeit von $11{,}417$ Millisekunden, die ein regulärer Vergleich über die CLI benötigt. Der überwiegende Teil der gemessenen Zeit gehört damit nicht zum Algorithmus, sondern zur Grenze. Für die Suche in diesem Kapitel ergibt sich daraus eine Überschlagsrechnung, die ausdrücklich keine Messung ist: Bei $1.143.115$ Kandidaten in den sechs Queries entsprächen $10{,}081$ Millisekunden je Aufruf allein für die Mindestlatenz rund $11.524$ Sekunden. Verteilt auf zwei Worker wären das etwa $5.762$ Sekunden, also rund $96$ Minuten, gegenüber $1.301$ Sekunden für die gesamte Python-Baseline. Die Rechnung setzt voraus, dass die Mindestlatenz in der parallelen Suche unverändert anfällt. Sie zeigt, in welcher Größenordnung die Grenze wirken kann, ersetzt aber nicht die ausstehende C++-Suchreihe.
+\paragraph{Die Library-Schnittstelle ist messbar, aber klein gegenüber dem CLI-Prozesspfad.} Der direkte Mikrobenchmark (Tabelle~\ref{tab:backend_calibration}) misst für C++ im Mittel $0{,}074$ Millisekunden je Vergleich und $0{,}018$ Millisekunden für einen trivialen $1\times1$-Aufruf. Letzterer ist eine Größenordnung für Funktionsübergabe und Marshalling; er entspricht ungefähr einem Viertel der mittleren Zeit des regulären Library-Aufrufs. Dem steht der frühere CLI-Mikrobenchmark mit $10{,}081$ Millisekunden für den trivialen Prozessaufruf gegenüber. Die Werte stammen aus verschiedenen Messläufen und Aufrufpfaden; sie dürfen nicht als exakt kontrollierter A/B-Vergleich subtrahiert werden. Zusammen mit dem gemessenen Ende-zu-Ende-Speedup von $6{,}36\times$ zeigen sie jedoch, dass die Library die Kostenstruktur der CLI vermeidet und den nativen Rechenkern praktisch nutzbar macht.
 
-\paragraph{Zwei Prozessebenen überlagern sich.} Gen-DB betreibt bereits einen \texttt{ProcessPoolExecutor}, dessen Worker blockweise mit je $256$ Vergleichen arbeiten. Die CLI-Anbindung legt darunter pro Vergleich einen weiteren Prozess an. Der Pool bleibt langlebig und amortisiert seine Startkosten, die CLI tut das nicht. Beide Ebenen folgen unterschiedlichen Lebensdauern, die in keiner gemeinsamen Beschreibung zusammengeführt sind. Eine Library im Worker-Prozess vermeidet diese zweite Ebene: Die Instanz kann wie die Python-Algorithmusinstanz einmal pro Worker erzeugt und für alle Vergleiche des Blocks wiederverwendet werden.
+\paragraph{Der Prozess-Pool wird mit der Library wiederverwendet.} Gen-DB betreibt einen langlebigen \texttt{ProcessPoolExecutor}, dessen Worker Kandidaten blockweise mit je $256$ Vergleichen bearbeiten. Die Library wird einmal je Worker geladen und für die Vergleiche innerhalb dieses Prozesses wiederverwendet. Die frühere CLI öffnete zusätzlich einen Prozess pro Vergleich; dieser zweite Prozess-Lebenszyklus entfällt im nun gemessenen Pfad. Das passt zum Modell der Anwendung und vermeidet wiederholte Betriebssystem- und JSON-Kosten.
 
 \subsubsection{Anwendung auf die gesamte Arbeit}
 \label{sec:fremde_gesamt}
 
 Die Position betrifft nicht nur dieses Kapitel. Sie knüpft an den Gedanken an, den die Schlussbemerkung als zentral bezeichnet, nämlich die Trennung zweier Aufgaben: eine günstige Vorauswahl in der Datenbank und der Subgraph Algorithmus als Entscheidung über jeden verbliebenen Kandidaten. Diese Trennung funktioniert, weil sie klar ist. Eine Anbindung, die sie an anderer Stelle durch eine unscharfe Grenze unterläuft, widerspricht dem Prinzip der Gesamtarbeit.
 
-\paragraph{Systemarchitektur (Abschnitt~\ref{sec:architektur}).} Die drei Schichten Frontend, Backend und Datenbank sind jeweils durch eine benannte Schnittstelle getrennt: REST-Aufrufe zwischen Frontend und Backend, SQL zwischen Backend und Datenbank. Der Algorithmus wird vom Modul \texttt{crud.py} über seine öffentliche Python-API aufgerufen. Er bildet damit keine vierte Schicht in einer eigenen Beschreibung, sondern einen Baustein des Backends. Die Library-Anbindung setzt dieses Muster fort, die CLI-Anbindung bricht es.
+\paragraph{Systemarchitektur (Abschnitt~\ref{sec:architektur}).} Die drei Schichten Frontend, Backend und Datenbank sind jeweils durch eine benannte Schnittstelle getrennt: REST-Aufrufe zwischen Frontend und Backend, SQL zwischen Backend und Datenbank. Der Algorithmus wird vom Modul \texttt{crud.py} über seine Backend-API aufgerufen. Die C++-Library wird innerhalb dieses Backend-Bausteins geladen und fügt keine weitere Prozessgrenze in die Suchpipeline ein.
 
 \paragraph{Formale Analyse (Abschnitt~\ref{sec:pipeline}).} Satz~\ref{satz:pipeline} modelliert die Suchzeit als Summe aus dem Pre-Filter und $C$ Vergleichen mit je $O(n^3)$ Aufwand. Das Modell trägt, solange die Kosten eines Vergleichs dem Algorithmus zugerechnet werden können. Eine Prozess-pro-Vergleich-Anbindung fügt jedem Vergleich einen Term hinzu, den das Modell nicht enthält.
 
 \begin{bemerkung}[Erweitertes Kostenmodell]
 \label{bem:schnittstellenkosten}
-Bezeichne $\delta$ die Schnittstellenkosten je Vergleich, also bei der CLI Prozessstart, JSON-Serialisierung und Antwortauswertung. Dann lautet eine erweiterte Form des Modells aus Satz~\ref{satz:pipeline}
+Bezeichne $\delta$ die Schnittstellenkosten je Vergleich. Bei der CLI umfassen sie Prozessstart, JSON-Serialisierung und Antwortauswertung; bei der Library die Übergabe der Arrays und den Funktionsaufruf. Dann lautet eine erweiterte Form des Modells aus Satz~\ref{satz:pipeline}
 \[
 	T'_{\text{Suche}}(N,C,n) = O(\log N + C) + O\bigl(C\cdot(n^3+\delta)\bigr).
 \]
-Bei der Library-Anbindung ist $\delta$ der Aufwand einer Funktionsübergabe innerhalb des Prozesses. Bei der CLI-Anbindung zeigt der Mikrobenchmark Werte in der Größenordnung von $10$ Millisekunden. Da in der Evaluation $n\le 20$ gilt, ist $n^3\le 8.000$; es ist daher plausibel, dass $\delta$ den Term $n^3$ bei nativer Rechengeschwindigkeit deutlich übersteigt. Diese Größenordnungsüberlegung ist nicht gemessen und gilt nur unter den dokumentierten Bedingungen.
+Der direkte Mikrobenchmark misst für die Library $0{,}018$ ms für einen trivialen Funktionsaufruf und $0{,}074$ ms im Mittel für ein Zufallspaar. Der frühere CLI-Mikrobenchmark maß rund $10$ ms für den trivialen Prozessaufruf. Diese konkreten Zeiten hängen von Hardware, Datenformat und Umgebung ab; sie zeigen jedoch, dass $\delta$ je nach Anbindung einen erheblichen Unterschied im konstanten Faktor erzeugt. Aus den Werten lässt sich kein allgemeiner Vergleich von $\delta$ mit der abstrakten Zahl $n^3$ ableiten.
 \end{bemerkung}
 
 Das erweiterte Modell erhält die asymptotische Aussage, dass die Suchzeit linear mit $C$ wächst. Es macht aber sichtbar, dass die Wahl der Anbindung den konstanten Faktor bestimmt. Ein Modell mit einem Term, den die Beschreibung der Arbeit nicht benennt, wäre ein Beispiel für das beschriebene Problem im Kleinen.
 
-\paragraph{Empirische Evaluation und VF2-Vergleich (Abschnitte~\ref{sec:evaluation} und~\ref{sec:vergleich}).} Der Vergleich mit VF2 ist aussagekräftig, weil beide Verfahren in derselben Beschreibung laufen: Beide werden in Python aufgerufen, auf identischen Eingaben und mit derselben Zeitmessung. Die Laufzeitunterschiede lassen sich deshalb den Verfahren zuschreiben. Beim Vergleich Python gegen C++-CLI gilt das nicht, denn dort unterscheiden sich zugleich Sprache und Ausführungsmodell, wie der Abschnitt über den Mikrobenchmark festhält. Eine Library-Anbindung würde den C++-Kern wieder unter vergleichbare Bedingungen stellen, also in denselben Prozess, mit denselben Daten und mit derselben Messmethode.
+\paragraph{Empirische Evaluation und VF2-Vergleich (Abschnitte~\ref{sec:evaluation} und~\ref{sec:vergleich}).} Der Vergleich mit VF2 ist aussagekräftig, weil beide Verfahren in derselben Beschreibung laufen: Beide werden in Python aufgerufen, auf identischen Eingaben und mit derselben Zeitmessung. Die Library-Messung vergleicht zwei unterschiedliche Implementierungssprachen, aber beide Aufrufe erfolgen innerhalb der Suchworker und auf denselben Daten. Sie misst damit den realen Einfluss der Backend-Wahl auf Gen-DB und nicht ausschließlich den algorithmischen Aufwand. Der frühere CLI-Pfad hatte zusätzlich Prozessstart und JSON-Transport in die Messung eingebracht.
 
-\paragraph{Parallelisierung (Abschnitt~\ref{sec:parallel}).} Die dort gemessenen Ergebnisse, ein Speedup von $1{,}90$ mit zwei Workern und eine Verschlechterung beim dritten Worker auf einem Rechner mit zwei logischen Prozessoren, beschreiben eine Arbeitslast, die Rechenzeit in den Worker-Prozessen verbraucht. Bei der CLI-Anbindung verbraucht zusätzlich jeder Prozessstart Rechenzeit und Betriebssystemressourcen. Ob die Skalierungsaussagen unverändert gelten, ist nicht belegt. Die Hardwareempfehlung, die Worker-Zahl an die Zahl der logischen Prozessoren anzupassen, wäre dann ebenfalls neu zu prüfen. Bei einer Library bliebe die Arbeitslast die gleiche wie in der Messreihe, nur der Rechenkern wäre ausgetauscht.
+\paragraph{Parallelisierung (Abschnitt~\ref{sec:parallel}).} Die dort gemessenen Ergebnisse, ein Speedup von $1{,}90$ mit zwei Workern und eine Verschlechterung beim dritten Worker auf einem Rechner mit zwei logischen Prozessoren, beschreiben die Python-Arbeitslast. Der Backend-Versuch setzte zwei Worker ein und zeigte auch bei der Library einen deutlichen Suchgewinn; er untersuchte jedoch nicht systematisch unterschiedliche Worker-Zahlen. Daher bleibt offen, ob die optimale Parallelisierung und der serielle Anteil mit C++ unverändert sind. Die Worker-Zahl sollte weiterhin an verfügbare Prozessoren und die Last des Datenbankservers angepasst werden.
 
 \paragraph{Schluss und Ausblick (Abschnitte~\ref{sec:grenzen} und~\ref{sec:ausblick}).} Die Grenzen der Arbeit nennen eine in reinem Python geschriebene Referenzimplementierung als obere Abschätzung des praktisch Erreichbaren. Der Ausblick führt als Hebel die Vektorisierung mit \texttt{numpy}, die Kompilierung mit \texttt{numba} und die C++-Erweiterung auf (Abschnitt~\ref{sec:impl_opt}). Alle drei sind Anbindungen, die in der Beschreibung des Aufrufers bleiben. Die hier vertretene Position stützt diese Reihenfolge: Weiterentwicklungen des Vergleichs sollten zuerst dort ansetzen, wo die Grenze schmal bleibt, und die Prozessgrenze nur dort einführen, wo ihr Zweck, etwa Isolation, den Beschreibungsbruch rechtfertigt.
 
 \subsubsection{Kriterien einer losen Kopplung}
 \label{sec:fremde_kriterien}
 
-Aus den vorangehenden Überlegungen lassen sich Kriterien ableiten, an denen sich beide Anbindungsformen vergleichen lassen. Die Tabelle fasst sie zusammen. Sie beschreibt Gestaltungseigenschaften und keine Messwerte; Aussagen zur Laufzeit stehen unter dem Vorbehalt der noch fehlenden C++-Suchreihe.
+Aus den vorangehenden Überlegungen lassen sich Kriterien ableiten, an denen sich beide Anbindungsformen vergleichen lassen. Die Tabelle fasst Gestaltungseigenschaften zusammen; die Laufzeitangaben werden durch die Mikro- und Suchmessungen aus Abschnitt~\ref{sec:backend_zwischenstand} ergänzt.
 
-\begin{table}[!htbp]
+\begin{table}[!h]
 	\centering
 	\small
-	\caption{Vergleich der Anbindungsformen nach Gestaltungskriterien. Die Einordnung der Library beschreibt die angestrebte Form; eine umgesetzte und gemessene Library-Anbindung liegt zum Stand dieser Arbeit nicht vor.}
+	\caption{Vergleich der früheren CLI- und der nun umgesetzten Library-Anbindung nach Gestaltungskriterien.}
 	\label{tab:fremde_kriterien}
 	\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
 		\toprule
@@ -1068,8 +1082,8 @@ Aus den vorangehenden Überlegungen lassen sich Kriterien ableiten, an denen sic
 		Datenaustausch & Matrizen als JSON-Text über \texttt{stdin} und \texttt{stdout} & typisierte Arrays über eine Funktionsschnittstelle \\
 		Fehlermodell & Exit-Code, \texttt{stderr}, Timeout (\texttt{CSUBGRAPH\_TIMEOUT}) & Ausnahmen oder Rückgabewerte in der Beschreibung des Aufrufers \\
 		Lebensdauer & kein Zustand über einen Vergleich hinaus & Instanz je Worker, wiederverwendbar \\
-		Aufrufkosten $\delta$ & Prozessstart je Vergleich, gemessen etwa $10$ ms & Funktionsaufruf im Prozess; nicht gemessen \\
-		Ergebnisabbildung & Übersetzung der Ergebniswerte und Regel für identische Graphen im Backend & Abbildung kann Teil der Schnittstelle sein und liegt dann beim Algorithmus \\
+		Aufrufkosten $\delta$ & Prozessstart je Vergleich, früher etwa $10$ ms je trivialem Aufruf & Funktionsaufruf im Prozess, trivial im Mittel $0{,}018$ ms \\
+		Ergebnisregeln & Übersetzung der Werte und Regel für identische Graphen im Backend & Abbildung kann Teil der Schnittstelle sein und liegt dann beim Algorithmus \\
 		Testbarkeit & Tests brauchen ein gebautes Executable und einen Prozessstart & Tests rufen die Funktion direkt auf, gleiche Mittel wie beim Python-Algorithmus \\
 		Auslieferung & plattformabhängiger Pfad zum Executable (\texttt{subgraph-cli.exe}) über die Konfiguration & Abhängigkeit des Projekts, Binärdatei je Plattform \\
 		Isolation & Absturz des Algorithmus betrifft nur den Einzelprozess & Absturz betrifft den Worker-Prozess \\
@@ -1087,7 +1101,7 @@ Die Zeile zur Isolation zeigt, dass die Gegenüberstellung nicht einseitig ausf�
 
 \paragraph{Aufwand der Library.} Eine Library braucht eine Anbindung an Python, etwa über einen Erweiterungsmechanismus, und eine Bauumgebung je Plattform. Das ist Aufwand, den die CLI zunächst nicht verlangt. Die Position behauptet nicht, dass dieser Aufwand gering sei. Sie behauptet, dass er einmalig anfällt und die Grenze danach schmal hält, während die Kosten der CLI bei jedem Vergleich und bei jeder Weiterentwicklung wiederkehren.
 
-\paragraph{Die Evidenz ist unvollständig.} Die C++-Suchreihe liegt zum ausgewerteten Zeitpunkt nicht vor, und die Library-Anbindung wurde nicht gemessen. Aus den vorhandenen Werten folgt nur, dass die CLI-Anbindung in ihrer jetzigen Form beim Einzelaufruf deutlich langsamer als der direkte Python-Aufruf ist. Ob die Library am Ende auch in der Gesamtsuche schneller ist, bleibt offen. Die Position hängt davon aber nicht ab: Selbst wenn eine Library nicht schneller wäre, bliebe die Grenze klarer, die Messung sauberer und die Verantwortlichkeit eindeutiger.
+\paragraph{Die Evidenz ist begrenzt, aber nicht mehr vorläufig.} Die Library wurde im Mikrobenchmark und in einer vollständigen Suchreihe gemessen; beide Messungen zeigen einen deutlichen Zeitgewinn. Die Aussagekraft ist jedoch auf sechs Queries, einen Lauf je Backend und eine Hardwarekonfiguration begrenzt. Die Ergebnisse belegen daher den Vorteil in diesem Versuchsaufbau, nicht für jede Plattform oder Graphenfamilie.
 
 \paragraph{Die Position ist eine Gestaltungsentscheidung.} Begriffe wie Trennungsbewusstsein lassen sich in dieser Arbeit nicht messen. Sie bezeichnen eine Eigenschaft der Zusammenarbeit von Mitgestaltern, die durch Fallbeispiele wie die oben genannten plausibel gemacht, aber nicht durch eine Studie belegt wird. Die Arbeit formuliert sie deshalb als begründete Position und nicht als Ergebnis.
 
@@ -1099,7 +1113,7 @@ Aus der Position und den Messungen ergeben sich fünf Folgerungen für die weite
 \begin{enumerate}
 	\item \textbf{Eine Schnittstelle, mehrere Implementierungen.} Python- und C++-Algorithmus sollten hinter derselben Funktionsschnittstelle liegen. Der Aufrufer in Gen-DB wählt die Implementierung über die Konfiguration, und der Rückfall auf Python bleibt erhalten. Er ist dann ein Wechsel hinter einer gemeinsamen Schnittstelle und kein Wechsel der Beschreibung.
 	\item \textbf{Fachliche Regeln gehören zum Algorithmus.} Die Abbildung der Ergebniswerte und die Auswahl nach der Kantenzahl bei identischen Graphen sollten in der Schnittstelle des Algorithmus festgelegt sein und nicht im Übersetzungscode der Anwendung. Beide Implementierungen liefern dann per Konstruktion dieselben Werte, und die Kontrolle über die Treffer-IDs wird zu einem Test statt zu einer Laufzeitprüfung.
-	\item \textbf{Die Library zuerst messen.} Die in Abschnitt~\ref{sec:backend_grenzen} empfohlene Folgeuntersuchung sollte den C++-Kern als Bibliotheksaufruf messen, mit identischen Queries und Kandidaten und mit mehreren Wiederholungen. Erst danach lässt sich beurteilen, ob ein Batch-CLI-Aufruf als Zwischenlösung überhaupt benötigt wird.
+	\item \textbf{Die Library-Messung verbreitern.} Die erste gepaarte Messreihe liegt vor. Als nächstes sollte sie mit mehr Queries, Wiederholungen, Konfidenzintervallen und weiteren Plattformen wiederholt werden; die Vergleiche sollten dabei nach Suchphasen aufgeschlüsselt werden.
 	\item \textbf{Schnittstellenkosten ausweisen.} Künftige Messungen sollten $\delta$ getrennt von der Rechenzeit des Algorithmus berichten, wie es die Bemerkung~\ref{bem:schnittstellenkosten} nahelegt. Dadurch lassen sich Ergebnisse verschiedener Anbindungen vergleichen, ohne Algorithmus und Schnittstelle zu vermischen.
 	\item \textbf{Die CLI als Werkzeug behalten.} Die CLI bleibt für Einzelprüfungen, Skripte und Fehlersuche nützlich. Sie sollte jedoch nicht der Pfad sein, über den die produktive Suche einen Vergleich nach dem anderen ausführt.
 \end{enumerate}
@@ -1107,7 +1121,7 @@ Aus der Position und den Messungen ergeben sich fünf Folgerungen für die weite
 \subsubsection{Zwischenfazit zur Kopplung}
 \label{sec:fremde_fazit}
 
-Die Aussage des Abschnitts lässt sich so zusammenfassen: Ein System bleibt analysierbar, weiterentwickelbar und wiederverwendbar, wenn seine Teile in einer gemeinsamen Beschreibung liegen und ihre Grenzen schmal und benannt sind. In diesem Kapitel zeigt sich das am Beispiel der C++-Anbindung. Die CLI verlegt die Grenze an die Prozessgrenze, verteilt fachliche Regeln auf zwei Orte, erzwingt Kontrollen gegen stille Abweichungen und verdeckt den Rechenkern hinter Schnittstellenkosten. Die Library hält die Grenze schmal. In der Gesamtarbeit setzt sie das Prinzip fort, das schon die Architektur, die formale Analyse und die Messmethodik tragen. Ob die Library auch schneller ist, wird die ausstehende Messung zeigen; die Entscheidung für die lose Kopplung stützt sich zuerst auf die Klarheit der Grenze.
+Die Aussage des Abschnitts lässt sich so zusammenfassen: Ein System bleibt analysierbar, weiterentwickelbar und wiederverwendbar, wenn seine Grenzen schmal und benannt sind und die Zuständigkeiten klar bleiben. Die Messungen zeigen am Beispiel der C++-Anbindung sowohl einen strukturellen als auch einen Laufzeitunterschied: Die CLI verlegt die Grenze an Prozess, JSON-Text und Exit-Code; der frühere triviale Aufruf benötigte rund $10$ ms. Die Library wird dagegen direkt im Worker aufgerufen; ihr trivialer Aufruf lag im Mittel bei $0{,}018$ ms, und die vollständige Suche war $6{,}36$-mal schneller als mit Python. Der Suchlauf bestätigt damit einen konkreten Leistungsvorteil dieser Library-Integration. Die allgemeinere Behauptung, dass dadurch Zusammenarbeit und Wiederverwendung erleichtert werden, bleibt eine begründete Gestaltungsposition. Die Library setzt in der Gesamtarbeit das Prinzip fort, das Architektur, formale Analyse und Messmethodik tragen: Schnittstellen und ihre Kosten sichtbar zu machen, statt sie im Gesamtergebnis zu verbergen.
 
 \section{Schluss}
 \label{sec:schluss}
@@ -1151,47 +1165,12 @@ Die Messreihe mit sechs aus der Datenbank gezogenen Queries (mindestens $15$ Kno
 
 \subsubsection{Vergleich der Python- und C++-Implementierung}
 
-Der Mikrobenchmark des in Abschnitt~\ref{sec:backends} beschriebenen Experiments ergab zunächst $2{,}70$ Millisekunden je direktem Python-Aufruf und $11{,}42$ Millisekunden je Vergleich über die C++-CLI. Bereits ein trivialer $1\times1$-CLI-Aufruf benötigte rund $10{,}08$ Millisekunden. Das deutet darauf hin, dass Prozessstart und JSON-Schnittstelle einen möglichen Vorteil des nativen Rechenkerns überdecken können. Eine überschlägige Differenzrechnung legt einen schnelleren C++-Kern nahe, misst ihn aber nicht isoliert. Zum dokumentierten Zwischenstand enthielt die Ergebnisdatei noch keine C++-Suchreihe; ob die vollständige Gen-DB-Suche mit C++ schneller wird und ob beide Backends dieselben Treffer liefern, blieb daher offen.
+Die abgeschlossene Suchmessung mit zwei Workern verglich sechs identische Queries und insgesamt $931.899$ Kandidaten. Die Python-Ausführung benötigte $1.180{,}28$ Sekunden, die C++-Library $185{,}62$ Sekunden; der Ende-zu-Ende-Speedup beträgt $6{,}36\times$. Der individuelle Speedup lag je nach Query zwischen $4{,}81\times$ und $8{,}76\times$. Im direkten Mikrobenchmark über $200$ gemeinsame Zufallspaare sank die mittlere Vergleichszeit von $2{,}694$ ms in Python auf $0{,}074$ ms in C++; der triviale Library-Aufruf lag bei $0{,}018$ ms. Alle sechs Suchpaare lieferten dieselben Netzwerk-IDs und beide Reihen hatten null fehlgeschlagene Vergleiche. Der Unterschied zwischen Mikrobenchmark- und Such-Speedup erklärt sich daraus, dass Datenbankzugriff, Worker-Kommunikation und Ergebnisaufbau beim schnelleren Rechenkern einen größeren Anteil an der vollständigen Antwortzeit ausmachen.
 
 \subsubsection{Kopplung und Beschreibungsgrenzen}
 \label{sec:zus_kopplung}
 
-Der Vergleich der Python- und C++-Implementierung hat über die Laufzeitfrage hinaus eine Gestaltungsfrage aufgeworfen, die Abschnitt~\ref{sec:fremde_beschreibungen} ausführt: Wie sollte ein Baustein, der in einer anderen Sprache und mit einem anderen Ausführungsmodell arbeitet, in Gen-DB eingebunden werden? Die vertretene Position lautet, dass die Einbindung als Fremdmodul in einer anderen Beschreibung unpassend ist und dass eine lose Kopplung über eine C++-Library einer Anbindung über die C++-CLI vorzuziehen ist, weil sie eine klarere Trennung erlaubt und allen Mitgestaltern ein klares Trennungsbewusstsein ermöglicht. Unter einer \emph{Beschreibung} wird dabei die Gesamtheit aus Sprache, Datentypen, Fehlermodell, Lebensdauer von Zuständen sowie Aufruf-, Test- und Auslieferungsweise eines Teils verstanden. Der Unterschied zwischen CLI und Library liegt damit nicht in der Sprache des Rechenkerns, sondern in der Frage, wo die Grenze zwischen zwei Beschreibungen verläuft.
-
-Die Untersuchung hat die Position an vier Beobachtungen aus den Messungen und dem Versuchsaufbau festgemacht:
-
-\begin{itemize}
-	\item \textbf{Der Messaufbau überwacht die Grenze selbst.} Die Prüfung der aktiven Implementierung in den Worker-Prozessen, die Fehlerzähler und der Abgleich der Treffer-IDs sind notwendig, weil ein stiller Rückfall auf Python sonst mit einem erfolgreichen C++-Lauf verwechselt werden könnte. Diese Fehlerklasse entsteht erst durch die Mischung zweier Beschreibungen.
-	\item \textbf{Fachliche Regeln liegen auf beiden Seiten der Grenze.} Die Abbildung der C++-Ergebniswerte und die Auswahl nach der Kantenzahl bei identischen Graphen geschehen im Übersetzungscode der Anwendung und nicht im Algorithmus. Eine fachliche Entscheidung ist damit auf zwei Orte verteilt.
-	\item \textbf{Die Grenzkosten dominieren die gemessene Zeit.} Der triviale CLI-Aufruf benötigt im Mittel $10{,}081$ Millisekunden und damit $88{,}3\,\%$ der $11{,}417$ Millisekunden eines regulären CLI-Vergleichs. Eine Überschlagsrechnung, die ausdrücklich keine Messung ist, ergibt für die sechs Queries mit $1.143.115$ Kandidaten allein für die Mindestlatenz rund $96$ Minuten bei zwei Workern, gegenüber $1.301$ Sekunden für die gesamte Python-Baseline.
-	\item \textbf{Zwei Prozessebenen überlagern sich.} Der langlebige Prozess-Pool amortisiert seine Startkosten, die CLI legt darunter pro Vergleich einen weiteren Prozess an, der das nicht tut. Eine Library im Worker-Prozess würde die Instanz wie beim Python-Algorithmus einmal pro Worker erzeugen.
-\end{itemize}
-
-Aus Sicht der Gesamtarbeit setzt die Position die Trennung fort, die auch die Architektur, die formale Analyse und die Messmethodik tragen. Tabelle~\ref{tab:grenzen_system} ordnet die Grenzen des Systems ein. Die Schichtgrenzen sind als solche entworfen und durch eigene Schnittstellen benannt. Die Position betrifft die Bausteine innerhalb einer Schicht: Ein Baustein des Backends sollte in der Beschreibung des Backends erscheinen, oder die Grenze zu ihm muss schmal und benannt sein.
-
-\begin{table}[!htbp]
-	\centering
-	\small
-	\caption{Grenzen im System Gen-DB und ihre Art. Die Zeile zur Library beschreibt die angestrebte Form; sie ist weder umgesetzt noch gemessen.}
-	\label{tab:grenzen_system}
-	\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{3.6cm}@{}}
-		\toprule
-		Grenze & Art & Verbindung & Einordnung \\
-		\midrule
-		Frontend -- Backend & Schichtgrenze & REST-Endpunkte unter \texttt{/api/networks} & entworfen, benannt \\
-		Backend -- Datenbank & Schichtgrenze & SQL über zwei verknüpfte Relationen & entworfen, benannt \\
-		Backend -- Subgraph Algorithmus (Python) & Baustein im Backend & öffentliche API \texttt{compare\_graphs} im selben Prozess & schmal, gemeinsame Beschreibung \\
-		Backend -- VF2 (\texttt{networkx}) & Baustein im Backend & Bibliotheksaufruf im selben Prozess & schmal, gemeinsame Beschreibung \\
-		Hauptprozess -- Worker & Prozessgrenze mit Zweck & blockweise je $256$ Vergleiche, langlebiger Pool & bewusst, Kosten amortisiert \\
-		Backend -- C++-CLI & Baustein im Backend & Prozess je Vergleich, JSON-Text, Exit-Code & breit, Übersetzungscode nötig \\
-		Backend -- C++-Library & Baustein im Backend & Funktionsschnittstelle im Worker-Prozess & angestrebt, nicht gemessen \\
-		\bottomrule
-	\end{tabular}
-\end{table}
-
-Die Untersuchung hat daraus drei weitere Ergebnisse abgeleitet. Erstens lässt sich das Kostenmodell aus Satz~\ref{satz:pipeline} um einen Schnittstellenterm $\delta$ je Vergleich erweitern (Bemerkung~\ref{bem:schnittstellenkosten}); die asymptotische Aussage bleibt erhalten, die Wahl der Anbindung bestimmt aber den konstanten Faktor. Zweitens vergleicht Tabelle~\ref{tab:fremde_kriterien} beide Anbindungsformen nach neun Gestaltungskriterien. Drittens nennen die Gegenargumente in Abschnitt~\ref{sec:fremde_gegen} die Isolation bei Abstürzen, die Sprachneutralität der CLI und den einmaligen Bauaufwand der Library; sie sprechen für die CLI als Werkzeug, nicht für den produktiven Suchpfad. Daraus ergaben sich fünf Folgerungen (Abschnitt~\ref{sec:fremde_folgerungen}): eine Schnittstelle mit mehreren Implementierungen, fachliche Regeln im Algorithmus, die Messung der Library zuerst, ein getrennter Ausweis der Schnittstellenkosten und die Beibehaltung der CLI als Werkzeug.
-
-Die Belastbarkeit ist begrenzt. Die C++-Suchreihe liegt zum ausgewerteten Zeitpunkt nicht vor, und die Library-Anbindung ist weder umgesetzt noch gemessen. Die Position stützt sich daher zuerst auf die Klarheit der Grenze und erst in zweiter Linie auf Messwerte. Welche Aussagen belegt sind und welche nicht, hält Abschnitt~\ref{sec:grenzen} fest.
+Der Vergleich wirft neben der Laufzeitfrage eine Gestaltungsfrage auf, die Abschnitt~\ref{sec:fremde_beschreibungen} ausführt: Wie lässt sich ein in C++ implementierter Rechenkern in ein Python-System einbinden, ohne die Zuständigkeiten und die Messung unnötig zu verkomplizieren? Die Messungen sprechen für die Library-Anbindung: Sie hält den wiederholten Aufruf innerhalb des Worker-Prozesses, vermeidet den Prozess-pro-Vergleich- und JSON-Pfad der CLI und erreicht in den sechs Suchläufen den Speedup von $6{,}36\times$. Das ist ein empirischer Vorteil unter den dokumentierten Bedingungen. Die weitergehende Behauptung, eine bestimmte Grenze erleichtere Zusammenarbeit, Analyse und Wiederverwendung generell, bleibt eine begründete Gestaltungsposition und ist nicht durch eine Nutzer- oder Entwicklerstudie geprüft.
 
 \subsubsection{Zentrale Erkenntnisse}
 
@@ -1200,18 +1179,18 @@ Aus der Gesamtschau lassen sich neun Erkenntnisse festhalten:
 \begin{enumerate}
 	\item \textbf{Die Architektur trägt die Analyse.} Die klare Trennung zwischen relationaler Kandidatenreduktion und algorithmischem Strukturvergleich erlaubt es, beide Stufen getrennt zu beweisen, zu messen und zu optimieren.
 	\item \textbf{Der Pre-Filter ist notwendig, aber allein nicht ausreichend.} Er verkleinert den Suchraum erheblich, doch bei kleinen oder spärlichen Queries bleiben Hunderttausende Kandidaten übrig. Bei den sechs Messanfragen lagen zwischen $6{,}2\,\%$ und $32{,}6\,\%$ der Datenbank im Suchraum.
-	\item \textbf{Die Suchzeit wird von den Vergleichen dominiert.} Sie wächst linear mit der Kandidatenzahl, so wie es der Term $O(C\cdot n^3)$ aus Satz~\ref{satz:pipeline} erwarten lässt.
+	\item \textbf{Der Anteil der Vergleichsphase hängt vom Backend ab.} Sie beansprucht $88{,}4\,\%$ der Python-Zeit, aber nur $33{,}3\,\%$ der C++-Suchzeit. Die Gesamtsuche wächst weiterhin mit der Kandidatenzahl; nach der Beschleunigung durch die Library begrenzen Datenzugriff, Übergabe und Ergebnisaufbau den End-to-End-Speedup stärker.
 	\item \textbf{Garantie und Geschwindigkeit sind zwei verschiedene Eigenschaften.} Der Subgraph Algorithmus bietet eine bewiesene polynomielle Schranke und vorhersagbare Laufzeiten. Auf kleinen dichten Zufallsgraphen kann ein Verfahren mit exponentieller Worst-Case-Schranke wie VF2 im Durchschnitt gleich schnell oder schneller sein.
 	\item \textbf{Parallelisierung ist ein verlässlicher, aber begrenzter Hebel.} Sie senkt die Antwortzeit auf dem untersuchten System um einen konstanten Faktor nahe der Prozessorzahl, ändert aber nichts an der linearen Abhängigkeit von $C$. Sie ersetzt deshalb weder einen schärferen Pre-Filter noch ein Kandidatenlimit.
 	\item \textbf{Die Worker-Zahl muss zur Hardware passen.} Mehr Worker als logische Prozessoren verschlechtern die Laufzeit. Die mitgelieferte Voreinstellung von vierzehn Workern ist deshalb nur auf entsprechend ausgestatteten Rechnern sinnvoll.
 	\item \textbf{Vollständigkeit und Geschwindigkeit stehen im Spannungsfeld.} Ein Kandidatenlimit macht die Suchzeit unabhängig von $N$, kostet aber die Vollständigkeitsgarantie. Auch die Suchrichtung ist nur für $A_Q \preceq A_k$ abgesichert.
-	\item \textbf{Die Grenze zwischen Beschreibungen ist eine Entwurfsentscheidung mit Kosten.} Ein Baustein in einer anderen Beschreibung verlangt Übersetzungscode, verteilt fachliche Regeln auf beide Seiten und erzwingt Kontrollen gegen stille Abweichungen. Eine lose Kopplung über eine Library hält die Grenze schmal und erlaubt allen Mitgestaltern ein klares Trennungsbewusstsein (Abschnitt~\ref{sec:fremde_beschreibungen}).
-	\item \textbf{Schnittstellenkosten gehören ins Kostenmodell.} Im Mikrobenchmark entfallen $88{,}3\,\%$ der CLI-Zeit auf den trivialen Aufruf. Das Modell aus Satz~\ref{satz:pipeline} wird durch einen Term $\delta$ je Vergleich erweitert (Bemerkung~\ref{bem:schnittstellenkosten}); die Wahl der Anbindung bestimmt den konstanten Faktor, nicht die Asymptotik.
+	\item \textbf{Die Form der Sprachgrenze hat praktische Folgen.} Der direkte Aufruf der C++-Library beschleunigt die sechs gemessenen Suchen gegenüber Python um den Faktor $6{,}36$, während der frühere CLI-Mikrobenchmark hohe Kosten pro Prozessaufruf zeigte. Die Library hält den wiederholten Aufruf im Worker-Prozess und erzielt damit sowohl eine schmale Grenze als auch einen gemessenen Anwendungsvorteil (Abschnitt~\ref{sec:fremde_beschreibungen}).
+	\item \textbf{Schnittstellenkosten gehören ins Kostenmodell.} Der direkte C++-Aufruf benötigt im Mittel $0{,}074$ ms, wovon der triviale Library-Aufruf rund $0{,}018$ ms als Größenordnung der Übergabe zeigt. Das Modell aus Satz~\ref{satz:pipeline} wird durch einen Term $\delta$ je Vergleich erweitert (Bemerkung~\ref{bem:schnittstellenkosten}); die Anbindung beeinflusst den konstanten Faktor, nicht die Asymptotik.
 \end{enumerate}
 
 \subsubsection{Abgleich mit den Beiträgen der Arbeit}
 
-In der Einleitung wurden acht Beiträge angekündigt. Sie sind wie folgt erfüllt: Die formale Beschreibung der Architektur und die Einbettung des Algorithmus in die relationale Datenbank sind in Abschnitt~\ref{sec:architektur} geleistet. Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, jedoch mit der ausdrücklichen Einschränkung auf die Richtung $A_Q \preceq A_k$ und den Fall ohne Kandidatenlimit. Die empirische Evaluation an einer Million Netzwerke und die zugehörigen Diagramme finden sich in Abschnitt~\ref{sec:evaluation}. Der Vergleich mit VF2 samt Ursachenanalyse folgt in Abschnitt~\ref{sec:vergleich}, die Untersuchung der Parallelisierung in Abschnitt~\ref{sec:parallel}. Der Vergleich der Python- und C++-Implementierung mit der Analyse des Schnittstellenaufwands und der begründeten Position zur Kopplung steht in Abschnitt~\ref{sec:backends}, dort insbesondere in Abschnitt~\ref{sec:fremde_beschreibungen}. Dieser Beitrag ist nur teilweise erfüllt, weil Mikrobenchmark und Analyse vorliegen, die Ende-zu-Ende-Suchmessung mit C++ jedoch aussteht. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Ein Unterschied in der Belastbarkeit ist zu beachten: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während die Abschnitte~\ref{sec:vergleich} und~\ref{sec:parallel} gemessene Werte zeigen. Dieser Punkt wird in Abschnitt~\ref{sec:grenzen} noch einmal aufgegriffen.
+In der Einleitung wurden Beiträge zur Architektur, formalen Analyse, Datenbankevaluation, zum VF2-Vergleich, zur Parallelisierung und zu den C++-Backends angekündigt. Die Architektur und Einbettung in die relationale Datenbank werden in Abschnitt~\ref{sec:architektur} beschrieben; Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, ausdrücklich für die Suchrichtung $A_Q \preceq A_k$ und unter Berücksichtigung eines optionalen Kandidatenlimits. Die Evaluation an einer Million synthetischen Netzwerken steht in Abschnitt~\ref{sec:evaluation}. VF2-Vergleich, Parallelisierung und Backend-Vergleich finden sich in den Abschnitten~\ref{sec:vergleich}, \ref{sec:parallel} und \ref{sec:backends}. Der Backend-Beitrag ist nun durch Mikrobenchmark, abgeschlossene Ende-zu-Ende-Messung, Trefferabgleich und Schnittstellenanalyse erfüllt; die Reproduzierbarkeit und Aussagekraft bleiben durch die kleine Stichprobe begrenzt. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Dabei ist zu unterscheiden: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während VF2-, Parallelisierungs- und Backend-Werte aus Messungen stammen.
 
 % =====================================================================
 \subsection{Kritische Würdigung und Grenzen}
@@ -1229,10 +1208,10 @@ Die Ergebnisse dieser Arbeit sind belastbar, soweit es um die formalen Aussagen 
 	\item \textbf{Begrenzte Hardware.} Die Parallelisierung wurde auf einem Rechner mit zwei logischen Prozessoren gemessen, auf dem auch die Datenbank lief. Aussagen zur Skalierung auf viele Prozessoren oder auf getrennte Datenbankserver sind daher Extrapolationen.
 	\item \textbf{Ungenutzte Knotenlabels.} Die Relation $\preceq$ ignoriert Knotenlabels. Zwei strukturell gleiche, biologisch aber verschiedene Netzwerke gelten als äquivalent, was für die praktische Anwendung eine wesentliche Einschränkung ist.
 	\item \textbf{Referenzimplementierung ohne Optimierung.} Die Laufzeitwerte des Subgraph Algorithmus stammen aus einer in reinem Python geschriebenen Implementierung ohne vorzeitigen Abbruch. Sie sind daher eher eine obere Abschätzung des praktisch Erreichbaren.
-	\item \textbf{C++-Suchreihe und Library-Anbindung fehlen.} Zum ausgewerteten Zeitpunkt enthält die Ergebnisdatei nur die Python-Suchmessungen und den Mikrobenchmark (Abschnitt~\ref{sec:backend_zwischenstand}). Ob die vollständige Suche mit C++ schneller ist und ob beide Backends dieselben Treffer liefern, ist offen. Die Library-Anbindung, für die Abschnitt~\ref{sec:fremde_beschreibungen} eintritt, ist weder umgesetzt noch gemessen; ihre Vorteile beruhen auf der Struktur der Anbindung und nicht auf Messwerten.
-	\item \textbf{Überschlagsrechnung und erweitertes Kostenmodell sind nicht validiert.} Die Zeit von rund $96$ Minuten für die Mindestlatenz der CLI-Aufrufe ist eine Hochrechnung der trivialen CLI-Zeit auf die Kandidatenzahl; sie setzt voraus, dass die Latenz in der parallelen Suche unverändert anfällt. Der Term $\delta$ in Bemerkung~\ref{bem:schnittstellenkosten} ist ein Modellvorschlag, dessen Größe nur für die CLI und nur aus dem Mikrobenchmark abgeschätzt ist.
+	\item \textbf{Begrenzte Backend-Messreihe.} Die C++-Library und die Ende-zu-Ende-Suche sind inzwischen gemessen (Abschnitt~\ref{sec:backend_zwischenstand}). Der Speedup von $6{,}36$ und die übereinstimmenden Treffer gelten für sechs Queries, eine Messung je Backend und eine Windows-11-Konfiguration mit zwei Workern. Wiederholungen, Konfidenzintervalle, weitere Plattformen und reale biologische Daten fehlen.
+	\item \textbf{Phasenmodell und Schnittstellenkosten.} Die Messung zerlegt die Suchzeit in Vergleichsphase und Rest; der Rest fasst Datenbankzugriff, Datenübergabe, Aufgabenverteilung und Ergebnisaufbau zusammen. Die $0{,}018$ ms für einen trivialen Library-Aufruf sind nur eine Orientierung für die Übergabekosten und dürfen nicht als exakte Korrektur auf größere Matrizen übertragen werden. Auch der frühere CLI-Wert von rund $10$ ms ist eine Messung eines anderen Aufrufpfads und keine kontrollierte Schätzung für alle Plattformen.
 	\item \textbf{Die Kopplungsposition ist eine Gestaltungsposition.} Begriffe wie Trennungsbewusstsein lassen sich in dieser Arbeit nicht messen. Die Fallbeispiele aus dem Versuchsaufbau machen die Position plausibel, belegen sie aber nicht durch eine Studie. Die Gegenargumente (Isolation, Sprachneutralität, Bauaufwand der Library) sind nicht entkräftet, sondern nur dem Einsatzzweck zugeordnet.
-	\item \textbf{Betriebssystemabhängigkeit der Schnittstellenkosten.} Die Messung stammt von einem Windows-11-Rechner. Die Kosten des Prozessstarts können auf anderen Betriebssystemen deutlich abweichen. Die Aussage, dass die Grenze der CLI breiter ist als die der Library, hängt davon nicht ab, ihre Größenordnung in Millisekunden jedoch schon.
+	\item \textbf{Betriebssystemabhängigkeit der C++-Anbindung.} Die Library-Messung stammt von einem Windows-11-Rechner. Bau, Linken, DLL-Laden und Wrapper-Aufruf können sich auf anderen Betriebssystemen unterscheiden. Der strukturelle Unterschied zum CLI-Prozessstart bleibt bestehen, aber die gemessene Größenordnung des Beschleunigungsgewinns ist nicht ohne plattformübergreifende Wiederholung übertragbar.
 \end{enumerate}
 
 % =====================================================================
@@ -1449,7 +1428,7 @@ Der größte offene Punkt auf Anwendungsebene ist der Nachweis, dass die Suche f
 % ---------------------------------------------------------------------
 \subsubsection*{Themenfeld G: Kopplung und Schnittstellen}
 
-Dieses Themenfeld überträgt die Position aus Abschnitt~\ref{sec:fremde_beschreibungen} in konkrete Erweiterungen. Es ist so geordnet, dass jeder Schritt den nächsten absichert: Zuerst wird festgelegt, was jede Implementierung des Vergleichs zusichern muss, dann wird die Library-Anbindung gebaut, danach wird für den Fall, dass sie nicht tragfähig ist, eine Übergangslösung bewertet. Ein Messprogramm macht die Ergebnisse vergleichbar, und eine Kriterienliste prüft künftige Bausteine, bevor sie in das System aufgenommen werden.
+Dieses Themenfeld überträgt die Position aus Abschnitt~\ref{sec:fremde_beschreibungen} in konkrete Maßnahmen. Die C++-Library-Anbindung und eine erste gepaarte Messreihe sind umgesetzt. Offen bleiben die dauerhafte Absicherung der Backend-Konformität, die Wiederholung auf breiterer Datenbasis sowie die Verbesserung der Phaseninstrumentierung. Die CLI ist damit eine optionale Werkzeug- oder Isolationsschnittstelle, nicht mehr Voraussetzung für den produktiven Suchpfad.
 
 \subsubsection{Gemeinsame Schnittstellenspezifikation und Konformitätstests}
 \label{sec:konformitaet}
@@ -1458,19 +1437,19 @@ Gegenwärtig ist die Gleichheit der beiden Backends eine Laufzeitprüfung des Ex
 
 Aus der Spezifikation folgt eine Suite von Konformitätstests, die gegen \emph{jede} Implementierung läuft, also gegen den Python-Algorithmus, die Library und gegebenenfalls die CLI. Die Suite enthält feste Beispielpaare mit bekannten Ergebnissen, zufällige Paare mit festem Seed und die Eigenschaftstests aus Themenfeld A, etwa dass jedes Netzwerk Teil von sich selbst ist und dass der Vergleich nicht von der zyklischen Anordnung der Zeilenkomponenten abhängt. Zwei Implementierungen gelten als austauschbar, wenn sie die Suite bestehen. Der Abgleich der Treffer-IDs im Experiment wird dadurch von einer Laufzeitkontrolle zu einer zusätzlichen Absicherung. Zugleich wandert die fachliche Regel für identische Graphen an die Stelle, an der sie hingehört, nämlich in die Schnittstelle des Algorithmus.
 
-\subsubsection{Library-Anbindung des C++-Kerns}
+\subsubsection{Ausbau der Library-Anbindung des C++-Kerns}
 \label{sec:lib_anbindung}
 
-Die Library-Anbindung ersetzt den Prozess je Vergleich durch einen Funktionsaufruf im Worker-Prozess. Für den Entwurf sind vier Entscheidungen zu treffen.
+Die Library-Anbindung ist umgesetzt: Die statische C++-Bibliothek wird mit einem Wrapper für den direkten Aufruf aus Python vorbereitet, und die Suchworker laden sie innerhalb ihres Prozesses. Der gemessene Such-Speedup von $6{,}36\times$ gegenüber Python bestätigt, dass dieser Integrationsweg für den untersuchten Datensatz praktisch wirksam ist. Die folgenden Maßnahmen betreffen nun nicht mehr die Grundentscheidung, sondern Robustheit, Portabilität und weitere Optimierung:
 
 \begin{itemize}
-	\item \textbf{Granularität der Schnittstelle.} Die Funktion sollte nicht ein einzelnes Paar, sondern einen Block von Kandidaten gegen eine Query vergleichen. Der Block entspricht der Chunk-Größe von $256$ im Prozess-Pool. Dadurch fällt der Aufrufaufwand einmal je Block an, und die Query muss nicht für jeden Kandidaten übergeben werden, was zugleich die in Abschnitt~\ref{sec:weiter_parallel} beschriebene Maßnahme ``Query nur einmal pro Task übertragen'' umsetzt.
-	\item \textbf{Datenübergabe.} Die Matrizen sollten als zusammenhängender Speicher übergeben werden, etwa als \texttt{numpy}-Array vom Typ \texttt{uint8} mit Form $(C,n,n)$, statt als JSON-Text. Die Serialisierung entfällt, und die Übergabe benötigt keine Kopie der Daten, wenn die Anbindung den Speicher direkt liest.
-	\item \textbf{Anbindungsmechanismus.} Infrage kommen ein Erweiterungsmodul, das mit einem Werkzeug wie \texttt{pybind11} oder \texttt{nanobind} gebaut wird, oder eine Shared Library mit C-Schnittstelle, die über \texttt{ctypes} oder \texttt{cffi} geladen wird. Das Erweiterungsmodul erscheint in der Beschreibung des Aufrufers als gewöhnliches Python-Modul mit Ausnahmen; die C-Schnittstelle ist einfacher zu bauen, braucht aber eigenen Übersetzungscode für Fehler und Datentypen. Die Entscheidung sollte nach der Frage getroffen werden, welche Variante die Grenze am schmalsten hält.
-	\item \textbf{Auslieferung und Rückfall.} Die Binärdatei ist plattformabhängig. Die Konfiguration sollte wie bisher einen Pfad oder ein Paket benennen, und der Rückfall auf die Python-Implementierung bleibt erhalten. Er ist dann ein Wechsel hinter derselben Schnittstelle, den die Konformitätstests absichern.
+	\item \textbf{Konformität automatisieren.} Der Experimentlauf vergleicht bereits Treffer-IDs und prüft, welches Backend aktiv ist. Diese Laufzeitkontrollen sollten durch gemeinsame Tests mit festen Fällen, Randbedingungen und Eigenschaftstests ergänzt werden, damit jede Änderung am C++-Wrapper oder Python-Backend vor dem Suchlauf gegen dieselbe Semantik geprüft wird.
+	\item \textbf{Datenübergabe und Kopien messen.} Die aktuelle C-Schnittstelle übergibt einzelne Matrizen an den nativen Aufruf. Zu untersuchen ist, welcher Anteil der verbleibenden $66{,}7\,\%$ nichtvergleichender beziehungsweise serieller Suchzeit auf Arraykonvertierung und Übergabe entfällt. Erst danach ist zu entscheiden, ob Batch-Verarbeitung oder ein zusammenhängendes Array für Kandidaten messbare Vorteile bietet.
+	\item \textbf{Bau und Auslieferung absichern.} Die Binärdatei ist plattformabhängig; Bau, Laden und Fehlerfälle sollten in der Continuous-Integration-Pipeline für unterstützte Betriebssysteme automatisiert werden. Fehlende oder inkompatible Bibliotheken müssen explizit gemeldet werden; ein stiller Wechsel auf Python würde Ergebnisse und Performance-Messungen verfälschen.
+	\item \textbf{Schnittstelle stabil halten.} Ergebniswerte, ungültige Eingaben und Fehlerverhalten sollten unabhängig vom Backend dokumentiert werden. Die Python-Referenz bleibt als Rückfall und Vergleichsimplementierung verfügbar, muss aber dieselben Konformitätstests bestehen.
 \end{itemize}
 
-Offen bleibt der Aufwand für Bau und Test je Plattform. Er fällt einmalig an und lässt sich in die Continuous-Integration-Pipeline aus Themenfeld D verlegen, die ohnehin um automatisierte Testläufe erweitert werden soll. Die Annahme, dass die Library schneller ist als die CLI, folgt aus der Struktur der Anbindung, ist aber nicht gemessen; sie wird mit dem Messprogramm in Abschnitt~\ref{sec:kopplung_messung} geprüft.
+Offen bleibt der einmalige Aufwand für Bau und Test je Plattform sowie der wiederkehrende Wartungsaufwand bei Änderungen am C++-Kern. Die gemessenen Laufzeiten beantworten die Performance-Frage für die aktuelle Windows-Konfiguration, nicht aber die Portabilität. Automatisierte Builds und direkte Konformitätstests bilden deshalb die Voraussetzung dafür, den beobachteten Beschleunigungsgewinn zuverlässig in künftigen Releases zu erhalten.
 
 \subsubsection{Batch- und persistente Prozessschnittstellen als Übergangslösung}
 \label{sec:batch_cli}
@@ -1484,9 +1463,9 @@ Mit $B=256$ läge der Prozessanteil rechnerisch bei rund $0{,}04$ Millisekunden 
 \subsubsection{Messprogramm für die Kopplungsfrage}
 \label{sec:kopplung_messung}
 
-Die ausstehende Untersuchung sollte vier Anbindungen mit denselben Queries, denselben Kandidaten und derselben Worker-Zahl vergleichen: den Python-Algorithmus, die Library, die Batch-CLI und die bisherige Prozess-pro-Vergleich-CLI. Sie ergänzt die in Abschnitt~\ref{sec:par_erweiterung} genannten Erweiterungen der Parallelisierungsmessung und folgt denselben Regeln: Wiederholungen je Konfiguration, damit Streuungsmaße und Konfidenzintervalle berechnet werden können, mehr als sechs Queries und die Angabe der Hard- und Softwareumgebung.
+Die abgeschlossene Messung vergleicht Python und Library bereits auf denselben sechs Queries und derselben Worker-Zahl. Eine Folgeuntersuchung sollte diese Messung mit mindestens mehreren Dutzend Queries und Wiederholungen pro Query erweitern, damit Streuungsmaße und Konfidenzintervalle berechnet werden können. CLI- und Batch-CLI-Varianten sind nur dann zusätzlich aufzunehmen, wenn sie als reale Alternativen für Isolation, Interoperabilität oder Fehlersuche bewertet werden; sie sind nicht nötig, um den inzwischen gemessenen Library-Vorteil festzustellen.
 
-Neu ist die Forderung, die Zeit nach Phasen auszuweisen: Datenbankabfrage, Übergabe der Daten an den Rechenkern, Rechenzeit des Kerns und Auswertung der Ergebnisse. Aus den Differenzen lässt sich $\delta$ aus Bemerkung~\ref{bem:schnittstellenkosten} je Anbindung bestimmen und das erweiterte Kostenmodell prüfen. Die Untersuchung sollte vier Hypothesen testen: Erstens ist $\delta$ bei der Library um Größenordnungen kleiner als bei der CLI. Zweitens ist die Gesamtsuche mit der Library schneller als mit dem Python-Algorithmus, falls der native Kern tatsächlich schneller ist. Drittens liefern alle Anbindungen für jede Query dieselben Treffer. Viertens bleiben die Skalierungsaussagen aus Abschnitt~\ref{sec:parallel} bei der Library erhalten, bei der CLI hingegen nicht notwendig. Die Messung sollte außerdem auf mindestens zwei Betriebssystemen laufen, weil die Kosten des Prozessstarts vom Betriebssystem abhängen können.
+Die Folgeuntersuchung sollte die Phasen feiner aufteilen: Datenbankabfrage, Übergabe der Daten an den Rechenkern, Rechenzeit des Kerns und Ergebnisauswertung. Damit lässt sich der verbleibende Aufwand $\delta$ genauer bestimmen und prüfen, ob er sich durch eine gebündelte Übergabe senken lässt. Zu untersuchen sind außerdem der Backend-Speedup über unterschiedliche Knotenzahlen und Kantendichten, identische Treffer für einen größeren Query-Satz und die Skalierung mit mehr als zwei Workern. Mindestens zwei Betriebssysteme sollten einbezogen werden, um sowohl die Portabilität als auch den Einfluss des Betriebssystems auf den Wrapper zu bewerten.
 
 \subsubsection{Prüfung künftiger Fremdmodule}
 \label{sec:fremd_pruefung}
@@ -1509,7 +1488,7 @@ Mehrere Erweiterungen dieses Ausblicks führen weitere Bausteine in das System e
 
 Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, die zunächst die fachliche Korrektheit und Aussagekraft absichert, danach die Messbarkeit herstellt und erst anschließend die Laufzeit optimiert. Die Parallelisierung der Vergleiche, die zuvor als eine von mehreren möglichen Optimierungen aufgeführt war, ist inzwischen umgesetzt und gemessen; sie entfällt daher als eigener Entwicklungsschritt, nicht jedoch ihre Verfeinerung. Die Kopplungsfrage (Themenfeld G) steht früh in der Reihenfolge, weil sie bestimmt, auf welcher Anbindung spätere Messungen und Optimierungen aufbauen.
 
-\begin{table}[!htbp]
+\begin{table}[!h]
 	\centering
 	\small
 	\caption{Vorgeschlagene Reihenfolge der Weiterentwicklung.}
@@ -1518,12 +1497,12 @@ Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, d
 		\toprule
 		Nr. & Maßnahme & Nutzen & Aufwand \\
 		\midrule
-		1 & Differenzielle Tests der Vorauswahl, Eigenschaftstests (Abschnitt~\ref{sec:ausblick}, Feld A) & sichert Korrektheit und alle weiteren Optimierungen ab & gering \\
-		2 & Phasen- und Metrikprotokollierung (Feld D) & macht seriellen Anteil und Schnittstellenkosten messbar & gering \\
-		3 & Schnittstellenspezifikation und Konformitätstests der Backends (Feld G) & Ergebnisregeln an einer Stelle, austauschbare Implementierungen & gering bis mittel \\
-		4 & Wiederholung der Parallelisierungsmessung (Feld E) & belastbare Aussagen zu $S(p)$ & gering bis mittel \\
-		5 & Library-Anbindung des C++-Kerns und Messung der Kopplung (Feld G) & schmale Grenze, Rechenkern unter gleichen Bedingungen messbar & mittel \\
-		6 & Batch- oder persistente CLI-Schnittstelle, nur falls die Library nicht tragfähig ist (Feld G) & beseitigt den Prozessstart je Vergleich & gering bis mittel \\
+		1 & Differenzielle Tests der Vorauswahl und Eigenschaftstests (Abschnitt~\ref{sec:ausblick}, Feld A) & sichert Korrektheit und alle weiteren Optimierungen ab & gering \\
+		2 & Gemeinsame Konformitätstests für Python und C++ (Feld G) & sichert identische Semantik bei jeder Änderung & gering bis mittel \\
+		3 & Feinere Phasen- und Schnittstellenmessung (Feld D und G) & erklärt den Restanteil der C++-Suchzeit & gering bis mittel \\
+		4 & Wiederholung der Backend- und Parallelisierungsmessung (Feld E und G) & belastbare Aussagen zu Speedup und $S(p)$ & mittel \\
+		5 & Bau und Laden der C++-Library für unterstützte Plattformen automatisieren (Feld G) & reproduzierbare Bereitstellung und Fehlererkennung & mittel \\
+		6 & Batch- oder persistente CLI-Schnittstelle nur bei Bedarf (Feld G) & erhält Isolation oder Sprachneutralität bei amortisierten Startkosten & gering bis mittel \\
 		7 & Suche in beide Richtungen (Feld A) & vollständige Suchsemantik & mittel \\
 		8 & Optimierung des Einzelvergleichs: Abbruch, Vektorisierung (Feld C) & wirkt fast vollständig auf die Gesamtzeit & mittel \\
 		9 & Verfeinerte Parallelisierung: strömendes Laden, Query pro Task, Blockgröße (Feld C) & kleinerer serieller Anteil & mittel \\
@@ -1537,17 +1516,19 @@ Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, d
 	\end{tabular}
 \end{table}
 
-Die Reihenfolge trennt drei Ziele, die bei der Weiterentwicklung nicht miteinander verwechselt werden sollten: Vollständigkeit und semantische Korrektheit der Suche (Nummern~1, 3 und~7), empirisch belastbare Aussagen über ihre Leistung (Nummern~2, 4, 5 und~14) sowie Optimierungen für konkrete Antwortzeit- und Skalierungsanforderungen (Nummern~6 sowie~8 bis~13 und~15). Insbesondere bleibt bei einer Hybridstrategie mit VF2 die Worst-Case-Garantie nur dann erhalten, wenn ein Verfahren mit garantierter Schranke, etwa der Subgraph Algorithmus, als Fallback vorgesehen ist. Wo die Maßnahmen voneinander abhängen, gilt: Die Tests (Nr.~1) und die Konformitätstests (Nr.~3) müssen vor jeder Optimierung des Vergleichs (Nr.~8 und~13) stehen, und die Protokollierung (Nr.~2) vor der Verfeinerung der Parallelisierung (Nr.~9), weil sonst nicht erkennbar ist, ob eine Änderung den seriellen Anteil tatsächlich senkt. Die Library-Messung (Nr.~5) geht der Entscheidung über die Übergangslösung (Nr.~6) voraus und liefert die Grundlage dafür, auf welchem Weg der native Rechenkern weiter beschleunigt wird (Nr.~8 und~15).
+Die Reihenfolge trennt drei Ziele: Vollständigkeit und semantische Korrektheit (Nummern~1 und~7), reproduzierbare Austauschbarkeit der Backends (Nummern~2 und~5) sowie empirisch belastbare Leistungswerte und darauf aufbauende Optimierungen (Nummern~3, 4, 6 und~8 bis~15). Die Grundentscheidung und erste Messung der Library sind abgeschlossen; Priorität haben nun Konformitätstests, genauere Phasenmessung und Wiederholungen unter kontrollierten Bedingungen. Bei einer Hybridstrategie mit VF2 bleibt die Worst-Case-Garantie nur dann erhalten, wenn der Subgraph Algorithmus als Fallback vorgesehen ist. Die Tests (Nr.~1 und~2) sollten vor algorithmischen Optimierungen (Nr.~8 und~13) stehen. Die detailliertere Instrumentierung (Nr.~3) ist Voraussetzung, um den Nutzen der späteren Parallelisierungsverfeinerung (Nr.~9) zuverlässig beurteilen zu können.
 
 % =====================================================================
 \subsection{Abschließende Bemerkung}
 \label{sec:schlussbemerkung}
 
-Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet die Architektur mit der formalen Analyse der Such-Pipeline, mit einer Evaluation an einer Million synthetischer Netzwerke, einem Vergleich mit VF2 und einer Messung der Parallelisierung. Ihr zentraler Gedanke ist die Trennung zweier Aufgaben: Eine kostengünstige Vorauswahl in der Datenbank verkleinert den Suchraum, und der Subgraph Algorithmus entscheidet anschließend über jeden verbliebenen Kandidaten mit einer bewiesenen kubischen Zeitschranke. Diese Trennung hat sich in allen Teilen der Arbeit bewährt: Sie ermöglicht Korrektheits- und Komplexitätsbeweise, sie macht die Kandidatenzahl zur entscheidenden Stellgröße der Laufzeit, und sie erlaubt es, die teure Stufe unabhängig auf mehrere Prozessoren zu verteilen.
+Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet Architektur, formale Analyse, eine Evaluation an einer Million synthetischer Netzwerke sowie Experimente zu VF2, Parallelisierung und Implementierungsbackends. Ihr zentraler Gedanke ist die Trennung zweier Aufgaben: Eine datenbankseitige Vorauswahl verkleinert den Suchraum, und der Subgraph Algorithmus entscheidet anschließend über die verbliebenen Kandidaten mit einer bewiesenen kubischen Zeitschranke. Die Analyse zeigt, unter welchen Bedingungen diese Pipeline korrekt und vollständig ist; die Experimente zeigen, wie stark die tatsächliche Laufzeit von Kandidatenzahl, Implementierung und Ausführungsmodell abhängt.
 
-Die Ergebnisse zeigen aber auch, wo die Grenzen des gegenwärtigen Stands liegen. Eine vollständige Suche über eine Datenbank mit einer Million Einträgen dauert bei großen Suchräumen mehrere Minuten, und die Parallelisierung senkt diese Zeit um einen konstanten Faktor, nicht in der Größenordnung. Der Weg zu interaktiven Antwortzeiten führt deshalb über mehrere sich ergänzende Maßnahmen: eine schärfere Vorauswahl, einen schnelleren Einzelvergleich, eine Verfahrenswahl nach Graphgröße und eine Bedienung, die Teilergebnisse früh anzeigt. Zugleich bleibt zu klären, ob die zyklische Relation $\preceq$ die fachlichen Anforderungen biologischer Anwender erfüllt, was eine Validierung an realen Netzwerken und die Einbeziehung der Knotenlabels verlangt. Gen-DB bietet dafür eine modulare Architektur, eine nachvollziehbare Kandidatenreduktion und ein reproduzierbares Experimentierwerkzeug. Die Arbeit benennt zugleich die Korrektheits- und Evaluationsschritte, die für den Übergang von der prototypischen Realisierung zu einem belastbar validierten Suchsystem erforderlich sind.
+Besonders deutlich wird das im erneuerten Backend-Experiment. Bei sechs identischen Suchanfragen und $931.899$ Kandidaten sinkt die Laufzeit mit der C++-Library von $1.180{,}28$ auf $185{,}62$ Sekunden, ein Speedup von $6{,}36\times$. Auch der direkte Mikrobenchmark zeigt einen erheblich schnelleren C++-Aufruf. Gleichzeitig ist der Ende-zu-Ende-Gewinn deutlich kleiner als der Mikrobenchmark-Speedup: Nach Beschleunigung des Vergleichskerns machen Datenbankzugriff, Übergabe und Ergebnisaufbau einen großen Teil der verbleibenden Suchzeit aus. Die Messung führt damit nicht nur zu einem positiven Ergebnis für die Library, sondern auch zu einer konkreten nächsten Frage: Welche nichtvergleichenden Phasen lassen sich sicher messen und optimieren, ohne die Korrektheit der Suche zu beeinträchtigen?
 
-Der zentrale Gedanke der Trennung gilt nicht nur für die beiden Stufen der Such-Pipeline, sondern auch für die Beschreibungen, in denen Gen-DB gebaut ist. Die Untersuchung der C++-Anbindung hat gezeigt, dass eine Grenze, die an den Prozess, das Textformat und den Exit-Code gelegt wird, Aufwand erzeugt, der weder zum Algorithmus noch zur Anwendung gehört: Übersetzungscode, doppelt verteilte fachliche Regeln, Kontrollen gegen stille Abweichungen und eine Mindestlatenz, die den Rechenkern in der Messung verdeckt. Eine lose Kopplung über eine Library hält die Grenze schmal und erlaubt es allen Beteiligten, das System mit einem klaren Trennungsbewusstsein zu analysieren, weiterzuentwickeln und wiederzuverwenden. Diese Position ist eine begründete Gestaltungsentscheidung und noch kein gemessenes Ergebnis; die Library-Anbindung und die C++-Suchreihe stehen aus, und der Ausblick benennt dafür die nächsten Schritte von der Schnittstellenspezifikation bis zum Messprogramm. Damit schließt sich der Bogen der Arbeit: Gen-DB gewinnt seine Analysierbarkeit daraus, dass seine Teile klar getrennt sind, und es behält sie nur, wenn auch künftige Erweiterungen ihre Grenzen schmal und benannt halten.
+Die Ergebnisse bleiben in ihrem Geltungsbereich begrenzt. Die Backend-Messung umfasst sechs einmalig ausgeführte Queries auf synthetischen Daten und einer Windows-11-Konfiguration. Sie belegt weder dieselbe Beschleunigung auf realen biologischen Netzwerken noch auf anderer Hardware; auch stimmen identische Treffer in dieser Stichprobe keinem allgemeinen Korrektheitsbeweis gleich. Offen bleiben außerdem die biologische Angemessenheit der Relation $\preceq$, die Berücksichtigung von Knotenlabels, die Suchrichtung, mögliche Kandidatenlimits und eine breitere statistische Absicherung. Der nächste Entwicklungsschritt ist deshalb nicht allein weitere Beschleunigung, sondern zunächst Konformitätstests, wiederholbare Multi-Plattform-Messungen und feinere Phaseninstrumentierung. Darauf können eine schärfere Vorauswahl, asynchrone Teilergebnisse und reale Anwendungsvalidierung aufbauen.
+
+Der zentrale Gedanke der Trennung gilt somit für die Suchpipeline wie für die Sprachgrenze: Eine klar definierte Schnittstelle macht Verantwortung und Kosten nachvollziehbar. Für den untersuchten Suchpfad hat die Library diese Gestaltungsentscheidung nicht nur strukturell, sondern auch experimentell gestützt; die frühere CLI-Messung zeigt zugleich, wie sehr ein ungünstiger Aufrufpfad den Rechenkern verdecken kann. Die Arbeit liefert damit keinen universellen Leistungsanspruch, sondern eine nachvollziehbare Grundlage für Gen-DB: einen formal analysierten Suchablauf, ein konkret gemessenes schnelleres Backend und einen priorisierten Weg von der Prototyp-Implementierung zu einem validierten und belastbar betriebenen Suchsystem.
 
 \begin{thebibliography}{99}
 

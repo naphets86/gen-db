@@ -7,13 +7,17 @@ Vergleiche in separaten Prozessen und blockieren den Webserver nicht.
 
 ALGORITHMUS-AUSWAHL (pro Prozess einmal aufgelöst):
 1. C++-Implementierung (https://github.com/naphets86/csubgraph): Wird genutzt,
-   wenn CSUBGRAPH_PATH (.env) auf das ``subgraph-cli``-Executable oder auf ein
-   Verzeichnis zeigt, in dem es liegt (Projektordner, ``build/``,
-   ``build/Release``).
+   wenn CSUBGRAPH_LIB_PATH (.env) auf ``libsubgraphlib.a`` oder einen Ordner mit
+   dieser Datei zeigt (Projektordner, ``build/``). Die statische Bibliothek wird
+   über einen kleinen C-Wrapper zu einer DLL/.so gelinkt (siehe
+   csubgraph_native.py) und direkt im Worker-Prozess aufgerufen, ohne
+   Prozessstart und ohne JSON je Vergleich.
 2. Python-Implementierung (Dependency aus pyproject.toml,
    https://github.com/naphets86/subgraph), ausschließlich über ihre öffentliche
-   API: ``Subgraph().compare_graphs(A, B)``. Fallback, wenn csubgraph nicht
-   konfiguriert, nicht auffindbar oder nicht ausführbar ist.
+   API: ``Subgraph().compare_graphs(A, B)``. Wird genutzt, wenn
+   CSUBGRAPH_LIB_PATH nicht gesetzt ist. Ist er gesetzt, aber die Bibliothek
+   nicht nutzbar (fehlt, kein Compiler, Build/Ladefehler), gibt es eine Warnung
+   im Log und ebenfalls den Python-Fallback.
 
 Rückgabewerte (A = Query, B = Kandidat). Beide Algorithmen liefern dieselben
 Werte; die C++-Ergebnisse werden dafür umgesetzt (KEEP_B -> keep_B, ...,
@@ -26,21 +30,19 @@ IDENTICAL -> equal_keep_A/equal_keep_B nach Kantenanzahl):
 
 KONFIGURATION VIA PYDANTIC:
 - Anzahl Worker über Config.subgraph_max_workers (SUBGRAPH_MAX_WORKERS)
-- Pfad zu csubgraph über Config.csubgraph_path (CSUBGRAPH_PATH)
-- Timeout je C++-Vergleich über Config.csubgraph_timeout (CSUBGRAPH_TIMEOUT)
+- Pfad zu libsubgraphlib.a über Config.csubgraph_lib_path (CSUBGRAPH_LIB_PATH)
 """
 
-import json
 import logging
 import os
-import subprocess
 import threading
 from concurrent.futures import ProcessPoolExecutor, Future
-from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 from subgraph import Subgraph
+
+from . import csubgraph_native
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +59,10 @@ DEFAULT_CHUNKSIZE = 256
 # Pro Prozess einmal erzeugte Instanz des Algorithmus
 _algorithm: Optional[Subgraph] = None
 
-# Name des C++-Executables (CMake-Target in csubgraph) und Standard-Timeout
-CSUBGRAPH_CLI_NAME = "subgraph-cli"
-DEFAULT_CSUBGRAPH_TIMEOUT = 30.0
-
-# Pro Prozess einmal aufgelöster Pfad zur csubgraph-CLI (None = Python-Fallback)
-_csubgraph_cli: Optional[str] = None
-_csubgraph_resolved = False
+# Pro Prozess einmal geladene C++-Bibliothek (None = Python-Fallback)
+_native: Optional[csubgraph_native.NativeSubgraph] = None
+_native_resolved = False
+_native_error: Optional[str] = None
 
 # Übersetzung der C++-Ergebnisse in die Rückgabewerte des Python-Algorithmus
 _CSUBGRAPH_RESULTS = {
@@ -76,10 +75,6 @@ _CSUBGRAPH_RESULTS = {
 
 Matrix = List[List[int]]
 ComparisonResult = Tuple[Optional[str], Optional[str]]
-
-
-class CsubgraphUnavailableError(Exception):
-    """csubgraph konnte nicht gestartet werden (-> Fallback auf Python)."""
 
 
 def _get_config_safe():
@@ -97,99 +92,58 @@ def _get_config_safe():
         return None
 
 
-def find_csubgraph_cli(path_setting: Optional[str]) -> Optional[str]:
-    """
-    Sucht das csubgraph-Executable anhand der Einstellung CSUBGRAPH_PATH.
+def _get_native() -> Optional[csubgraph_native.NativeSubgraph]:
+    """Lädt die C++-Bibliothek einmal pro Prozess (None = Python nutzen)."""
+    global _native, _native_resolved, _native_error
 
-    Args:
-        path_setting: Pfad zur Datei ``subgraph-cli(.exe)`` oder zu einem
-            Verzeichnis (csubgraph-Projektordner oder Build-Ordner)
-
-    Returns:
-        Absoluter Pfad zum Executable oder None, wenn nichts Ausführbares
-        gefunden wurde (leere/fehlende Einstellung eingeschlossen)
-    """
-    if not path_setting or not path_setting.strip():
-        return None
-
-    base = Path(path_setting.strip()).expanduser()
-    if base.is_file():
-        candidates = [base]
-    else:
-        names = [CSUBGRAPH_CLI_NAME + ".exe", CSUBGRAPH_CLI_NAME]
-        subdirs = ["", "build", "build/Release", "Release"]
-        candidates = [base / sub / name for sub in subdirs for name in names]
-
-    for candidate in candidates:
-        if candidate.is_file() and os.access(candidate, os.X_OK):
-            return str(candidate.resolve())
-    return None
-
-
-def _get_csubgraph_cli() -> Optional[str]:
-    """Löst die csubgraph-CLI einmal pro Prozess auf (None = Python nutzen)."""
-    global _csubgraph_cli, _csubgraph_resolved
-
-    if not _csubgraph_resolved:
+    if not _native_resolved:
         config = _get_config_safe()
-        setting = getattr(config, "csubgraph_path", None) if config else None
-        _csubgraph_cli = find_csubgraph_cli(setting)
-        _csubgraph_resolved = True
+        setting = getattr(config, "csubgraph_lib_path", None) if config else None
+        _native_resolved = True
+        _native = None
+        _native_error = None
 
-        if not _csubgraph_cli and setting and setting.strip():
-            logger.warning(
-                f"CSUBGRAPH_PATH={setting!r} contains no executable "
-                f"'{CSUBGRAPH_CLI_NAME}', falling back to Python implementation"
-            )
+        if setting and setting.strip():
+            try:
+                _native = csubgraph_native.load(setting)
+            except csubgraph_native.NativeLibraryError as e:
+                _native_error = str(e)
+                logger.warning(
+                    f"CSUBGRAPH_LIB_PATH={setting!r} not usable ({e}), "
+                    "falling back to Python implementation"
+                )
 
-    return _csubgraph_cli
+    return _native
+
+
+def get_native_error() -> Optional[str]:
+    """Grund, warum die C++-Bibliothek trotz gesetztem Pfad nicht genutzt wird (sonst None)."""
+    _get_native()
+    return _native_error
 
 
 def reset_backend() -> None:
     """Verwirft den aufgelösten Algorithmus (neue Auflösung beim nächsten Vergleich)."""
-    global _csubgraph_cli, _csubgraph_resolved, _algorithm
+    global _native, _native_resolved, _native_error, _algorithm
 
-    _csubgraph_cli = None
-    _csubgraph_resolved = False
+    _native = None
+    _native_resolved = False
+    _native_error = None
     _algorithm = None
 
 
 def get_backend_name() -> str:
     """Gibt \"csubgraph\" oder \"python\" zurück (je nach aufgelöstem Algorithmus)."""
-    return "csubgraph" if _get_csubgraph_cli() else "python"
+    return "csubgraph" if _get_native() else "python"
 
 
-def _compare_with_csubgraph(cli: str, matrix_a: np.ndarray, matrix_b: np.ndarray) -> ComparisonResult:
-    """
-    Vergleicht zwei Matrizen über das csubgraph-Executable (JSON via stdin/stdout).
+def _compare_with_csubgraph(native: csubgraph_native.NativeSubgraph,
+                            matrix_a: np.ndarray, matrix_b: np.ndarray) -> ComparisonResult:
+    """Vergleicht zwei Matrizen über die eingebundene C++-Bibliothek (direkter Funktionsaufruf)."""
+    result, error = native.compare(matrix_a, matrix_b)
+    if error:
+        return None, error
 
-    Raises:
-        CsubgraphUnavailableError: Executable lässt sich nicht starten
-    """
-    config = _get_config_safe()
-    timeout = getattr(config, "csubgraph_timeout", None) or DEFAULT_CSUBGRAPH_TIMEOUT
-    payload = json.dumps({"graph_a": matrix_a.tolist(), "graph_b": matrix_b.tolist()})
-
-    try:
-        proc = subprocess.run(
-            [cli], input=payload, capture_output=True, text=True, timeout=timeout
-        )
-    except subprocess.TimeoutExpired:
-        return None, f"csubgraph timeout after {timeout}s"
-    except OSError as e:
-        raise CsubgraphUnavailableError(str(e)) from e
-
-    # Die CLI schreibt Erfolg nach stdout, Fehler teils nach stderr (JSON)
-    raw = proc.stdout.strip() or proc.stderr.strip()
-    try:
-        response = json.loads(raw)
-    except ValueError:
-        return None, f"csubgraph returned invalid output (exit code {proc.returncode})"
-
-    if proc.returncode != 0 or response.get("error"):
-        return None, f"csubgraph error: {response.get('error')}"
-
-    result = response.get("result")
     if result == "IDENTICAL":
         # Wie der Python-Algorithmus: A behalten, wenn A mindestens so viele Kanten hat
         return ("equal_keep_A" if matrix_a.sum() >= matrix_b.sum() else "equal_keep_B"), None
@@ -236,6 +190,9 @@ def get_executor(max_workers: Optional[int] = None) -> ProcessPoolExecutor:
     if _executor is None:
         with _executor_lock:
             if _executor is None:
+                # C++-Bibliothek vor dem Start der Worker einmalig bauen/laden, damit
+                # nicht alle Worker gleichzeitig den Build anstoßen
+                _get_native()
                 _executor = ProcessPoolExecutor(max_workers=max_workers)
                 logger.info(f"ProcessPoolExecutor initialized with {max_workers} workers")
 
@@ -246,7 +203,7 @@ def execute_subgraph_comparison(graph_a: Matrix, graph_b: Matrix) -> ComparisonR
     """
     Vergleicht zwei Graphen mit dem Subgraph Algorithmus.
 
-    Nutzt zuerst csubgraph (C++, wenn über CSUBGRAPH_PATH verfügbar), sonst die
+    Nutzt csubgraph (C++-Bibliothek, wenn über CSUBGRAPH_LIB_PATH verfügbar), sonst die
     Python-Implementierung. Wird im Worker-Prozess ausgeführt. Fehler werden nicht geworfen, sondern
     als Fehlertext zurückgegeben, damit ein defekter Kandidat nicht die
     gesamte Suche abbricht.
@@ -258,8 +215,6 @@ def execute_subgraph_comparison(graph_a: Matrix, graph_b: Matrix) -> ComparisonR
     Returns:
         Tuple (decision, error_message). Bei Erfolg ist error_message None.
     """
-    global _csubgraph_cli
-
     try:
         matrix_a = np.array(graph_a, dtype=int)
         matrix_b = np.array(graph_b, dtype=int)
@@ -268,13 +223,9 @@ def execute_subgraph_comparison(graph_a: Matrix, graph_b: Matrix) -> ComparisonR
             if matrix.ndim != 2 or matrix.shape[0] == 0 or matrix.shape[0] != matrix.shape[1]:
                 return None, f"Invalid adjacency matrix: {name} must be a non-empty square matrix"
 
-        cli = _get_csubgraph_cli()
-        if cli:
-            try:
-                return _compare_with_csubgraph(cli, matrix_a, matrix_b)
-            except CsubgraphUnavailableError as e:
-                logger.warning(f"csubgraph not usable ({e}), falling back to Python implementation")
-                _csubgraph_cli = None
+        native = _get_native()
+        if native:
+            return _compare_with_csubgraph(native, matrix_a, matrix_b)
 
         return _compare_with_python(matrix_a, matrix_b)
 
