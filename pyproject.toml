@@ -44,6 +44,7 @@ omit = [
     "src/experiment_search_workers.py",
     "src/experiment_search_backends.py",
     "src/experiment_search_multiomics.py",
+    "db-populate.py"
 ]
 
 [tool.pytest.ini_options]

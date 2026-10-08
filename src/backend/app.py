@@ -104,7 +104,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Gen - Biological Network Analysis API",
     description="REST API for searching biological networks using subgraph matching",
-    version="1.1.0",
+    version="5.0.0",
     lifespan=lifespan
 )
 
