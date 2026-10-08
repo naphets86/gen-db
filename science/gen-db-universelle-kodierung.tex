@@ -1,0 +1,291 @@
+\section{Universelle Kodierung biologischer Strukturen und optimale Suche}
+\label{sec:universell}
+
+Bisher wurde für jede neue Art biologischer Daten ein eigener Vergleichspfad formuliert und in den nativen Kern implementiert: zuerst für das Einzelnetzwerk (Abschnitt~\ref{sec:pipeline}), dann für das mehrschichtige Netzwerk (Abschnitt~\ref{sec:multiomics}). Dieses Kapitel zeigt, dass dies nicht notwendig ist. Die Suche wird in zwei Teile getrennt:
+\begin{enumerate}[label=(\roman*)]
+\item einen \emph{strukturunabhängigen Kern}, der ausschließlich Stapel von Mengenfolgen kennt (Abschnitt~\ref{sec:univ_kern}), und
+\item eine \emph{Kodierung} $\Phi_{\Sigma,\kappa}$, die jede biologische Struktur eines beliebigen Schemas $\Sigma$ in einen solchen Stapel überführt und vollständig in Python liegt (Abschnitt~\ref{sec:univ_kodierung}).
+\end{enumerate}
+Für eine neue biologische Struktur ist dann nur noch ein neues Schema und damit eine neue Kodierung zu schreiben; der Kern, seine Beweise und sein Index bleiben unverändert.
+
+Bewiesen werden folgende Aussagen: Jede endliche attributierte relationale Struktur besitzt eine verlustfreie Kodierung (Satz~\ref{satz:univ_verlustfrei}), die in fast linearer Zeit berechenbar ist (Satz~\ref{satz:univ_kodierung_zeit}). Der Vergleich zweier Stapel ist in erwarteter Linearzeit entscheidbar (Satz~\ref{satz:univ_vergleich}) und bis auf einen konstanten Faktor optimal (Satz~\ref{satz:univ_untere}). Mit einem invertierten Index liefert die Suche das exakte Ergebnis ohne Einzelvergleiche, und ihr Aufwand hängt von der Trefferlast, nicht von der Datenbankgröße $N$ ab (Satz~\ref{satz:univ_index} und \ref{satz:univ_index_zeit}). Nicht behauptet wird, dass die Relation $\sqsubseteq$ mit der klassischen Teilgraph-Isomorphie übereinstimmt; dies ist nach Bemerkung~\ref{bem:univ_np} ohne $\mathrm{P}=\mathrm{NP}$ nicht möglich. Ebenso wenig wird behauptet, dass jede Kodierung eine biologisch valide Suchsemantik liefert (Bemerkung~\ref{bem:univ_semantik}).
+
+%--------------------------------------------------------------------
+\subsection{Der strukturunabhängige Kern}
+\label{sec:univ_kern}
+
+\begin{definition}[Schicht und Stapel]
+	Eine \emph{Schicht der Länge $m$} ist eine Folge $s=(s_0,\dots,s_{m-1})$ endlicher Mengen $s_j\subset\mathbb{N}$, der \emph{Komponenten}. Ein \emph{Stapel} $M=(s^{(1)},\dots,s^{(L)})$ besteht aus $L\ge 1$ Schichten derselben Länge $|M|:=m$. Die \emph{Belegung} ist $\nu(M):=\sum_{\ell=1}^{L}\sum_{j=0}^{m-1}|s^{(\ell)}_j|$. Die zu $M$ gehörende \emph{Tupelfolge} ist $\tau(M)_j:=(s^{(1)}_j,\dots,s^{(L)}_j)$.
+\end{definition}
+
+\begin{bemerkung}[Matrixstapel als Spezialfall]
+	\label{bem:univ_matrix}
+	Zu einem Stapel quadratischer $\{0,1\}$-Matrizen $(A_1,\dots,A_L)$ der Größe $n$ gehört die Komponente $s^{(\ell)}_j=\{\,i : (A_\ell)_{ij}=1\,\}$, also die In-Nachbarschaft des Knotens $j$ in Schicht $\ell$. Sie entspricht bijektiv dem Bitmuster $\sum_i (A_\ell)_{ij}2^i$ der Zeilenkomponente aus Abschnitt~\ref{sec:multiomics_relation}. Die folgende Relation ist die dort beschriebene Relation (Bigramm-Charakterisierung der Implementierung), nur ohne die Einschränkung $n\le 63$, die allein aus der 64-Bit-Darstellung der nativen Bibliothek stammt.
+\end{bemerkung}
+
+\begin{definition}[Paarmengen]
+	Für eine Folge $s=(s_0,\dots,s_{m-1})$ über einer beliebigen Menge sei
+	\[
+	P_{\mathrm{lin}}(s)=\{(s_j,s_{j+1}) : 0\le j\le m-2\},\qquad
+	P_{\mathrm{cyc}}(s)=\{(s_j,s_{(j+1)\bmod m}) : 0\le j\le m-1\}
+	\]
+	für $m\ge 2$ sowie $P_{\mathrm{lin}}(s)=P_{\mathrm{cyc}}(s)=\emptyset$ für $m\le 1$.
+\end{definition}
+
+\begin{definition}[Enthaltensein]
+	Seien $M,M'$ Stapel mit derselben Schichtzahl $L$. Dann gilt
+	\begin{align*}
+	M\sqsubseteq_{\mathrm{ind}}M' &:\iff |M|\le|M'| \ \wedge\ \forall \ell\in\{1,\dots,L\}:\ P_{\mathrm{lin}}(s^{(\ell)})\cap P_{\mathrm{cyc}}(s'^{(\ell)})\neq\emptyset,\\
+	M\sqsubseteq_{\mathrm{coh}}M' &:\iff |M|\le|M'| \ \wedge\ P_{\mathrm{lin}}(\tau(M))\cap P_{\mathrm{cyc}}(\tau(M'))\neq\emptyset.
+	\end{align*}
+	Für eine Indexmenge $I\subseteq\{1,\dots,L\}$ bezeichne $\pi_I(M)$ die Projektion auf die Schichten aus $I$. Die Relationen $\sqsubseteq_{\mathrm{ind}}^{I}$ und $\sqsubseteq_{\mathrm{coh}}^{I}$ sind $\sqsubseteq_{\mathrm{ind}}$ bzw.\ $\sqsubseteq_{\mathrm{coh}}$ auf den projizierten Stapeln.
+\end{definition}
+
+\begin{lemma}[Elementare Eigenschaften]
+	\label{lem:univ_eigenschaften}
+	Für Stapel $M,M',M''$ mit gleicher Schichtzahl gilt:
+	\begin{enumerate}[label=(\alph*)]
+	\item $M\sqsubseteq_{\mathrm{coh}}M' \Rightarrow M\sqsubseteq_{\mathrm{ind}}M'$.
+	\item $M\sqsubseteq_{\mathrm{ind}}M' \Rightarrow 2\le|M|\le|M'|$.
+	\item Ist $|M|\ge 2$, so gilt $M\sqsubseteq_{\mathrm{coh}}M$ und damit $M\sqsubseteq_{\mathrm{ind}}M$.
+	\item Für $I'\subseteq I$ folgt aus $M\sqsubseteq_{\mu}^{I}M'$ stets $M\sqsubseteq_{\mu}^{I'}M'$ mit $\mu\in\{\mathrm{ind},\mathrm{coh}\}$: Weniger Schichten liefern mehr Treffer.
+	\item Die Relationen sind im Allgemeinen \emph{nicht transitiv}.
+	\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+	(a) Ist $(\tau(M)_j,\tau(M)_{j+1})=(\tau(M')_k,\tau(M')_{(k+1)\bmod m'})$, so stimmen die Paare in jeder Koordinate $\ell$ überein; das Paar liegt also in $P_{\mathrm{lin}}(s^{(\ell)})\cap P_{\mathrm{cyc}}(s'^{(\ell)})$ für jedes $\ell$.
+	(b) Für $|M|\le 1$ ist $P_{\mathrm{lin}}=\emptyset$, der Durchschnitt also leer.
+	(c) Für $m\ge2$ liegt $(s_0,s_1)$ sowohl in $P_{\mathrm{lin}}(s)$ als auch in $P_{\mathrm{cyc}}(s)$; dasselbe gilt für $\tau(M)$.
+	(d) Beim Weglassen von Schichten bleibt ein gemeinsames Paar gemeinsam: bei ind für jede verbleibende Schicht, bei coh nach Streichen der entfernten Koordinaten aus beiden Tupeln.
+	(e) Gegenbeispiel mit $L=1$: $M=(\{1\},\{2\})$, $M'=(\{1\},\{2\},\{3\})$, $M''=(\{2\},\{3\},\emptyset,\emptyset)$. Das Paar $(\{1\},\{2\})$ liegt in $P_{\mathrm{lin}}(M)\cap P_{\mathrm{cyc}}(M')$, also $M\sqsubseteq M'$. Das Paar $(\{2\},\{3\})$ liegt in $P_{\mathrm{lin}}(M')\cap P_{\mathrm{cyc}}(M'')$, also $M'\sqsubseteq M''$. Es ist aber $P_{\mathrm{lin}}(M)=\{(\{1\},\{2\})\}$ und $P_{\mathrm{cyc}}(M'')=\{(\{2\},\{3\}),(\{3\},\emptyset),(\emptyset,\emptyset),(\emptyset,\{2\})\}$ ohne gemeinsames Element, also $M\not\sqsubseteq M''$.
+\end{proof}
+
+\begin{lemma}[Kein Kantenzahl-Filter für $\sqsubseteq$]
+	\label{lem:univ_kanten}
+	Aus $M\sqsubseteq M'$ folgt $|M|\le|M'|$, aber im Allgemeinen \emph{nicht} $\nu(M)\le\nu(M')$.
+\end{lemma}
+
+\begin{proof}
+	Sei $L=1$, $M=(\{0,1\},\{0,1\},\{0,1,2\})$ (eine $3\times3$-Matrix mit $\nu=7$ Kanten) und $M'=(\{0,1\},\{0,1\},\emptyset,\emptyset)$ (eine $4\times4$-Matrix mit $\nu=4$ Kanten). Das Paar $(\{0,1\},\{0,1\})$ liegt in $P_{\mathrm{lin}}(M)$ und in $P_{\mathrm{cyc}}(M')$, also $M\sqsubseteq M'$, obwohl $\nu(M)>\nu(M')$.
+\end{proof}
+
+\begin{bemerkung}
+	Lemma~\ref{lem:univ_kanten} bedeutet: Der Kantenfilter $m_k\ge m_Q$ aus Abschnitt~\ref{sec:prefilter} ist für diese Relation \emph{nicht} zulässig, weil er echte Treffer ausschließen würde. Zulässig ist allein die Schranke $|M_k|\ge|Q|$ (Knotenzahl bzw.\ Schichtlänge). Dies entspricht der Implementierung der Multi-Omics-Suche, die nur nach \texttt{node\_count} vorfiltert. Der Index in Abschnitt~\ref{sec:univ_index} ersetzt den Pre-Filter ohnehin vollständig.
+\end{bemerkung}
+
+%--------------------------------------------------------------------
+\subsection{Biologische Strukturen und ihre Kodierung}
+\label{sec:univ_kodierung}
+
+\begin{definition}[Schema]
+	Ein \emph{Schema} $\Sigma=(\Lambda,T,(k_t)_{t\in T},(W_t)_{t\in T})$ besteht aus einer endlichen Menge von Knotenmerkmalen $\Lambda$, einer endlichen, fest geordneten Menge von Relationstypen $T$, Stelligkeiten $k_t\ge1$ und Gewichtsstufen $W_t\ge1$ ($W_t=1$: ungewichtet).
+\end{definition}
+
+\begin{definition}[Struktur]
+	Sei $\mathcal{U}$ die Menge aller Entitätsbezeichner (z.\,B.\ Gen-, Protein- oder Metabolitkennungen). Eine \emph{Struktur über $\Sigma$} ist $S=(V,\lambda,(R_t)_{t\in T},(w_t)_{t\in T})$ mit endlichem $V\subset\mathcal{U}$, $\lambda:V\to 2^{\Lambda}$, Relationen $R_t\subseteq V^{k_t}$ und Gewichten $w_t:R_t\to\{1,\dots,W_t\}$. Die Klasse aller Strukturen über $\Sigma$ heißt $\mathfrak{B}_\Sigma$; ihre Größe ist $|S|:=|V|+\sum_t|R_t|$.
+\end{definition}
+
+Diese Klasse umfasst gerichtete und (durch symmetrische Relationen) ungerichtete Netzwerke, gewichtete und attributierte Netzwerke, Reaktionsnetze mit mehrstelligen Reaktionen, Hypergraphen, Pfade und Sequenzen (als Nachfolgerrelation), Ontologie-Graphen sowie mehrschichtige Netzwerke (eine Relationsart je Schicht). Kontinuierliche Werte müssen zuvor quantisiert werden; die Verlustfreiheit gilt dann bezüglich der quantisierten Struktur.
+
+\begin{definition}[Koordinatensystem]
+	Ein \emph{Koordinatensystem} ist eine injektive Abbildung $\kappa:\mathcal{U}\to\mathbb{N}$, etwa die Vergabereihenfolge in einem Entitätsregister der Datenbank. Neue Entitäten erhalten stets neue, größere Koordinaten; bestehende Koordinaten ändern sich nie.
+\end{definition}
+
+\begin{definition}[Kodierung $\Phi_{\Sigma,\kappa}$]
+	\label{def:univ_kodierung}
+	Sei $S\in\mathfrak{B}_\Sigma$. Die \emph{Spalten} bestehen aus den Entitätsspalten $V$, aufsteigend nach $\kappa$, gefolgt von den Relationsknoten $E=\biguplus_{t:k_t\ne 2}R_t$, geordnet nach $t$ (gemäß der festen Ordnung von $T$) und innerhalb eines Typs lexikographisch nach $(\kappa(v_1),\dots,\kappa(v_{k_t}))$. Es ist $n:=|V|+|E|$. Die Kodierung $\Phi_{\Sigma,\kappa}(S)$ ist der Stapel mit folgenden Schichten, jeweils der Länge $n$; $s_j$ bezeichnet die Komponente der Spalte $j$:
+	\begin{itemize}
+	\item $\mathrm{Ex}$ (Existenz): für eine Entitätsspalte $v$ ist $s_j=\{\kappa(v)\}$, sonst $\emptyset$.
+	\item $\mathrm{Lab}_a$ für $a\in\Lambda$: für eine Entitätsspalte $v$ ist $s_j=\{\kappa(v)\}$, falls $a\in\lambda(v)$, sonst $\emptyset$; Relationsspalten haben $\emptyset$.
+	\item $\mathrm{Bin}_{t,r}$ für $k_t=2$ und $1\le r\le W_t$: für eine Entitätsspalte $v$ ist $s_j=\{\kappa(u) : (u,v)\in R_t,\ w_t(u,v)\ge r\}$, sonst $\emptyset$.
+	\item $\mathrm{Inz}_{t,p}$ für $k_t\ne2$ und $1\le p\le k_t$: für eine Relationsspalte $e=(v_1,\dots,v_{k_t})\in R_t$ ist $s_j=\{\kappa(v_p)\}$, sonst $\emptyset$.
+	\item $\mathrm{Wgt}_{t,r}$ für $k_t\ne2$ und $2\le r\le W_t$: für eine Relationsspalte $e\in R_t$ mit $w_t(e)\ge r$ ist $s_j=\{\kappa(v_1)\}$, sonst $\emptyset$.
+	\end{itemize}
+	Die Schichtzahl $L_\Sigma=1+|\Lambda|+\sum_{k_t=2}W_t+\sum_{k_t\ne2}(k_t+W_t-1)$ hängt nur vom Schema ab.
+\end{definition}
+
+Dass $L_\Sigma$ nur vom Schema abhängt, ist wesentlich: Der Kern vergleicht nur Stapel gleicher Schichtzahl, und Query sowie gespeicherte Strukturen eines Schemas erfüllen diese Bedingung automatisch.
+
+\begin{beispiel}
+	Sei $T=\{\mathrm{reg}\}$ mit $k_{\mathrm{reg}}=2$, $W_{\mathrm{reg}}=1$, $\Lambda=\emptyset$, und $V=\{a,b,c\}$ mit $\kappa(a)=0,\kappa(b)=1,\kappa(c)=2$ sowie $R_{\mathrm{reg}}=\{(a,b),(a,c),(b,c)\}$. Dann ist $n=3$ und $\Phi(S)$ hat die beiden Schichten
+	\[
+	\mathrm{Ex}=(\{0\},\{1\},\{2\}),\qquad \mathrm{Bin}_{\mathrm{reg},1}=(\emptyset,\{0\},\{0,1\}).
+	\]
+	Wird zusätzlich ein dreistelliger Typ $\mathrm{rx}$ (Substrat, Enzym, Produkt) mit $R_{\mathrm{rx}}=\{(a,b,c)\}$ ergänzt, so entsteht eine vierte Spalte $e=(a,b,c)$ mit $\mathrm{Inz}_{\mathrm{rx},1}=(\emptyset,\emptyset,\emptyset,\{0\})$, $\mathrm{Inz}_{\mathrm{rx},2}=(\emptyset,\emptyset,\emptyset,\{1\})$ und $\mathrm{Inz}_{\mathrm{rx},3}=(\emptyset,\emptyset,\emptyset,\{2\})$.
+\end{beispiel}
+
+\begin{satz}[Verlustfreiheit der Kodierung]
+	\label{satz:univ_verlustfrei}
+	Für jedes Schema $\Sigma$ und jedes Koordinatensystem $\kappa$ ist $\Phi_{\Sigma,\kappa}:\mathfrak{B}_\Sigma\to\{\text{Stapel mit }L_\Sigma\text{ Schichten}\}$ injektiv. Die Umkehrabbildung ist auf dem Bild berechenbar.
+\end{satz}
+
+\begin{proof}
+	Sei $M=\Phi_{\Sigma,\kappa}(S)$. Wir rekonstruieren $S$ aus $M$ und $\kappa$.
+	\emph{Entitäten:} In $\mathrm{Ex}$ sind genau die Entitätsspalten nichtleer, jeweils mit der Einermenge $\{\kappa(v)\}$. Da Entitätsspalten vor allen Relationsspalten stehen, sind es die ersten $|V|$ Spalten, und $v=\kappa^{-1}(\cdot)$ ist wegen der Injektivität von $\kappa$ eindeutig.
+	\emph{Merkmale:} $a\in\lambda(v)$ genau dann, wenn die Komponente von $\mathrm{Lab}_a$ in der Spalte von $v$ nichtleer ist.
+	\emph{Zweistellige Relationen:} $(u,v)\in R_t$ genau dann, wenn $\kappa(u)$ in der Komponente von $\mathrm{Bin}_{t,1}$ in der Spalte von $v$ liegt; das Gewicht ist $w_t(u,v)=\max\{r : \kappa(u)\in \mathrm{Bin}_{t,r}\text{ in Spalte }v\}$.
+	\emph{Übrige Relationen:} Jede Relationsspalte $j>|V|$ gehört zu genau einem Tupel $e\in R_t$ eines Typs $t$ mit $k_t\ne2$. Der Typ ist der einzige $t$, für den $\mathrm{Inz}_{t,1}$ in Spalte $j$ nichtleer ist; die Stellen sind $\kappa(v_p)=$ das einzige Element von $\mathrm{Inz}_{t,p}$ in Spalte $j$; das Gewicht ist $w_t(e)=\max(\{1\}\cup\{r : \mathrm{Wgt}_{t,r}\text{ in Spalte }j\text{ nichtleer}\})$.
+	Damit ist $S$ eindeutig durch $M$ bestimmt, d.\,h.\ $\Phi_{\Sigma,\kappa}$ ist injektiv, und die beschriebene Rekonstruktion ist die Umkehrabbildung.
+\end{proof}
+
+\begin{satz}[Aufwand der Kodierung]
+	\label{satz:univ_kodierung_zeit}
+	Bei festem Schema ist $\Phi_{\Sigma,\kappa}(S)$ in Zeit $O(|S|\log|S|)$ berechenbar, und es gilt $\nu(\Phi_{\Sigma,\kappa}(S))=O(|S|)$ sowie $|\Phi_{\Sigma,\kappa}(S)|=|V|+|E|\le|S|$.
+\end{satz}
+
+\begin{proof}
+	Jeder Entität werden höchstens $1+|\Lambda|$ Einträge zugeordnet, jedem Tupel $e\in R_t$ höchstens $\max(W_t,k_t+W_t-1)$ Einträge. Die Summe ist durch eine nur vom Schema abhängige Konstante mal $|S|$ beschränkt. Das Sortieren der Entitäten nach $\kappa$ kostet $O(|V|\log|V|)$, das Sortieren der Relationsknoten nach $(t,\kappa\text{-Tupel})$ höchstens $O(k_{\max}\,|E|\log|E|)$. Die Komponenten werden in einem Durchlauf über die Relationstupel angelegt.
+\end{proof}
+
+\begin{bemerkung}[Lokale und globale Koordinaten]
+	\label{bem:univ_lokal}
+	Wählt man statt eines globalen Registers $\kappa$ den \emph{lokalen} Rang $\kappa_S(v)\in\{0,\dots,|V|-1\}$ innerhalb der jeweiligen Struktur, so ergibt sich für ein reines Mehrschicht-Netzwerk ($\Lambda=\emptyset$, nur zweistellige Typen, $W_t=1$, Existenzschicht nicht in der Suche) genau der Matrixstapel aus Bemerkung~\ref{bem:univ_matrix} und damit die bisherige Multi-Omics-Relation. Das Einzelnetzwerk ist der Fall $L=1$. Alle folgenden Sätze gelten für beliebige Stapel und damit für beide Koordinatenwahlen. Global kodierte Komponenten sind Mengen identifizierbarer Entitäten; ihre Gleichheit bedeutet \emph{gleiche Regulatoren} im Sinne derselben Entitäten, nicht bloß gleicher Positionen.
+\end{bemerkung}
+
+\begin{bemerkung}[Schemaänderung]
+	Die Aufnahme eines neuen Relationstyps in ein bestehendes Schema ändert Spaltenanzahl und -reihenfolge und erfordert deshalb eine Neukodierung der vorhandenen Einträge in Zeit $O(|S|\log|S|)$ je Struktur (Satz~\ref{satz:univ_kodierung_zeit}). Alternativ legt man für den neuen Typ ein neues Schema mit eigenem Index an.
+\end{bemerkung}
+
+%--------------------------------------------------------------------
+\subsection{Optimaler Vergleich zweier Stapel}
+\label{sec:univ_vergleich}
+
+Wir betrachten das Modell, in dem Komponenten zunächst in ganze Zahlen \emph{interniert} werden (ein Wörterbuch, das jeder Menge beim ersten Auftreten eine neue Zahl zuordnet), sodass Gleichheitstests in $O(1)$ möglich sind.
+
+\begin{satz}[Obere Schranke]
+	\label{satz:univ_vergleich}
+	Für Stapel $M,M'$ mit $L$ Schichten sind $M\sqsubseteq_{\mathrm{ind}}M'$ und $M\sqsubseteq_{\mathrm{coh}}M'$ jeweils in erwarteter Zeit $O\big(\nu(M)+\nu(M')+L(|M|+|M'|)\big)$ entscheidbar. Mit Sortieren statt Hashing ist die Schranke deterministisch bis auf einen Faktor $O(\log(\nu(M)+\nu(M')+L(|M|+|M'|)))$.
+\end{satz}
+
+\begin{proof}
+	Das Internieren aller Komponenten kostet erwartet $O(\nu(M)+\nu(M'))$, da jede Menge einmal gehasht wird. Für die Relation $\sqsubseteq_{\mathrm{ind}}$ wird je Schicht $\ell$ die Menge $P_{\mathrm{cyc}}(s'^{(\ell)})$ als Hash-Menge von Zahlenpaaren aufgebaut ($|M'|$ Einfügungen) und anschließend jedes der $|M|-1$ Paare aus $P_{\mathrm{lin}}(s^{(\ell)})$ nachgeschlagen. Das kostet erwartet $O(|M|+|M'|)$ je Schicht, insgesamt $O(L(|M|+|M'|))$. Für $\sqsubseteq_{\mathrm{coh}}$ werden zunächst die Tupel $\tau(M)_j$ und $\tau(M')_k$ als Zahlentupel der Länge $L$ interniert ($O(L(|M|+|M'|))$) und danach wie oben mit nur einer Folge verfahren. Die Bedingung $|M|\le|M'|$ ist ein $O(1)$-Test.
+\end{proof}
+
+\begin{satz}[Untere Schranke]
+	\label{satz:univ_untere}
+	Seien $2\le m\le m'$. Jeder korrekte deterministische Algorithmus, der $\sqsubseteq_{\mathrm{ind}}$ oder $\sqsubseteq_{\mathrm{coh}}$ für Stapel der Längen $m$ und $m'$ über lesenden Zugriff auf einzelne Komponenten entscheidet, muss bei geeigneten Eingaben mindestens $\lceil m'/2\rceil$ Komponenten von $M'$ und mindestens $\lfloor m/2\rfloor$ Komponenten von $M$ lesen. Die Laufzeit ist daher $\Omega(m+m')$ für jede Schichtzahl $L\ge1$.
+\end{satz}
+
+\begin{proof}
+	Sei zunächst $L=1$.
+	\emph{Zugriffe auf $M'$:} Sei $a=(\{0\},\{1\},\{0\},\{1\},\dots)$ der Länge $m$; dann ist $P_{\mathrm{lin}}(a)\subseteq\{(\{0\},\{1\}),(\{1\},\{0\})\}$. Sei $b^0=(\{2\},\dots,\{2\})$ der Länge $m'$; es ist $P_{\mathrm{cyc}}(b^0)=\{(\{2\},\{2\})\}$, der Durchschnitt mit $P_{\mathrm{lin}}(a)$ ist leer, die Antwort lautet also \emph{nein}. Zu jedem $k\in\{0,\dots,m'-1\}$ sei $y_k$ aus $b^0$ durch $b_k:=\{0\}$ und $b_{(k+1)\bmod m'}:=\{1\}$ entstanden (es ist $k\ne(k+1)\bmod m'$, da $m'\ge2$). Dann liegt $(\{0\},\{1\})$ in $P_{\mathrm{cyc}}(y_k)\cap P_{\mathrm{lin}}(a)$ und die Antwort lautet \emph{ja}. Läse ein Algorithmus auf der Eingabe $(a,b^0)$ weder die Position $k$ noch $(k+1)\bmod m'$, so verliefe er auf $(a,y_k)$ identisch und gäbe dieselbe, dort falsche Antwort. Die Menge der gelesenen Positionen trifft daher jede Kante des Kreises $C_{m'}$, ist also eine Knotenüberdeckung und hat mindestens $\lceil m'/2\rceil$ Elemente.
+	\emph{Zugriffe auf $M$:} Sei $b'=(\{0\},\{1\},\{2\},\{3\},\{2\},\{3\},\dots)$ der Länge $m'$ (für $m'=2$ sei $b'=(\{0\},\{1\})$); es ist $(\{0\},\{1\})\in P_{\mathrm{cyc}}(b')$ und $(\{2\},\{2\})\notin P_{\mathrm{cyc}}(b')$. Sei $a^0=(\{2\},\dots,\{2\})$ der Länge $m$: Antwort \emph{nein}. Zu $j\in\{0,\dots,m-2\}$ sei $z_j$ aus $a^0$ durch $a_j:=\{0\}$, $a_{j+1}:=\{1\}$ entstanden: Antwort \emph{ja}. Wie oben muss die gelesene Positionsmenge jede Kante des Pfades auf $m$ Knoten überdecken, also mindestens $\lfloor m/2\rfloor$ Elemente haben.
+	Für $L>1$ setze man in beiden Stapeln alle weiteren Schichten auf die konstante Folge $(\emptyset,\dots,\emptyset)$; dort ist $(\emptyset,\emptyset)$ stets ein gemeinsames Paar. Die Antworten beider Modi stimmen dann mit dem Fall $L=1$ überein.
+\end{proof}
+
+\begin{korollar}[Optimalität des Vergleichs]
+	Für festes $L$ und Komponenten konstanter Größe ist der Vergleich zweier Stapel in $\Theta(|M|+|M'|)$ entscheidbar. Für wachsendes $L$ bleibt zwischen $\Omega(|M|+|M'|)$ und $O(L(|M|+|M'|))$ eine Lücke, die hier nicht geschlossen wird.
+\end{korollar}
+
+%--------------------------------------------------------------------
+\subsection{Invertierter Index: Suche ohne Einzelvergleiche}
+\label{sec:univ_index}
+
+Sei $\mathcal{D}=\{(k,M_k)\}_{k=1}^{N}$ eine Datenbank von Stapeln desselben Schemas mit $L$ Schichten. Für jede Schicht $\ell$ sei $\iota_\ell$ ein injektives Wörterbuch, das jeder in der Datenbank vorkommenden Komponente eine Zahl zuordnet.
+
+\begin{definition}[Paarindex]
+	Für ein Zahlenpaar $p$ sei
+	\[
+	\mathrm{Idx}^{\mathrm{cyc}}_\ell(p)=\{k : p\in P_{\mathrm{cyc}}(\iota_\ell(s_k^{(\ell)}))\},\qquad
+	\mathrm{Idx}^{\mathrm{lin}}_\ell(p)=\{k : p\in P_{\mathrm{lin}}(\iota_\ell(s_k^{(\ell)}))\}.
+	\]
+	Jeder Eintrag speichert zusätzlich die Länge $|M_k|$.
+\end{definition}
+
+\begin{definition}[Anfrage und Suchergebnis]
+	Eine \emph{Anfrage} ist ein Stapel $Q$ der Länge $m_Q$ mit einer nichtleeren Menge aktiver Schichten $I\subseteq\{1,\dots,L\}$. Das Suchergebnis ist
+	\[
+	\mathrm{Match}_\mu(Q,I,\mathcal{D})=\{k : \pi_I(Q)\sqsubseteq_\mu\pi_I(M_k)\},\quad \mu\in\{\mathrm{ind},\mathrm{coh}\}.
+	\]
+	Nicht aktive Schichten (etwa die Existenzschicht) sind nicht eingeschränkt. Für Schichten mit nur leeren Komponenten kann \glqq keine Kante\grqq{} nicht ausgedrückt werden; sie sind per Definition nicht aktiv.
+\end{definition}
+
+\begin{satz}[Korrektheit des Index]
+	\label{satz:univ_index}
+	Für $\iota_\ell$-bekannte Komponenten sei $R_\ell(Q)=\{k : |M_k|\ge m_Q \wedge \exists p\in P_{\mathrm{lin}}(\iota_\ell(s_Q^{(\ell)})):\ k\in\mathrm{Idx}^{\mathrm{cyc}}_\ell(p)\}$; Paare mit unbekannter Komponente tragen nichts bei. Dann gilt
+	\[
+	\mathrm{Match}_{\mathrm{ind}}(Q,I,\mathcal{D})=\bigcap_{\ell\in I}R_\ell(Q),
+	\qquad
+	\mathrm{Match}_{\mathrm{coh}}(Q,I,\mathcal{D})=\{k\in\mathrm{Match}_{\mathrm{ind}}(Q,I,\mathcal{D}) : \pi_I(Q)\sqsubseteq_{\mathrm{coh}}\pi_I(M_k)\}.
+	\]
+	Die Auswertung der ersten Formel benötigt keinen Einzelvergleich.
+\end{satz}
+
+\begin{proof}
+	Da $\iota_\ell$ injektiv ist, ist Gleichheit von Komponenten gleichbedeutend mit Gleichheit der Zahlen; ein Paar mit einer in der Datenbank unbekannten Komponente liegt in keiner $P_{\mathrm{cyc}}(M_k)$. Nach Definition von $\sqsubseteq_{\mathrm{ind}}$ ist $k\in\mathrm{Match}_{\mathrm{ind}}$ genau dann, wenn $|M_k|\ge m_Q$ und für jedes $\ell\in I$ ein Paar $p\in P_{\mathrm{lin}}(s_Q^{(\ell)})\cap P_{\mathrm{cyc}}(s_k^{(\ell)})$ existiert, d.\,h.\ $k\in R_\ell(Q)$ für alle $\ell\in I$. Für die zweite Formel gilt $\mathrm{Match}_{\mathrm{coh}}\subseteq\mathrm{Match}_{\mathrm{ind}}$ nach Lemma~\ref{lem:univ_eigenschaften}(a); die Verifikation auf der Obermenge liefert somit genau $\mathrm{Match}_{\mathrm{coh}}$.
+\end{proof}
+
+\begin{satz}[Laufzeit der Indexsuche]
+	\label{satz:univ_index_zeit}
+	Sei $H=\sum_{\ell\in I}\sum_{p\in P_{\mathrm{lin}}(\iota_\ell(s_Q^{(\ell)}))}|\mathrm{Idx}^{\mathrm{cyc}}_\ell(p)|$ die \emph{Trefferlast}. Die Berechnung von $\mathrm{Match}_{\mathrm{ind}}$ benötigt erwartet $O(\nu_I(Q)+|I|\,m_Q+H)$ Zeit, wobei $\nu_I(Q)$ die Belegung der aktiven Schichten von $Q$ ist. Für $\mathrm{Match}_{\mathrm{coh}}$ kommen $O\big(|\mathrm{Match}_{\mathrm{ind}}|\cdot|I|(m_Q+m_{\max})\big)$ hinzu. Der Index belegt $O(\sum_k L\,|M_k|)$ Einträge und wird beim Einfügen oder Löschen einer Struktur $M_k$ in Zeit $O(L\,|M_k|+\nu(M_k))$ angepasst.
+\end{satz}
+
+\begin{proof}
+	Das Internieren der Query-Komponenten ist ein Wörterbuchzugriff je Komponente, zusammen $O(\nu_I(Q))$. Die Menge $P_{\mathrm{lin}}$ je aktiver Schicht hat höchstens $m_Q-1$ Paare. Jedes Paar $p$ liest die Liste $\mathrm{Idx}^{\mathrm{cyc}}_\ell(p)$ einmal und sammelt die Elemente mit $|M_k|\ge m_Q$ in einer Hash-Menge, insgesamt $O(H)$. Der Schnitt über $I$ kostet höchstens die Summe der Mengengrößen, also $O(H)$. Für coh wird je Kandidat Satz~\ref{satz:univ_vergleich} auf den projizierten Stapeln angewendet. Der Speicherbedarf und die Pflegekosten folgen daraus, dass ein Stapel der Länge $|M_k|$ je Schicht höchstens $|M_k|$ zyklische und $|M_k|-1$ lineare Paare besitzt.
+\end{proof}
+
+\begin{korollar}[Unabhängigkeit von $N$]
+	\label{kor:univ_unabhaengig}
+	Kommt jedes Paar in höchstens $h$ gespeicherten Strukturen vor, so beträgt die Laufzeit der Indexsuche für $\mathrm{Match}_{\mathrm{ind}}$ erwartet $O(\nu_I(Q)+|I|\,m_Q\,h)$ und hängt nicht von $N$ ab. Im ungünstigsten Fall, wenn alle $N$ Strukturen dasselbe Paar enthalten, ist $H=\Theta(N\,m_Q|I|)$; dann ist die Ausgabegröße $|\mathrm{Match}|=\Theta(N)$ ohnehin eine untere Schranke.
+\end{korollar}
+
+\begin{bemerkung}[Umgekehrte Richtung]
+	Die Treffer der Gegenrichtung $\pi_I(M_k)\sqsubseteq\pi_I(Q)$ (gespeicherte Struktur ist in der Query enthalten) ergeben sich symmetrisch mit $\mathrm{Idx}^{\mathrm{lin}}_\ell$: $k\in R'_\ell(Q)$ genau dann, wenn $|M_k|\le m_Q$ und ein Paar $p\in P_{\mathrm{cyc}}(\iota_\ell(s_Q^{(\ell)}))$ mit $k\in\mathrm{Idx}^{\mathrm{lin}}_\ell(p)$ existiert. Satz~\ref{satz:univ_index} und \ref{satz:univ_index_zeit} gelten analog; das Ergebnis liefert die Treffertypen \texttt{KEEP\_A}, \texttt{KEEP\_B} und \texttt{EQUAL\_KEEP\_*}.
+\end{bemerkung}
+
+\begin{bemerkung}[Verhältnis zur bisherigen Pipeline]
+	Die bisherige Pipeline (Satz~\ref{satz:pipeline}) kostet $O(\log N+C)+O(C\,n^3)$ mit einer Kandidatenmenge $C$, die von der Knoten- und Kantenzahl abhängt. Die Indexsuche prüft keine Kandidaten, sondern liest nur Treffer-Listen; in der Messung der Multi-Omics-Suche entfielen mit C++ $70{,}5\,\%$ der Gesamtzeit auf das Laden (Tabelle~\ref{tab:multiomics_search_totals}). Ein exakter Index lädt dagegen im Modus ind nur die tatsächlichen Treffer. Dies ist eine Folgerung aus Satz~\ref{satz:univ_index} und keine Messung; sie ist im zweiten Schritt experimentell zu prüfen.
+\end{bemerkung}
+
+%--------------------------------------------------------------------
+\subsection{Kernunabhängigkeit und Reichweite}
+\label{sec:univ_reichweite}
+
+\begin{korollar}[Kernunabhängigkeit]
+	\label{kor:univ_kern}
+	Für jedes Schema $\Sigma$, jedes Koordinatensystem $\kappa$ und jede Datenbank aus Strukturen $S_k\in\mathfrak{B}_\Sigma$ gelten die Sätze~\ref{satz:univ_vergleich} bis \ref{satz:univ_index_zeit} für die Stapel $\Phi_{\Sigma,\kappa}(S_k)$ unverändert. Eine neue Art biologischer Struktur erfordert daher nur die Angabe eines Schemas $\Sigma$, nicht die Änderung von Vergleich, Index oder deren Korrektheitsbeweisen.
+\end{korollar}
+
+\begin{proof}
+	Die genannten Sätze wurden für beliebige Stapel mit gleicher Schichtzahl bewiesen. Nach Definition~\ref{def:univ_kodierung} sind alle Bilder von $\Phi_{\Sigma,\kappa}$ solche Stapel mit der Schichtzahl $L_\Sigma$; nach Satz~\ref{satz:univ_verlustfrei} geht beim Kodieren keine Information verloren.
+\end{proof}
+
+\begin{bemerkung}[Native Bibliothek]
+	Die C++-Bibliothek \texttt{csubgraph} bleibt als optionaler Beschleuniger für den Teil der Stapel erhalten, deren Koordinaten in 64 Bit passen, insbesondere bei lokalen Koordinaten (Bemerkung~\ref{bem:univ_lokal}). Für die Korrektheit und die oben bewiesenen Laufzeiten wird sie nicht benötigt.
+\end{bemerkung}
+
+\begin{bemerkung}[Grenze der Effizienzaussage]
+	\label{bem:univ_np}
+	Das Teilgraph-Isomorphieproblem ist NP-vollständig (Cook 1971; Garey und Johnson 1979, Problem GT48; es enthält Clique und Hamiltonkreis als Spezialfälle). Gäbe es eine in Polynomialzeit berechenbare Abbildung $\Psi$ auf Stapel mit $G\hookrightarrow H\iff\Psi(G)\sqsubseteq\Psi(H)$ für alle Graphen $G,H$, so wäre dieses Problem nach Satz~\ref{satz:univ_vergleich} in Polynomialzeit lösbar, also $\mathrm{P}=\mathrm{NP}$. Die Optimalität dieses Kapitels bezieht sich daher auf die \emph{definierte} Relation $\sqsubseteq$ und nicht auf die klassische Isomorphie. Jede polynomiell berechenbare Relation über diesen Strukturen ist ein Näherungs- oder Filterkriterium.
+\end{bemerkung}
+
+\begin{bemerkung}[Semantik]
+	\label{bem:univ_semantik}
+	$M\sqsubseteq M'$ besagt: Zwei in der Spaltenfolge benachbarte Entitäten von $M$ besitzen in jeder aktiven Schicht dieselben Nachbarschaftsmengen wie zwei zyklisch benachbarte Spalten von $M'$. Ob dies eine biologisch sinnvolle Ähnlichkeit darstellt, hängt von Schema, Spaltenordnung und Koordinatensystem ab; die Sätze dieses Kapitels sichern Kodierung, Korrektheit und Aufwand, nicht die fachliche Validität. Sie ist mit fachlich annotierten Daten zu prüfen, wie bereits in Abschnitt~\ref{sec:multiomics} vermerkt. Zudem ist $\sqsubseteq$ nicht transitiv (Lemma~\ref{lem:univ_eigenschaften}(e)); die Treffertypen sind daher paarweise, nicht als Halbordnung zu verstehen.
+\end{bemerkung}
+
+%--------------------------------------------------------------------
+\subsection{Vorbereitung des zweiten Schritts: Umsetzung in Python}
+\label{sec:univ_umsetzung}
+
+Die Umsetzung folgt unmittelbar aus den Sätzen und ist nicht Gegenstand dieses Kapitels. Vorgesehen sind:
+\begin{itemize}
+\item eine Schnittstelle je Strukturart mit \texttt{schema}, \texttt{encode} (Definition~\ref{def:univ_kodierung}) und \texttt{decode} (Satz~\ref{satz:univ_verlustfrei});
+\item ein Entitätsregister für $\kappa$ und eine Tabelle für die Wörterbücher $\iota_\ell$;
+\item eine Indextabelle mit den Spalten Schicht, Komponentenpaar, Art (\texttt{cyc} oder \texttt{lin}), Netzwerk und Länge, mit einem B-Baum über Schicht und Paar;
+\item Tests, die direkt aus den Sätzen folgen: Rundlauf $\mathrm{decode}\circ\mathrm{encode}=\mathrm{id}$ (Satz~\ref{satz:univ_verlustfrei}); Gleichheit von Indexsuche und Einzelvergleich über alle Paare, analog zur differenziellen Prüfung der Multi-Omics-Suche; $\mathrm{Match}_{\mathrm{coh}}\subseteq\mathrm{Match}_{\mathrm{ind}}$ und Monotonie unter Projektion (Lemma~\ref{lem:univ_eigenschaften}); Nicht-Transitivität als Regressionsfall;
+\item ein Experiment, das Indexsuche, Einzelvergleiche in Python und die native Bibliothek bei gleichen Anfragen vergleicht.
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={Skizze der Schnittstelle (zweiter Schritt)}]
+class StructureEncoder(Protocol):
+    schema: Schema                       # (Lambda, T, k_t, W_t), versioniert
+    def encode(self, s: Structure) -> LayerStack: ...   # Phi
+    def decode(self, m: LayerStack) -> Structure: ...   # Umkehrung
+\end{lstlisting}
+
+%--------------------------------------------------------------------
+\subsection{Zusammenfassung}
+
+Der Kern kennt nur Stapel von Mengenfolgen und die Relation $\sqsubseteq$. Jede endliche attributierte relationale Struktur lässt sich verlustfrei und in fast linearer Zeit in einen solchen Stapel kodieren; Vergleich und Indexsuche sind dafür korrekt, der Vergleich ist bis auf einen konstanten Faktor optimal, und die Indexsuche hängt nur von der Trefferlast ab. Damit muss für weitere biologische Strukturen künftig nur noch die Kodierung in Python ergänzt werden. Offen bleiben die fachliche Validierung der Suchsemantik sowie die experimentelle Bestätigung der Laufzeitaussagen im zweiten Schritt.
