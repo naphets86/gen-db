@@ -102,6 +102,24 @@ python src/experiment_search_backends.py --plot-from src/results/search_backends
 
 Mit `--queries 2` kann vor einer längeren Messung ein kleiner Vorabtest ausgeführt werden. Während des Experiments sollte der API-Server beendet sein, damit er nicht mit den Worker-Prozessen um Ressourcen konkurriert.
 
+### Multi-Omics
+
+Ein Multi-Omics-Netzwerk besteht aus mehreren Schichten (z. B. Transkriptom, Proteom, Metabolom) über denselben Knoten. Jede Schicht ist eine eigene Adjazenzmatrix, alle Schichten teilen sich die `node_labels`. Gespeichert wird es in den Tabellen `omics_networks` und `omics_layers`; die Metadaten stehen wie bei jedem Netzwerk in `biological_networks` (`edge_count` ist die Summe über alle Schichten, Löschen entfernt per `CASCADE` auch die Schichten). Die Zeilenkomponenten je Schicht liegen als `BIGINT[]` vor und passen bis 63 Knoten hinein.
+
+| Endpoint | Zweck |
+|---|---|
+| `POST /api/multiomics` | Netzwerk mit Schichten anlegen (`layers`: Liste aus `layer_name` und `adjacency_matrix`) |
+| `GET /api/multiomics/{network_id}` | Netzwerk mit allen Schichten lesen |
+| `POST /api/multiomics/search` | Suche: Query-Schichten (nach Name) in allen Netzwerken, die diese Schichten besitzen |
+
+Die Suche kennt zwei Modi (`mode`): `coherent` (Standard) verlangt, dass alle Schichten der Query an derselben Position des Kandidaten übereinstimmen, `independent` erlaubt je Schicht eine eigene Position. `coherent` ist strenger; jeder kohärente Treffer ist auch ein unabhängiger Treffer. Ungültige Eingaben (doppelte Schichtnamen, nicht quadratische oder nicht binäre Matrizen, mehr als 63 Knoten, falsche Zahl an Labels) liefern `422`.
+
+Der Algorithmus wird **genauso wie der Subgraph Algorithmus über die `.env`** ausgewählt, es gibt keine neue Einstellung: Zeigt `CSUBGRAPH_LIB_PATH` auf eine `libsubgraphlib.a`, die `MultiOmics` enthält (csubgraph mit `MultiOmics.cpp`), läuft die Suche über die C++-Klasse `MultiOmics`. Dafür wird ein zweiter C-Wrapper (`src/backend/native/csubgraph_omics_shim.cpp`) mit derselben Bibliothek gelinkt und per `ctypes` im Worker-Prozess aufgerufen, gebaut und gecacht wie der Wrapper für den Einzelvergleich. Ist der Pfad nicht gesetzt oder die Bibliothek nicht nutzbar, steht der Grund als Warnung im Log und es läuft die Python-Implementierung (`src/backend/multiomics_python.py`). Eine ältere `libsubgraphlib.a` ohne `MultiOmics` betrifft nur Multi-Omics: der Einzelvergleich bleibt bei C++, Multi-Omics nutzt Python. Nach dem Aktualisieren von csubgraph muss die Bibliothek neu gebaut werden. Beim Start steht im Log, welcher Algorithmus für Multi-Omics gewählt wurde.
+
+Die Kandidaten werden nur nach der Knotenzahl (`node_count >= n_Query`) und dem Vorhandensein aller Query-Schichten vorgefiltert. Eine Vorauswahl nach der Kantenzahl gibt es hier bewusst nicht: Mit der Relation des Algorithmus kann ein Graph mit mehr Kanten in einem Graphen mit weniger Kanten enthalten sein (Beispiel in `tests/test_multiomics_python.py::test_edge_count_is_not_monotone`).
+
+Die Datenbank-Tabellen für Multi-Omics stehen in `init-db.sql`; bei einer bestehenden Datenbank genügt es, die beiden neuen `CREATE TABLE`-Anweisungen und den Index auszuführen. Das Web-Frontend nutzt die Multi-Omics-Endpoints noch nicht.
+
 ## SQL-Strutkur
 
 Die Datenbankstruktur wird durch `init-db.sql` definiert und ist bewusst einfach, aber für die Suche nach biologischen Netzwerken effizient aufgebaut. Das Schema besteht aus zwei zentralen Tabellen, die zusammen den eigentlichen Netzwerkinhalt und die zugehörigen Metadaten modellieren.

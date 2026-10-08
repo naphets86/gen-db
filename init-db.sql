@@ -22,6 +22,29 @@ CREATE INDEX IF NOT EXISTS idx_networks_organism ON biological_networks(organism
 CREATE INDEX IF NOT EXISTS idx_networks_node_count ON biological_networks(node_count);
 CREATE INDEX IF NOT EXISTS idx_matrices_hash ON network_matrices(signature_hash);
 
+-- Multi-Omics: mehrere Schichten (z.B. Transkriptom, Proteom, Metabolom) über denselben Knoten.
+-- Die Metadaten stehen wie bei jedem Netzwerk in biological_networks (edge_count = Summe über
+-- alle Schichten); Löschen in biological_networks entfernt über CASCADE auch diese Tabellen.
+CREATE TABLE IF NOT EXISTS omics_networks (
+    network_id INTEGER PRIMARY KEY REFERENCES biological_networks(network_id) ON DELETE CASCADE,
+    node_labels TEXT[] NOT NULL,
+    layer_count INTEGER NOT NULL CHECK (layer_count >= 1),
+    signature_hash VARCHAR(64)
+);
+
+CREATE TABLE IF NOT EXISTS omics_layers (
+    network_id INTEGER NOT NULL REFERENCES omics_networks(network_id) ON DELETE CASCADE,
+    layer_index INTEGER NOT NULL,
+    layer_name VARCHAR(100) NOT NULL,
+    adjacency_matrix INTEGER[][] NOT NULL,
+    row_components BIGINT[] NOT NULL,
+    edge_count INTEGER NOT NULL,
+    PRIMARY KEY (network_id, layer_name),
+    UNIQUE (network_id, layer_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_omics_layers_name ON omics_layers(layer_name);
+
 INSERT INTO biological_networks (name, network_type, organism, description, node_count, edge_count)
 VALUES
     ('Glycolysis', 'metabolic', 'Homo sapiens', 'Glucose breakdown pathway', 7, 6),

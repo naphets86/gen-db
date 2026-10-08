@@ -13,7 +13,7 @@ Verwendet: pydantic.BaseModel
 """
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 
 # ============================================================================
@@ -262,3 +262,142 @@ class HealthResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Schema für Error Responses"""
     detail: str = Field(..., description="Fehler-Beschreibung")
+
+
+# ============================================================================
+# MULTI-OMICS SCHEMAS
+# ============================================================================
+
+class OmicsLayerInput(BaseModel):
+    """Eine Schicht eines Multi-Omics-Netzwerks (Request)."""
+    layer_name: str = Field(..., min_length=1, max_length=100, description="Name der Schicht (z.B. 'proteome')")
+    adjacency_matrix: List[List[int]] = Field(
+        ...,
+        description="Adjazenzmatrix der Schicht (0 oder 1), n x n über die Knoten des Netzwerks"
+    )
+
+
+class MultiOmicsCreate(BaseModel):
+    """
+    Schema für POST /api/multiomics Request
+
+    Alle Schichten beziehen sich auf dieselben Knoten (node_labels, gleiche Reihenfolge).
+    """
+    name: str = Field(..., min_length=1, max_length=255, description="Name des Netzwerks")
+    network_type: str = Field(default="multi_omics", min_length=1, description="Typ des Netzwerks")
+    organism: str = Field(..., min_length=1, description="Organismus (z.B. 'Human')")
+    description: Optional[str] = Field(default="", max_length=1000, description="Optionale Beschreibung")
+    node_labels: List[str] = Field(..., min_length=1, description="Labels der Knoten")
+    layers: List[OmicsLayerInput] = Field(..., min_length=1, description="Schichten mit Adjazenzmatrizen")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "TP53 Multi-Omics",
+                "network_type": "multi_omics",
+                "organism": "Human",
+                "description": "Transkriptom- und Proteom-Schicht",
+                "node_labels": ["TP53", "MDM2", "CDKN1A"],
+                "layers": [
+                    {"layer_name": "transcriptome", "adjacency_matrix": [[0, 1, 1], [0, 0, 0], [0, 0, 0]]},
+                    {"layer_name": "proteome", "adjacency_matrix": [[0, 1, 0], [1, 0, 0], [0, 0, 0]]},
+                ],
+            }
+        }
+    )
+
+
+class MultiOmicsSearch(BaseModel):
+    """
+    Schema für POST /api/multiomics/search Request
+
+    Gesucht werden Multi-Omics-Netzwerke, die alle genannten Schichten besitzen und die
+    Query in diesen Schichten enthalten.
+    """
+    node_labels: List[str] = Field(..., min_length=1, description="Labels des Such-Subgraph")
+    layers: List[OmicsLayerInput] = Field(..., min_length=1, description="Schichten der Query")
+    mode: Literal["coherent", "independent"] = Field(
+        default="coherent",
+        description="'coherent': alle Schichten an derselben Position, 'independent': je Schicht eigene Position"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "node_labels": ["TP53", "MDM2"],
+                "layers": [
+                    {"layer_name": "transcriptome", "adjacency_matrix": [[0, 1], [0, 0]]},
+                    {"layer_name": "proteome", "adjacency_matrix": [[0, 1], [1, 0]]},
+                ],
+                "mode": "coherent",
+            }
+        }
+    )
+
+
+class OmicsLayerResponse(BaseModel):
+    """Eine Schicht eines Multi-Omics-Netzwerks (Response)."""
+    layer_name: str = Field(..., description="Name der Schicht")
+    adjacency_matrix: List[List[int]] = Field(..., description="Adjazenzmatrix der Schicht")
+    edge_count: int = Field(..., ge=0, description="Anzahl Kanten der Schicht")
+
+
+class MultiOmicsResponse(BaseModel):
+    """Schema für GET /api/multiomics/{network_id} Response."""
+    network_id: int = Field(..., description="Eindeutige Netzwerk-ID")
+    name: str = Field(..., description="Name des Netzwerks")
+    network_type: str = Field(..., description="Typ des Netzwerks")
+    organism: str = Field(..., description="Organismus")
+    description: str = Field(..., description="Beschreibung")
+    node_labels: List[str] = Field(..., description="Knoten-Labels")
+    node_count: int = Field(..., ge=0, description="Anzahl Knoten")
+    edge_count: int = Field(..., ge=0, description="Gesamtzahl der Kanten über alle Schichten")
+    layers: List[OmicsLayerResponse] = Field(..., description="Schichten")
+    created_at: Optional[str] = Field(None, description="Erstell-Zeitstempel")
+
+
+class MultiOmicsCreationResponse(BaseModel):
+    """Schema für POST /api/multiomics Response."""
+    network_id: int = Field(..., description="ID des neu erstellten Netzwerks")
+    name: str = Field(..., description="Name")
+    network_type: str = Field(..., description="Typ")
+    organism: str = Field(..., description="Organismus")
+    description: str = Field(..., description="Beschreibung")
+    node_count: int = Field(..., ge=0, description="Anzahl Knoten")
+    edge_count: int = Field(..., ge=0, description="Gesamtzahl der Kanten über alle Schichten")
+    layer_names: List[str] = Field(..., description="Namen der gespeicherten Schichten")
+
+
+class MultiOmicsSearchMatchResponse(BaseModel):
+    """Ein einzelnes Ergebnis der Multi-Omics-Suche."""
+    network_id: int = Field(..., description="Gefundenes Netzwerk")
+    name: str = Field(..., description="Name des Netzwerks")
+    network_type: str = Field(..., description="Typ des Netzwerks")
+    organism: str = Field(..., description="Organismus")
+    node_labels: List[str] = Field(..., description="Knoten-Labels")
+    node_count: int = Field(..., ge=0, description="Anzahl Knoten")
+    edge_count: int = Field(..., ge=0, description="Gesamtzahl der Kanten über alle Schichten")
+    layer_names: List[str] = Field(..., description="Verglichene Schichten")
+    mode: str = Field(..., description="Verwendeter Modus: 'coherent' oder 'independent'")
+    match_type: str = Field(
+        ...,
+        description="Art des Matches: 'exact' (gleich) oder 'subgraph' (Query ist enthalten)"
+    )
+
+
+class MultiOmicsSingleResponse(BaseModel):
+    """Wrapper für ein Multi-Omics-Netzwerk."""
+    success: bool = Field(True, description="Erfolgs-Status")
+    data: MultiOmicsResponse = Field(..., description="Daten")
+
+
+class MultiOmicsCreationWrapper(BaseModel):
+    """Wrapper für die Erstellung eines Multi-Omics-Netzwerks."""
+    success: bool = Field(True, description="Erfolgs-Status")
+    data: MultiOmicsCreationResponse = Field(..., description="Erstelltes Netzwerk")
+
+
+class MultiOmicsSearchResponse(BaseModel):
+    """Wrapper für Multi-Omics-Suchergebnisse."""
+    success: bool = Field(True, description="Erfolgs-Status")
+    data: List[MultiOmicsSearchMatchResponse] = Field(..., description="Gefundene Matches")

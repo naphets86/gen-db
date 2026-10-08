@@ -124,3 +124,113 @@ class NetworkCreationResult:
     node_count: int
     edge_count: int
     signature_hash: str
+
+
+# ============================================================================
+# Multi-Omics (Mehrschicht-Netzwerke)
+# ============================================================================
+
+@dataclass
+class OmicsLayer:
+    """
+    Eine Schicht eines Multi-Omics-Netzwerks (z.B. Transkriptom, Proteom, Metabolom)
+
+    Attributes:
+        layer_name: Name der Schicht (innerhalb eines Netzwerks eindeutig)
+        adjacency_matrix: Adjazenzmatrix der Schicht (n x n, gleiche Knoten in allen Schichten)
+        edge_count: Anzahl Kanten dieser Schicht
+    """
+    layer_name: str
+    adjacency_matrix: List[List[int]]
+    edge_count: int
+
+
+@dataclass
+class MultiOmicsNetwork:
+    """
+    Domain Model für ein Multi-Omics-Netzwerk
+
+    Alle Schichten beziehen sich auf dieselbe, geordnete Knotenmenge (node_labels).
+
+    Attributes:
+        network_id: Eindeutige Netzwerk-ID (gleiche ID wie in biological_networks)
+        name: Name des Netzwerks
+        network_type: Typ (Standard: 'multi_omics')
+        organism: Organismus
+        description: Beschreibung
+        node_labels: Labels der Knoten
+        node_count: Anzahl Knoten
+        edge_count: Gesamtzahl der Kanten über alle Schichten
+        layers: Schichten in ihrer gespeicherten Reihenfolge
+        signature_hash: SHA-256 Hash der Signaturen aller Schichten
+        created_at: Erstell-Zeitstempel
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    node_labels: List[str]
+    node_count: int
+    edge_count: int
+    layers: List[OmicsLayer]
+    signature_hash: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+@dataclass
+class MultiOmicsCreationResult:
+    """
+    Resultat nach erfolgreicher Erstellung eines Multi-Omics-Netzwerks
+
+    Attributes:
+        network_id: ID des neu erstellten Netzwerks
+        name: Name
+        network_type: Typ
+        organism: Organismus
+        description: Beschreibung
+        node_count: Anzahl Knoten
+        edge_count: Gesamtzahl der Kanten über alle Schichten
+        layer_names: Namen der gespeicherten Schichten
+        signature_hash: Berechneter Hash
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    node_count: int
+    edge_count: int
+    layer_names: List[str]
+    signature_hash: str
+
+
+@dataclass
+class MultiOmicsSearchMatch:
+    """
+    Suchresultat für die Multi-Omics-Suche
+
+    Attributes:
+        network_id: Gefundenes Netzwerk
+        name: Name des Netzwerks
+        network_type: Typ des Netzwerks
+        organism: Organismus
+        node_count: Anzahl Knoten
+        edge_count: Gesamtzahl der Kanten über alle Schichten
+        node_labels: Labels der Knoten
+        layer_names: Verglichene Schichten (Reihenfolge der Query)
+        mode: Verwendeter Modus ('coherent' oder 'independent')
+        match_type: Art des Match ('exact' = gleich, 'subgraph' = Query ist enthalten)
+        subgraph_result: Rohes Ergebnis ('keep_B', 'equal_keep_A', 'equal_keep_B')
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    node_count: int
+    edge_count: int
+    node_labels: List[str]
+    layer_names: List[str]
+    mode: str
+    match_type: str
+    subgraph_result: str

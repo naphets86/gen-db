@@ -62,6 +62,8 @@ def setup_test_database():
     )
     try:
         with test_conn.cursor() as cursor:
+            cursor.execute('DROP TABLE IF EXISTS omics_layers CASCADE')
+            cursor.execute('DROP TABLE IF EXISTS omics_networks CASCADE')
             cursor.execute('DROP TABLE IF EXISTS network_matrices CASCADE')
             cursor.execute('DROP TABLE IF EXISTS biological_networks CASCADE')
             cursor.execute("""
@@ -86,6 +88,27 @@ def setup_test_database():
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE omics_networks (
+                    network_id INTEGER PRIMARY KEY REFERENCES biological_networks(network_id) ON DELETE CASCADE,
+                    node_labels TEXT[] NOT NULL,
+                    layer_count INTEGER NOT NULL CHECK (layer_count >= 1),
+                    signature_hash VARCHAR(64)
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE omics_layers (
+                    network_id INTEGER NOT NULL REFERENCES omics_networks(network_id) ON DELETE CASCADE,
+                    layer_index INTEGER NOT NULL,
+                    layer_name VARCHAR(100) NOT NULL,
+                    adjacency_matrix INTEGER[][] NOT NULL,
+                    row_components BIGINT[] NOT NULL,
+                    edge_count INTEGER NOT NULL,
+                    PRIMARY KEY (network_id, layer_name),
+                    UNIQUE (network_id, layer_index)
+                )
+            """)
+            cursor.execute('CREATE INDEX idx_omics_layers_name ON omics_layers(layer_name)')
             cursor.execute('CREATE INDEX idx_networks_type ON biological_networks(network_type)')
             cursor.execute('CREATE INDEX idx_networks_organism ON biological_networks(organism)')
             cursor.execute('CREATE INDEX idx_networks_node_count ON biological_networks(node_count)')
@@ -147,11 +170,11 @@ def db_connection(setup_test_database, test_db_config):
 @pytest.fixture(scope='function')
 def clean_database(db_connection):
     with db_connection.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE network_matrices, biological_networks RESTART IDENTITY CASCADE')
+        cursor.execute('TRUNCATE TABLE omics_layers, omics_networks, network_matrices, biological_networks RESTART IDENTITY CASCADE')
     db_connection.commit()
     yield db_connection
     with db_connection.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE network_matrices, biological_networks RESTART IDENTITY CASCADE')
+        cursor.execute('TRUNCATE TABLE omics_layers, omics_networks, network_matrices, biological_networks RESTART IDENTITY CASCADE')
     db_connection.commit()
 
 
