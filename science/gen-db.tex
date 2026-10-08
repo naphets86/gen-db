@@ -1,4 +1,4 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass[a4paper,12pt, twoside]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[german]{babel}
 \usepackage[T1]{fontenc}
@@ -19,6 +19,21 @@
 
 \emergencystretch=4em
 \sloppy
+
+% --- 1. \section als oberste Nummerierung einstellen ---
+% Entfernt die Kapitelnummer aus der Nummernansicht der Sections (1 statt 0.1)
+\renewcommand{\thesection}{\arabic{section}}
+
+% Zähler für Abbildungen, Tabellen und Gleichungen fortlaufend (nicht nach Chapter) nummerieren
+\usepackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+\counterwithout{equation}{chapter}
+
+% --- 2. Jede \section auf einer neuen rechten Seite beginnen lassen ---
+% Falls du \section wie Kapitel behandeln möchtest:
+\let\oldsection\section
+\renewcommand{\section}{\cleardoublepage\oldsection}
 
 \geometry{margin=2.5cm}
 
@@ -105,6 +120,7 @@ Diese Arbeit beschreibt die konkrete Realisierung einer solchen Suche im System 
 	\item Experimenteller Vergleich des Subgraph Algorithmus mit VF2 sowie Analyse der Ursachen der beobachteten Laufzeitunterschiede.
 	\item Experimentelle Untersuchung der parallelen Ausführung der Kandidatenvergleiche mit $1$, $2$ und $3$ Worker-Prozessen (Gesamtzeit, Speedup, Effizienz, Skalierung mit der Kandidatenzahl).
 	\item Experimenteller Vergleich der Python- und C++-Implementierung des Subgraph Algorithmus über eine direkt im Worker-Prozess aufgerufene C++-Library, einschließlich Mikrobenchmark, Ende-zu-Ende-Suchmessung, Trefferabgleich und Analyse der verbleibenden Schnittstellenkosten.
+	\item Erweiterung des Suchmodells auf geschichtete Multi-Omics-Netzwerke und experimentelle Prüfung der kohärenten und unabhängigen Schichtrelationen mit Python- und C++-Backends, synthetischer Ground Truth, Mikrobenchmark und Ende-zu-Ende-Messung.
 	\item Zusammenfassung, kritische Würdigung der Grenzen und ausführlicher, nach Themenfeldern geordneter Ausblick auf Erweiterungen (Korrektheit, Indexierung, Beschleunigung der Vergleiche, Systemebene, Evaluation, Anwendung, Kopplung und Schnittstellen) mit einer Priorisierung der nächsten Schritte.
 \end{itemize}
 
@@ -114,7 +130,7 @@ Die Arbeit gliedert sich in aufeinander aufbauende Abschnitte: von den theoretis
 
 Abschnitt~\ref{sec:grundlagen} führt in biologische Netzwerke, ihre Adjazenzmatrix-Repräsentation, die Spaltensignaturen und den Subgraph Algorithmus ein, dessen Laufzeit von $O(n^3)$ die Grundlage aller späteren Betrachtungen ist. Abschnitt~\ref{sec:architektur} beschreibt die Systemarchitektur und das Datenmodell von Gen-DB und erläutert anhand von UML-Paket- und Klassendiagrammen den Aufbau der Anwendung. Abschnitt~\ref{sec:pipeline} formalisiert die Such-Pipeline, insbesondere die Vorauswahl anhand von Knoten- und Kantenzahl, und untersucht deren Korrektheit und Laufzeitkomplexität; ein Serverprotokoll veranschaulicht dort zusätzlich den Ablauf einer konkreten Suche.
 
-Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Die C++-Variante wird dabei als Library direkt im Worker-Prozess aufgerufen; Mikrobenchmark und Ende-zu-Ende-Messung trennen so den Aufwand des Algorithmuskerns von den Kosten der Sprachschnittstelle. Ein früherer CLI-Messlauf wird nur zur Einordnung dieser Anbindungsentscheidung herangezogen. Der letzte Unterabschnitt (Abschnitt~\ref{sec:fremde_beschreibungen}) ordnet die Messergebnisse in die Frage ein, wie lose Kopplung und klare Beschreibungsgrenzen in Gen-DB zusammenwirken.
+Der zweite Teil der Arbeit ist empirisch. Abschnitt~\ref{sec:evaluation} stellt den Versuchsaufbau sowie die Ergebnisse zur generierten Datenbank mit einer Million Netzwerken und zum Verhalten der Vorauswahl vor und schließt mit einer Diskussion. Abschnitt~\ref{sec:vergleich} widmet sich dem experimentellen Vergleich mit etablierten Verfahren, analysiert die beobachteten Laufzeitunterschiede und ordnet die Verfahren in die Fachliteratur ein. Abschnitt~\ref{sec:parallel} untersucht anschließend, wie sich die gesamte Suche verhält, wenn die Kandidatenvergleiche auf mehrere Prozesse verteilt werden. Er beschreibt die Implementierung der parallelen Ausführung, ein reproduzierbares Experiment mit einem, zwei und drei Worker-Prozessen und die Auswertung nach Gesamtzeit, Speedup, Effizienz und Skalierung mit der Kandidatenzahl. Abschnitt~\ref{sec:backends} vergleicht darauf aufbauend die Python- und C++-Implementierungen. Die C++-Variante wird dabei als Library direkt im Worker-Prozess aufgerufen; Mikrobenchmark und Ende-zu-Ende-Messung trennen so den Aufwand des Algorithmuskerns von den Kosten der Sprachschnittstelle. Abschnitt~\ref{sec:multiomics} erweitert diese Untersuchungen auf geschichtete Multi-Omics-Netzwerke: Er definiert kohärente und unabhängige Schichtvergleiche, dokumentiert den synthetischen Versuchsaufbau mit bekannter Ground Truth und wertet die abgeschlossenen Korrektheits-, Mikrobenchmark-, Ende-zu-Ende-, Worker- und Chunk-Experimente aus. Die abgebrochene Datenbankgrößenreihe wird als unvollständig eingeordnet. Der letzte Unterabschnitt (Abschnitt~\ref{sec:fremde_beschreibungen}) ordnet die Messergebnisse in die Frage ein, wie lose Kopplung und klare Beschreibungsgrenzen in Gen-DB zusammenwirken.
 
 Das abschließende Kapitel „Schluss“ (Abschnitt~\ref{sec:schluss}) besteht aus fünf Teilen. Es fasst die Ergebnisse aller Abschnitte zusammen (Abschnitt~\ref{sec:zusammenfassung}), benennt die Grenzen der Arbeit (Abschnitt~\ref{sec:grenzen}), entwickelt einen ausführlichen, nach Themenfeldern geordneten Ausblick mit möglichen Erweiterungen und offenen Forschungsfragen (Abschnitt~\ref{sec:ausblick}), schlägt eine Reihenfolge für die nächsten Entwicklungsschritte vor (Abschnitt~\ref{sec:prio}) und schließt mit einer Gesamteinschätzung (Abschnitt~\ref{sec:schlussbemerkung}).
 
@@ -226,18 +242,18 @@ Die beiden UML-Diagramme in den Abbildungen~\ref{fig:uml-packages} und~\ref{fig:
 
 Das Paketdiagramm zeigt die fachliche und technische Zerlegung der Anwendung in drei logisch getrennte Bausteine: das Web-Frontend, das Backend mit den API- und Suchkomponenten und die persistente Datenspeicherung in PostgreSQL. Dieser Aufbau ist keine rein dokumentarische Anordnung, sondern entspricht einem klaren Entwurfsmuster für skalierbare Datenbankanwendungen: Die Präsentationsschicht übernimmt keine Datenlogik, sondern stellt lediglich die Interaktion mit dem Benutzer bereit; die Logikschicht kapselt die Kernfunktionalität der Signaturberechnung, des Pre-Filters und des Subgraph-Checks; die Datenbankschicht speichert neben den Netzwerkinhalten auch die maschinenlesbaren Repräsentationen, die für die Suche benötigt werden. Aus Sicht der Systemarchitektur ist deshalb besonders wichtig, dass die Datenflussrichtung zwischen den Schichten eindeutig ist: Ein Nutzer erzeugt oder lädt ein biologisches Netzwerk über das Frontend; die Anfrage wird als API-Request an das Backend weitergeleitet; dort werden Netzwerkdaten interpretiert, normalisiert und in Form von Knotenlabels und Adjazenzmatrizen für den Subgraph Algorithmus aufbereitet; danach werden die passenden Kandidaten mit SQL-Filterkriterien aus der Datenbank abgerufen und im Ergebnis an die Präsentationsschicht zurückgegeben. Das Paketdiagramm macht damit sichtbar, dass Gen-DB als System nicht nur aus einer einzelnen Anwendung besteht, sondern aus einer zusammengesetzten, modularen Architektur, in der fachliche Trennung und technische Verantwortlichkeit klar voneinander abgegrenzt sind.
 
-Die in der übrigen Arbeit beschriebene Such-Pipeline baut genau auf dieser Struktur auf. Die Datenbank hält nicht nur die Netzwerkmetadaten wie Name, Organismus und Typ, sondern auch die strukturellen Repräsentationen in einer für schnelle Filterung geeigneten Form. Die Backend-Komponenten sind dafür zuständig, die Suchanfrage in eine Folge von Vorfilter-, Vergleichs- und Ergebnisphasen zu übersetzen. Das Paketdiagramm zeigt somit die organisatorische Ebene des Systems: welche Komponenten miteinander interagieren, welche Verantwortlichkeiten sie übernehmen und wo die fachlichen Grenzen verlaufen. Diese Abgrenzung ist für das Verständnis der späteren Komplexitäts- und Korrektheitsbeweise entscheidend, weil sie präzise zeigt, wo der algorithmische Kern liegt und wo rein relationale oder benutzerorientierte Aufgaben ausgelagert werden.
-
-Das Klassendiagramm ergänzt diese Sicht um den objektorientierten bzw. modellorientierten Entwurf der einzelnen Daten- und Dienstekomponenten. Es macht deutlich, dass die Systemlogik nicht auf lose, unstrukturierte Listen von Werten beruht, sondern auf semantisch geordneten Entitäten: Netzwerkobjekte, Knoten- und Kanteninformationen, Matrixrepräsentationen, Signaturdaten und Suchresultate sind als getrennte Strukturen modelliert. Ein wesentlicher Entwurfspunkt ist die Trennung zwischen der biologischen Netzwerkanalyse und der relationalen Persistenz. Während die Datenbankrelationen die langfristige Speicherung, Indizierung und Abfrage von Netzwerken garantieren, repräsentiert das Klassendiagramm die fachlichen Informationen im Laufzeitkontext der Anwendung. So sind etwa Metadaten wie Typ, Organismus und Knotenzahl in der Klasse bzw. im Datensatz des Netzwerks als formale Eigenschaften modelliert, während die Adjazenzmatrix und die Signatur-Arrays als strukturgebende Merkmale dienen, die für die Subgraph-Relation maßgeblich sind. Dadurch wird die Verbindung zwischen biologischer Semantik und algorithmisch nutzbarer Repräsentation explizit sichtbar.
-
-Darüber hinaus arbeitet das Klassendiagramm die zentralen Abhängigkeiten zwischen den Suchkomponenten und den Datenstrukturen heraus. Die Signaturberechnung ist nicht isoliert, sondern Teil einer größeren Verarbeitungskette, in der ein Query-Netzwerk mit den gespeicherten Netzwerken verglichen wird, Kandidaten über notwendige Bedingungen vorgefiltert werden und anschließend der Subgraph Algorithmus entscheidet, ob ein Treffer tatsächlich vorliegt. Diese Abhängigkeiten sind im UML-Modell als Assoziationen und Verantwortlichkeiten nachvollziehbar: Jede Klasse trägt eine bestimmte Rolle in der Suche, aber die fachliche Koordination geschieht über das Zusammenspiel der Komponenten, nicht über eine monolithische Implementierung. Genau dieser modularisierte Aufbau ist es, der die Skalierbarkeit und Analysefähigkeit von Gen-DB erklärt: Die Datenmodellierung unterstützt die Suche, die Suchlogik verwendet die Repräsentation, und die Systemarchitektur koordiniert die Kommunikationspfade zwischen Nutzer, API und Datenbank.
-
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\textwidth]{../doc/uml/packages_gen-db.pdf}
 \caption{UML-Paketdiagramm der Gen-DB-Architektur.}
 \label{fig:uml-packages}
 \end{figure}
+
+Die in der übrigen Arbeit beschriebene Such-Pipeline baut genau auf dieser Struktur auf. Die Datenbank hält nicht nur die Netzwerkmetadaten wie Name, Organismus und Typ, sondern auch die strukturellen Repräsentationen in einer für schnelle Filterung geeigneten Form. Die Backend-Komponenten sind dafür zuständig, die Suchanfrage in eine Folge von Vorfilter-, Vergleichs- und Ergebnisphasen zu übersetzen. Das Paketdiagramm zeigt somit die organisatorische Ebene des Systems: welche Komponenten miteinander interagieren, welche Verantwortlichkeiten sie übernehmen und wo die fachlichen Grenzen verlaufen. Diese Abgrenzung ist für das Verständnis der späteren Komplexitäts- und Korrektheitsbeweise entscheidend, weil sie präzise zeigt, wo der algorithmische Kern liegt und wo rein relationale oder benutzerorientierte Aufgaben ausgelagert werden.
+
+Das Klassendiagramm ergänzt diese Sicht um den objektorientierten bzw. modellorientierten Entwurf der einzelnen Daten- und Dienstekomponenten. Es macht deutlich, dass die Systemlogik nicht auf lose, unstrukturierte Listen von Werten beruht, sondern auf semantisch geordneten Entitäten: Netzwerkobjekte, Knoten- und Kanteninformationen, Matrixrepräsentationen, Signaturdaten und Suchresultate sind als getrennte Strukturen modelliert. Ein wesentlicher Entwurfspunkt ist die Trennung zwischen der biologischen Netzwerkanalyse und der relationalen Persistenz. Während die Datenbankrelationen die langfristige Speicherung, Indizierung und Abfrage von Netzwerken garantieren, repräsentiert das Klassendiagramm die fachlichen Informationen im Laufzeitkontext der Anwendung. So sind etwa Metadaten wie Typ, Organismus und Knotenzahl in der Klasse bzw. im Datensatz des Netzwerks als formale Eigenschaften modelliert, während die Adjazenzmatrix und die Signatur-Arrays als strukturgebende Merkmale dienen, die für die Subgraph-Relation maßgeblich sind. Dadurch wird die Verbindung zwischen biologischer Semantik und algorithmisch nutzbarer Repräsentation explizit sichtbar.
+
+Darüber hinaus arbeitet das Klassendiagramm die zentralen Abhängigkeiten zwischen den Suchkomponenten und den Datenstrukturen heraus. Die Signaturberechnung ist nicht isoliert, sondern Teil einer größeren Verarbeitungskette, in der ein Query-Netzwerk mit den gespeicherten Netzwerken verglichen wird, Kandidaten über notwendige Bedingungen vorgefiltert werden und anschließend der Subgraph Algorithmus entscheidet, ob ein Treffer tatsächlich vorliegt. Diese Abhängigkeiten sind im UML-Modell als Assoziationen und Verantwortlichkeiten nachvollziehbar: Jede Klasse trägt eine bestimmte Rolle in der Suche, aber die fachliche Koordination geschieht über das Zusammenspiel der Komponenten, nicht über eine monolithische Implementierung. Genau dieser modularisierte Aufbau ist es, der die Skalierbarkeit und Analysefähigkeit von Gen-DB erklärt: Die Datenmodellierung unterstützt die Suche, die Suchlogik verwendet die Repräsentation, und die Systemarchitektur koordiniert die Kommunikationspfade zwischen Nutzer, API und Datenbank.
 
 Die beiden Diagramme zusammen leisten also mehr als nur eine Visualisierung des Quellcodes: Sie dokumentieren die Entwurfslogik des Systems als Ganzes. Sie zeigen, dass Gen-DB ein typisches Full-Stack-System ist, dessen Stärke nicht in einer einzelnen technischen Komponente, sondern in der engen Verknüpfung von semantischer Modellierung, datenbankseitiger Indexierung und algorithmischer Subgraph-Erkennung liegt. Gerade diese Architektur ist der Grund, warum die folgenden Abschnitte die Laufzeit, die Korrektheit und die Kandidatenreduktion formal analysieren können: Die Struktur des Systems ist so klar und modular, dass die mathematische Modellierung der Pipeline direkt auf die reale Implementierung zurückgeführt werden kann.
 
@@ -390,7 +406,7 @@ INFO:     127.0.0.1:51928 - "POST /api/networks/search HTTP/1.1" 200 OK
 
 Der Log-Ausschnitt zeigt den entscheidenden Unterschied zur früheren Implementierung: Auch bei einer vergleichbaren Kandidatenmenge von $277.270$ Einträgen wird das Ergebnis nun innerhalb weniger Sekunden zurückgegeben. Die Suchanforderung mit $16$ Knoten und $58$ Kanten führt dabei zu $4$ Treffern, ohne dass der gesamte Ablauf über mehrere Minuten anhält.
 
-Dies bestätigt die zentrale systemische Beobachtung aus Satz~\ref{satz:pipeline}: Die Größe der Kandidatenmenge $C$ bestimmt zwar die Anzahl der zu prüfenden Strukturen, aber die tatsächliche Auswertung dieser Kandidaten bestimmt die gemessene Antwortzeit. Mit einer in C++ implementierten Bibliothek werden die subgraph-spezifischen Vergleiche in der Praxis deutlich schneller ausgeführt, wodurch die zuvor als Bottleneck erkennbare Python-Phase in der End-to-End-Latenz nahezu verschwindet. Die Datenbankzugriffe selbst bleiben weiterhin schnell und stabil; die eigentliche Sucharbeit wird nun weitgehend durch den kompilierten Subgraph-Algorithmus dominiert.
+Dies bestätigt die zentrale systemische Beobachtung aus Satz~\ref{satz:pipeline}: Die Größe der Kandidatenmenge $C$ bestimmt zwar die Anzahl der zu prüfenden Strukturen, aber die tatsächliche Auswertung dieser Kandidaten bestimmt die gemessene Antwortzeit. Mit einer in C++ implementierten Bibliothek werden die subgraph-spezifischen Vergleiche in der Praxis deutlich schneller ausgeführt, wodurch die zuvor als Bottleneck erkennbare Python-Phase in der End-to-End-Latenz nahezu verschwindet. Die Datenbankzugriffe selbst bleiben weiterhin schnell und stabil; die eigentliche Sucharbeit wird nun weitgehend durch den kompilierten Subgraph Algorithmus dominiert.
 
 Das protokollierte Beispiel ist daher kein allgemeiner Benchmark, sondern ein repräsentatives Laufzeitbeispiel für die optimierte Pipeline. Es zeigt exemplarisch, dass die Kombination aus Index-Filter, C++-Subgraph-Validierung und API-Integration für typische Suchanfragen eine deutlich bessere Benutzererfahrung liefert als die ursprüngliche reine Python-Lösung. Für belastbarere Aussagen zu Skalierung und asymptotischem Verhalten werden in Abschnitt~\ref{sec:evaluation} kontrollierte Messreihen mit reproduzierbaren Datenbankgrößen und Suchprofilen verwendet.
 
@@ -1129,6 +1145,207 @@ Aus der Position und den Messungen ergeben sich fünf Folgerungen für die weite
 
 Die Aussage des Abschnitts lässt sich so zusammenfassen: Ein System bleibt analysierbar, weiterentwickelbar und wiederverwendbar, wenn seine Grenzen schmal und benannt sind und die Zuständigkeiten klar bleiben. Die Messungen zeigen am Beispiel der C++-Anbindung sowohl einen strukturellen als auch einen Laufzeitunterschied: Die CLI verlegt die Grenze an Prozess, JSON-Text und Exit-Code; der frühere triviale Aufruf benötigte rund $10$ ms. Die Library wird dagegen direkt im Worker aufgerufen; ihr trivialer Aufruf lag im Mittel bei $0{,}018$ ms, und die vollständige Suche war $6{,}36$-mal schneller als mit Python. Der Suchlauf bestätigt damit einen konkreten Leistungsvorteil dieser Library-Integration. Die allgemeinere Behauptung, dass dadurch Zusammenarbeit und Wiederverwendung erleichtert werden, bleibt eine begründete Gestaltungsposition. Die Library setzt in der Gesamtarbeit das Prinzip fort, das Architektur, formale Analyse und Messmethodik tragen: Schnittstellen und ihre Kosten sichtbar zu machen, statt sie im Gesamtergebnis zu verbergen.
 
+\section{Experimentelle Untersuchung Multi-Omics-Suche}
+\label{sec:multiomics}
+
+Die bisherigen Such- und Backend-Experimente vergleichen jeweils einzelne Netzwerke. Biologische Prozesse lassen sich jedoch häufig erst dann sinnvoll untersuchen, wenn mehrere Datenebenen gemeinsam betrachtet werden: Genom, Transkriptom, Proteom und Metabolom beschreiben unterschiedliche, miteinander in Beziehung stehende Aspekte eines Systems. Dieses Kapitel erweitert deshalb die Suche von einer einzelnen Adjazenzmatrix auf ein geordnetes Bündel mehrerer Netzwerkschichten. Im Mittelpunkt stehen nicht nur Laufzeit und Implementierung, sondern auch die Frage, ob die beiden Backends für verschiedene Arten der Schichtkopplung dieselben Entscheidungen treffen.
+
+Die Untersuchung wird durch \texttt{src/experiment\_search\_multiomics.py} gesteuert. Der Lauf wurde am 8. Oktober 2026 nach Abschluss der Such-, Worker- und Chunk-Größen-Experimente während der Datenbankgrößenreihe abgebrochen. Die JSON-Datei wird nach jeder Messung aktualisiert und enthält deshalb vollständige Resultate für diese drei Phasen, aber nur einen Teil der Datenbankgrößenmessungen. Die folgenden Aussagen trennen diese abgeschlossenen Reihen von der abgebrochenen Phase. Die maschinenlesbaren Einzelergebnisse stehen in \texttt{src/results/search\_multiomics\_20261008\_115430.json}; das Textprotokoll \texttt{src/results/search\_multiomics\_20261008\_115430.txt} dokumentiert den Ablauf und den Abbruchstand.
+
+\subsection{Mehrschichtige Netzwerke und Suchrelationen}
+\label{sec:multiomics_relation}
+
+Ein Multi-Omics-Netzwerk wird als geordnetes Tupel
+\[
+\mathcal{M}=(A_1,A_2,\ldots,A_L), \qquad A_\ell\in\{0,1\}^{n\times n},
+\]
+modelliert. Jede Matrix $A_\ell$ repräsentiert eine Omics-Schicht, beispielsweise ein Genom- oder Proteomnetzwerk. In diesem Experiment haben alle Schichten eines Tupels dieselbe Knotenzahl $n$; die Schichtnamen bleiben jedoch unterscheidbar. Verglichen werden Query-Tupel und Kandidaten-Tupel mit möglicherweise verschiedener Knotenzahl und Schichtzahl.
+
+Der Vergleich baut auf den Zeilenkomponenten der Matrizen auf, also den aus den Spalten abgeleiteten Bitmustern des in Abschnitt~\ref{sec:grundlagen} beschriebenen Subgraph Algorithmus. Eine einzelne Schichtrelation sucht ein benachbartes Paar solcher Komponenten in zyklischer Ordnung. Für mehrere Schichten unterscheidet die Implementierung zwei Kopplungsmodi:
+
+\begin{itemize}
+\item \textbf{Kohärent:} Ein passendes Komponentenpaar der Query muss in allen betrachteten Schichten an derselben Kandidatenposition auftreten. Die Schichten teilen damit eine gemeinsame strukturelle Einbettung.
+\item \textbf{Unabhängig:} Jede Schicht darf ihr passendes Komponentenpaar an einer eigenen Kandidatenposition finden. Die Trefferpositionen müssen zwischen den Schichten nicht übereinstimmen.
+\end{itemize}
+
+Die kohärente Bedingung ist die strengere Kopplung: Ein kohärenter Treffer erfüllt auch die unabhängige Bedingung. Die Modi beantworten somit unterschiedliche fachliche Fragen. Kohärent sucht nach einem über mehrere Ebenen hinweg an derselben Stelle erhaltenen Muster; unabhängig fragt, ob das Muster in jeder Ebene vorkommt, auch wenn die Positionen voneinander abweichen. Das Experiment prüft diese Unterscheidung anhand gezielt konstruierter Beispiele und darf nicht mit einer validierten biologischen Kausalbeziehung zwischen den Schichten gleichgesetzt werden.
+
+\subsection{Versuchsaufbau und Datengenerierung}
+\label{sec:multiomics_setup}
+
+Der Lauf verwendet den Seed $42$ und ergänzt die bestehende Datenbank um $20.000$ reproduzierbar erzeugte Zufallsnetzwerke des Typs \texttt{multi\_omics\_experiment}. Hinzu kommen Netzwerke, die zu eingebetteten Queries eine bekannte Lösung liefern; zum gespeicherten Zwischenstand enthielt die Datenbank insgesamt $20.175$ Multi-Omics-Netzwerke. Die Zufallsnetzwerke haben $4$ bis $40$ Knoten und $2$ bis $5$ Schichten. Für die Schichten werden sechs Namen aus Genom, Transkriptom, Proteom, Metabolom, Epigenom und Lipidom verwendet. Die Schichten werden als gerichtete Zufallsmatrizen ohne Selbstkanten mit je Omics-Typ festgelegter Kantenwahrscheinlichkeit erzeugt.
+
+Das Query-Gitter umfasst sieben Knotenzahlen ($4,6,8,12,16,24,32$), vier Schichtzahlen ($1$ bis $4$) und zwei Query-Arten: eine Zufallsanfrage ohne absichtlich eingefügte Lösung sowie eine Anfrage, zu der Lösungen konstruiert werden. Damit entstehen $56$ Query-Konfigurationen. Zu den eingebetteten Anfragen werden eine identische Kopie, kohärent eingebettete und unabhängig eingebettete Kandidaten erzeugt. Für die Einbettung werden zwei benachbarte Query-Spalten in die Kandidatenmatrix kopiert; Zeilen außerhalb der Query-Knotenzahl bleiben dabei null. Bei kohärenten Beispielen verwenden alle Schichten dasselbe benachbarte Paar und dieselbe Position, bei unabhängigen Beispielen kann die Position je Schicht variieren. Die so erzeugten Kandidaten stellen eine Ground Truth bereit, unabhängig davon, ob Python und C++ dieselbe Antwort liefern.
+
+\begin{table}[!h]
+\centering
+\small
+\caption{Konfiguration des Multi-Omics-Experiments gemäß gespeicherten Laufmetadaten.}
+\label{tab:multiomics_setup}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{8.2cm}@{}}
+\toprule
+Parameter & Wert \\
+\midrule
+Zufallsnetzwerke & $20.000$, $4$--$40$ Knoten und $2$--$5$ Schichten \\
+Omics-Schichten & Genom, Transkriptom, Proteom, Metabolom, Epigenom, Lipidom \\
+Query-Knotenzahlen & $4,6,8,12,16,24,32$ \\
+Query-Schichtzahlen & $1,2,3,4$ \\
+Query-Arten und Modi & Zufall/eingebettet; kohärent/unabhängig \\
+Suchmessungen geplant & $56$ Queries $\times 2$ Modi $\times 2$ Backends $\times 3$ Wiederholungen $=672$ \\
+Mikrobenchmark & $6$ Schichtzahlen $\times 6$ Knotenzahlen $\times 2$ Paartypen; je $100$ Vergleiche \\
+Korrektheitsprüfung & $5.000$ Paare; beide Modi, bekannte Konstruktionen und Zufallspaare \\
+Worker-Skalierung & $1,2,3,4$ Worker; Standardausführung mit $2$ Workern \\
+Chunk-Größen & $1,8,32,128,256,1024,4096$ \\
+Datenbankgrößen & $2.000,5.000,10.000,20.000$ Zufallsnetzwerke \\
+Wiederholungen & $3$ pro Suchkonfiguration; eine Aufwärmsuche wird verworfen \\
+Laufzeitumgebung & Windows 11, Python $3.14.8$, NumPy $2.5.3$ \\
+Prozessor & Intel Core i3-8100T, $4$ Kerne und $4$ logische Prozessoren, maximal $3.096$ MHz, 64 Bit \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Die Reihenfolge der Backends und Queries wird zwischen Wiederholungen variiert. Gemessen wird die Wanduhrzeit des vollständigen Aufrufs von \texttt{crud.search\_multiomics()}, also einschließlich SQL-Abfrage, Kandidatenvergleichen, Prozesskommunikation und Trefferaufbau. Zusätzlich protokolliert das Experiment Laden, Vergleichsphase und Ergebnisaufbau getrennt. Die Anfrage wird standardmäßig mit zwei Workern ausgeführt; eigene Teilexperimente variieren Worker-Zahl, Chunk-Größe und Datenbankumfang. Vor einer Messung kontrolliert das Skript, dass das konfigurierte Backend tatsächlich in den Worker-Prozessen aktiv ist, damit ein stiller Rückfall von C++ auf Python die Auswertung nicht verfälscht.
+
+\subsection{Korrektheit und differenzielle Prüfung}
+\label{sec:multiomics_correctness}
+
+Die abgeschlossene Korrektheitsprüfung vergleicht Python und C++ auf $5.000$ Paaren. Sie umfasst Zufallspaare, kohärent und unabhängig konstruierte Einbettungen, identische sowie umgekehrte Paare und wertet beide Modi aus. Damit entstehen $10.000$ Backend-Entscheidungen. Zusätzlich prüft das Skript Invarianten der Modi sowie die erwarteten Ergebnisse der konstruierten Einbettungen. Tabelle~\ref{tab:multiomics_correctness} fasst die gespeicherten Resultate zusammen.
+
+\begin{table}[!h]
+\centering
+\small
+\caption{Abgeschlossene differenzielle Korrektheitsprüfung der Multi-Omics-Backends.}
+\label{tab:multiomics_correctness}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Prüfgruppe & Paare & übereinstimmende Modusentscheidungen & Fehler \\
+\midrule
+Zufallspaare & $1.000$ & $2.000$ & $0$ \\
+Kohärent eingebettet & $1.000$ & $2.000$ & $0$ \\
+Unabhängig eingebettet & $1.000$ & $2.000$ & $0$ \\
+Identische Paare & $1.000$ & $2.000$ & $0$ \\
+Umgekehrte Paare & $1.000$ & $2.000$ & $0$ \\
+\midrule
+\textbf{Gesamt} & $5.000$ & $10.000$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Für alle $10.000$ Entscheidungen stimmen die Implementierungen überein; das JSON enthält null Fehler, null abweichende Resultate und keine Invariantenverletzungen. Diese Prüfung ist besonders aussagekräftig, weil sie nicht nur zufällige Eingaben vergleicht: Die eingebetteten Paare besitzen bekannte Solltreffer, während identische und umgekehrte Fälle Grenz- und Richtungsverhalten adressieren. Sie ist dennoch kein allgemeiner Beweis der Korrektheit für alle möglichen Matrizen, Schichtzahlen und biologischen Daten.
+
+\subsection{Mikrobenchmark der Schichtvergleiche}
+\label{sec:multiomics_micro}
+
+Der Mikrobenchmark umgeht die Datenbank und vergleicht dieselben Eingabepaare direkt in beiden Implementierungen. Untersucht werden $L\in\{1,2,3,4,6,8\}$ Schichten und Knotenzahlen $n\in\{8,16,24,32,48,63\}$, jeweils mit zufälligen und eingebetteten Paaren. Für jede Backend-, Modus-, Schichtzahl-, Knotenzahl- und Paartyp-Konfiguration werden $100$ Vergleiche ausgeführt. Das ergibt $144$ Konfigurationen pro Backend. Ein separater Test mit $500$ trivialen $1\times1$-Aufrufen schätzt die Untergrenze der Aufruf- und Übergabekosten.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Mikrobenchmark-Zwischenstand: Mittel der Konfigurationsmittelwerte und gepaarte Speedups.}
+\label{tab:multiomics_micro}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Backend & Konfigurationen & Mittelwert je Vergleich [ms] & Mittelwert eingebettet [ms] \\
+\midrule
+Python & $144$ & $4{,}0680$ & $4{,}0571$ \\
+C++ & $144$ & $0{,}4005$ & $0{,}4032$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Über die $144$ passenden Konfigurationen beträgt das geometrische Mittel des Python-zu-C++-Speedups $8{,}11\times$; die einzelnen gepaarten Faktoren liegen zwischen $2{,}90\times$ und $11{,}77\times$. Die Tabelle berichtet den ungewichteten Mittelwert der Konfigurationsmittelwerte und nicht die gepoolte Zeit aller Einzelaufrufe. Zufalls- und eingebettete Paare weisen in beiden Backends in dieser Aggregation ähnliche Mittel auf. Der triviale C++-Aufruf benötigte im Mittel $0{,}0242$ ms bei $500$ Aufrufen. Dieser Wert zeigt, dass die Funktionsübergabe messbar, aber klein gegenüber der mittleren Vergleichszeit ist; er wird nicht von den C++-Laufzeiten abgezogen, da triviale und reguläre Matrizen nicht denselben Aufwand verursachen.
+
+Das Ergebnis stützt die C++-Bibliothek als Beschleunigungsoption für den mehrschichtigen Vergleich in der untersuchten Konfiguration. Der Faktor ist jedoch kein alleiniger Effekt der Programmiersprache: Implementierung, Datenrepräsentation, Aufrufpfad und Eingabeverteilung unterscheiden sich. Eine isolierte Aussage über die algorithmische Komplexität folgt aus dem Mikrobenchmark nicht; dafür dient er als praktische Messung des tatsächlich integrierten Vergleichspfads.
+
+\subsection{Ende-zu-Ende-Suche und Laufzeitergebnisse}
+\label{sec:multiomics_search}
+
+Die vollständige Suchreihe umfasst $56$ Query-Konfigurationen, zwei Modi, zwei Backends und drei Wiederholungen, insgesamt $672$ Läufe beziehungsweise $336$ gepaarte Python/C++-Vergleiche. Bei jedem Paar waren Kandidatenzahl und Treffer-IDs identisch; alle $1.722$ erwarteten eingebetteten Ground-Truth-Treffer wurden gefunden, und kein Vergleich schlug fehl. Die aggregierten Laufzeiten stehen in Tabelle~\ref{tab:multiomics_search_totals}.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Vollständige Ende-zu-Ende-Suchreihe: aufsummierte Zeiten aus 336 gepaarten Läufen je Backend.}
+\label{tab:multiomics_search_totals}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Backend & Gesamt [s] & Laden [s] & Vergleiche [s] & Trefferaufbau [s] \\
+\midrule
+Python & $1.401{,}16$ & $428{,}18$ & $961{,}16$ & $11{,}82$ \\
+C++ & $620{,}43$ & $437{,}30$ & $171{,}07$ & $12{,}05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Das Verhältnis der aufsummierten Antwortzeiten beträgt $2{,}26$ zugunsten von C++; die Gesamtlaufzeit sinkt damit um $55{,}7\,\%$. Auf Ebene der $112$ Query-, Modus- und Anfrageart-Konfigurationen liegt der Median des über drei Wiederholungen gebildeten Speedups bei $2{,}26$; die Konfigurationswerte reichen von $1{,}56$ bis $3{,}77$. Das geometrische Mittel über die einzelnen gepaarten Laufzeiten beträgt $2{,}28$. C++ war in allen $112$ Konfigurationen schneller. Diese übereinstimmende Richtung ist belastbarer als ein einzelner Gesamtquotient, bleibt aber auf die synthetischen Anfragen und die untersuchte Rechnerkonfiguration beschränkt.
+
+Die Phasenmessung macht sichtbar, weshalb der Such-Speedup deutlich unter dem Mikrobenchmark-Faktor von $8{,}11$ liegt. Bei Python entfallen $68{,}6\,\%$ der gemessenen Gesamtzeit auf Vergleiche und $30{,}6\,\%$ auf das Laden. Mit C++ sinkt der Vergleichsanteil auf $27{,}6\,\%$, während das Laden nun $70{,}5\,\%$ der Gesamtzeit beansprucht. Die beschleunigte Vergleichsphase reduziert die Ladezeit nicht; sie verschiebt vielmehr den Engpass der Gesamtsuche. Weitere Optimierung des C++-Kerns allein kann deshalb nur begrenzte zusätzliche Ende-zu-Ende-Gewinne erzielen.
+
+\subsection{Worker-Skalierung auf vier Prozessorkernen}
+\label{sec:multiomics_workers}
+
+Die abgeschlossene Worker-Reihe umfasst sechs ausgewählte Queries, zwei Wiederholungen und jeweils $1$ bis $4$ Worker, also $12$ Messungen je Backend und Worker-Zahl. Tabelle~\ref{tab:multiomics_workers} fasst die aufsummierten Zeiten und den Speedup gegenüber einem Worker zusammen.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Worker-Skalierung: aufsummierte Laufzeit der sechs Queries in zwei Wiederholungen.}
+\label{tab:multiomics_workers}
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+Worker & Python [s] & Python Speedup & C++ [s] & C++ Speedup \\
+\midrule
+$1$ & $74{,}73$ & $1{,}00$ & $24{,}08$ & $1{,}00$ \\
+$2$ & $50{,}31$ & $1{,}49$ & $19{,}69$ & $1{,}22$ \\
+$3$ & $39{,}14$ & $1{,}91$ & $20{,}08$ & $1{,}20$ \\
+$4$ & $35{,}55$ & $2{,}10$ & $18{,}68$ & $1{,}29$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Die Hardwareangabe aus Tabelle~\ref{tab:multiomics_setup} ist für die Interpretation entscheidend: Der Intel Core i3-8100T stellt vier physische Kerne und vier logische Prozessoren bereit, also keine zusätzlichen SMT-Threads. Python profitiert in dieser Stichprobe bis vier Worker und erreicht dort $2{,}10$-fachen Speedup, entsprechend einer parallelen Effizienz von rund $52{,}5\,\%$. Beim C++-Backend ist der Gewinn deutlich kleiner: Zwei Worker erreichen $1{,}22$, drei $1{,}20$ und vier $1{,}29$. Der Unterschied zwischen zwei und vier Workern ist damit gering; vier Worker liefern hier die kürzeste Summe, aber keinen annähernd linearen Gewinn. Das passt dazu, dass nach Beschleunigung des Vergleichskerns Laden und übrige Prozesskosten dominieren. Wegen der nur zwei Wiederholungen und sechs Queries sind diese Werte eine Messung auf diesem Vierkernsystem, keine allgemeine Empfehlung für andere Hardware.
+
+\subsection{Einfluss der Chunk-Größe}
+\label{sec:multiomics_chunksize}
+
+Die Chunk-Reihe vergleicht sieben Blockgrößen mit denselben sechs Queries und zwei Wiederholungen, jeweils bei zwei Workern. Tabelle~\ref{tab:multiomics_chunksize} zeigt die aufsummierte Zeit der $12$ Messungen je Backend und Blockgröße.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Chunk-Größen: aufsummierte Laufzeiten der sechs Queries in zwei Wiederholungen.}
+\label{tab:multiomics_chunksize}
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Chunk-Größe & Python [s] & C++ [s] \\
+\midrule
+$1$ & $58{,}39$ & $33{,}71$ \\
+$8$ & $48{,}13$ & $18{,}58$ \\
+$32$ & $42{,}50$ & $18{,}03$ \\
+$128$ & $41{,}14$ & $18{,}33$ \\
+$256$ (Standard) & $45{,}54$ & $18{,}80$ \\
+$1.024$ & $51{,}46$ & $20{,}25$ \\
+$4.096$ & $64{,}26$ & $23{,}74$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Die kleinsten und größten Blöcke sind in dieser Stichprobe für beide Backends ungünstiger als mittlere Größen. Python erreicht den niedrigsten Summenwert bei Chunk $128$, C++ bei Chunk $32$; beide liegen nahe beieinander im mittleren Bereich. Gegenüber dem Standardwert $256$ ist die jeweilige beste beobachtete Summe um rund $9{,}7\,\%$ (Python) beziehungsweise $4{,}1\,\%$ (C++) kleiner. Das deutet auf einen Kompromiss zwischen Übergabeaufwand bei sehr kleinen Blöcken und Lastverteilung bei sehr großen Blöcken hin. Die Messung umfasst jedoch nur sechs Queries mit zwei Wiederholungen; sie rechtfertigt keine universelle optimale Chunk-Größe, sondern eine backend- und hardwareabhängige Kalibrierung.
+
+\subsection{Abgebrochene Datenbankgrößenreihe}
+\label{sec:multiomics_dbsize}
+
+Zum Abbruch war die Datenbankgrößenreihe erst teilweise abgeschlossen: Für $2.000$ und $5.000$ Zufallsnetzwerke liegen jeweils alle $24$ Messungen vor (sechs Queries, zwei Backends, zwei Wiederholungen). Bei $10.000$ Netzwerken sind $10$ von $24$ Messungen gespeichert; die geplante Stufe mit $20.000$ Netzwerken wurde nicht erreicht. Die abgeschlossenen kleineren Stufen zeigen zwar unterschiedliche Laufzeiten, doch ohne vollständige, gepaarte Stufen und ohne die größte Datenbankgröße lässt sich daraus keine belastbare Aussage zum Wachstum mit $N$ ableiten. Eine lineare Skalierung oder ein fester Zusammenhang zwischen Datenbankgröße, Kandidatenzahl und Suchzeit wird daher nicht behauptet.
+
+\subsection{Einordnung, Grenzen und Folgerungen}
+\label{sec:multiomics_discussion}
+
+Das Experiment erweitert die bisherigen Untersuchungen in drei Richtungen. Erstens werden mehrere biologische Ebenen über zwei explizite Schichtsemantiken verglichen. Zweitens wird die Backend-Konformität durch differenzielle Prüfungen und konstruktive Solltreffer kontrolliert. Drittens trennt die Phasenmessung Rechenzeit und übrige Suchkosten. Die abgeschlossene Suchreihe bestätigt einen Ende-zu-Ende-Vorteil von C++ um den Faktor $2{,}26$ bei identischen Kandidaten und Treffern. Zugleich sinkt der Anteil der Vergleichsphase von $68{,}6\,\%$ auf $27{,}6\,\%$; der Ladeanteil wird mit C++ zum größten Kostenblock. Worker- und Chunk-Reihen zeigen zudem, dass Prozesszahl und Blockgröße nicht unabhängig vom Backend gewählt werden sollten.
+
+Die Reichweite der Befunde ist aus mehreren Gründen begrenzt. Die Netzwerke und Einbettungen sind synthetisch erzeugt; biologische Netzwerke mit realen Beschriftungen, Unsicherheiten und unvollständigen Messungen werden nicht untersucht. Die Schichtmatrizen teilen dieselbe Knotenzahl, während reale Omics-Datensätze unterschiedliche Entitäten und Abbildungen zwischen Ebenen aufweisen können. Die Relation sucht strukturelle Muster in Zeilenkomponenten und ist keine klassische, labelbewusste Multi-Graph-Isomorphie. Insbesondere bedeutet ein kohärenter Treffer daher nicht, dass eine biologische Wechselwirkung oder Kausalität nachgewiesen wurde. Die Ende-zu-Ende-, Worker- und Chunk-Reihen sind abgeschlossen, aber auf eine einzelne Windows-11-Konfiguration mit vier physischen Kernen, zwei Wiederholungen für die Skalierung und sechs ausgewählten Skalierungsqueries beschränkt. Die Datenbankgrößenreihe wurde bei 10.000 Zufallsnetzwerken abgebrochen und erlaubt keine vollständige Skalierungsaussage.
+
+Für eine belastbare Fortsetzung ist zunächst die Datenbankgrößenreihe zu vervollständigen oder ausdrücklich als Teilmessung auszuweisen; die fertigen Such-, Worker- und Chunk-Ergebnisse können bereits berichtet werden. Anschließend sind Wiederholungen auf weiterer Hardware und mit realen, fachlich annotierten Multi-Omics-Daten erforderlich. Die Ground Truth sollte dabei um Domänenwissen erweitert werden: Welche Knoten entsprechen sich zwischen den Ebenen, welche Interaktionen sind zulässig, und welche biologischen Treffer bewerten Fachleute als relevant? Erst diese Validierung kann entscheiden, ob kohärente und unabhängige Modi für konkrete Forschungsfragen geeignete Suchsemantiken darstellen.
+
 \section{Schluss}
 \label{sec:schluss}
 
@@ -1173,6 +1390,15 @@ Die Messreihe mit sechs aus der Datenbank gezogenen Queries (mindestens $15$ Kno
 
 Die abgeschlossene Suchmessung mit zwei Workern verglich sechs identische Queries und insgesamt $931.899$ Kandidaten. Die Python-Ausführung benötigte $1.180{,}28$ Sekunden, die C++-Library $185{,}62$ Sekunden; der Ende-zu-Ende-Speedup beträgt $6{,}36\times$. Der individuelle Speedup lag je nach Query zwischen $4{,}81\times$ und $8{,}76\times$. Im direkten Mikrobenchmark über $200$ gemeinsame Zufallspaare sank die mittlere Vergleichszeit von $2{,}694$ ms in Python auf $0{,}074$ ms in C++; der triviale Library-Aufruf lag bei $0{,}018$ ms. Alle sechs Suchpaare lieferten dieselben Netzwerk-IDs und beide Reihen hatten null fehlgeschlagene Vergleiche. Der Unterschied zwischen Mikrobenchmark- und Such-Speedup erklärt sich daraus, dass Datenbankzugriff, Worker-Kommunikation und Ergebnisaufbau beim schnelleren Rechenkern einen größeren Anteil an der vollständigen Antwortzeit ausmachen.
 
+\subsubsection{Multi-Omics: geschichtete Suchsemantik und abgeschlossene Messreihen}
+\label{sec:zus_multiomics}
+
+Abschnitt~\ref{sec:multiomics} erweitert den Vergleich auf geordnete Tupel aus mehreren Omics-Netzwerkschichten. Die kohärente Relation verlangt dieselbe Trefferposition in allen Schichten; die unabhängige Relation erlaubt schichtweise verschiedene Positionen. In der abgeschlossenen differenziellen Prüfung stimmen Python und C++ auf $5.000$ Paaren und $10.000$ Modusentscheidungen vollständig überein; Fehler und Invariantenverletzungen wurden nicht beobachtet. Im Mikrobenchmark über $144$ passende Konfigurationen pro Backend beträgt das geometrische Mittel des Python/C++-Speedups $8{,}11\times$ (Konfigurationsmittelwerte $4{,}0680$ ms gegenüber $0{,}4005$ ms).
+
+Die vollständige Ende-zu-Ende-Reihe umfasst $336$ gepaarte Suchläufe je Backend. Python benötigte aufsummiert $1.401{,}16$ Sekunden, C++ $620{,}43$ Sekunden; der Summen-Speedup beträgt $2{,}26$, das geometrische Mittel der gepaarten Laufzeiten $2{,}28$. Bei allen $336$ Paaren waren Kandidatenzahl und Treffer-IDs gleich, alle $1.722$ erwarteten eingebetteten Referenztreffer wurden gefunden, und es gab keine fehlgeschlagenen Vergleiche. Über $112$ Konfigurationen mit je drei Wiederholungen lag der mediane Speedup bei $2{,}26$; in jeder Konfiguration war C++ schneller. Die Vergleichsphase beanspruchte $68{,}6\,\%$ der Python-Zeit und $27{,}6\,\%$ der C++-Zeit, während das Laden mit C++ $70{,}5\,\%$ der Antwortzeit ausmachte.
+
+Die Worker-Reihe auf dem Intel Core i3-8100T mit vier physischen Kernen erreichte bei Python mit vier Workern einen Speedup von $2{,}10$, bei C++ dagegen nur $1{,}29$. In der Chunk-Reihe lagen mittlere Blockgrößen vorn: $128$ für Python und $32$ für C++; die Unterschiede zum Standard $256$ waren moderat und beruhen auf sechs Queries mit zwei Wiederholungen. Die Datenbankgrößenreihe blieb abgebrochen: $2.000$ und $5.000$ Zufallsnetzwerke sind vollständig gemessen, bei $10.000$ liegt nur ein Teil der Messungen vor, $20.000$ wurde nicht erreicht. Damit sind die Backend-Beschleunigung und beide Skalierungsreihen empirisch beschrieben, nicht aber ein allgemeines Wachstumsgesetz der Suchzeit mit der Datenbankgröße oder die biologische Aussagekraft der synthetischen Relation.
+
 \subsubsection{Kopplung und Beschreibungsgrenzen}
 \label{sec:zus_kopplung}
 
@@ -1180,7 +1406,7 @@ Der Vergleich wirft neben der Laufzeitfrage eine Gestaltungsfrage auf, die Absch
 
 \subsubsection{Zentrale Erkenntnisse}
 
-Aus der Gesamtschau lassen sich neun Erkenntnisse festhalten:
+Aus der Gesamtschau lassen sich zehn Erkenntnisse festhalten:
 
 \begin{enumerate}
 	\item \textbf{Die Architektur trägt die Analyse.} Die klare Trennung zwischen relationaler Kandidatenreduktion und algorithmischem Strukturvergleich erlaubt es, beide Stufen getrennt zu beweisen, zu messen und zu optimieren.
@@ -1192,11 +1418,12 @@ Aus der Gesamtschau lassen sich neun Erkenntnisse festhalten:
 	\item \textbf{Vollständigkeit und Geschwindigkeit stehen im Spannungsfeld.} Ein Kandidatenlimit macht die Suchzeit unabhängig von $N$, kostet aber die Vollständigkeitsgarantie. Auch die Suchrichtung ist nur für $A_Q \preceq A_k$ abgesichert.
 	\item \textbf{Die Form der Sprachgrenze hat praktische Folgen.} Der direkte Aufruf der C++-Library beschleunigt die sechs gemessenen Suchen gegenüber Python um den Faktor $6{,}36$, während der frühere CLI-Mikrobenchmark hohe Kosten pro Prozessaufruf zeigte. Die Library hält den wiederholten Aufruf im Worker-Prozess und erzielt damit sowohl eine schmale Grenze als auch einen gemessenen Anwendungsvorteil (Abschnitt~\ref{sec:fremde_beschreibungen}).
 	\item \textbf{Schnittstellenkosten gehören ins Kostenmodell.} Der direkte C++-Aufruf benötigt im Mittel $0{,}074$ ms, wovon der triviale Library-Aufruf rund $0{,}018$ ms als Größenordnung der Übergabe zeigt. Das Modell aus Satz~\ref{satz:pipeline} wird durch einen Term $\delta$ je Vergleich erweitert (Bemerkung~\ref{bem:schnittstellenkosten}); die Anbindung beeinflusst den konstanten Faktor, nicht die Asymptotik.
+	\item \textbf{Multi-Omics erfordert eine explizite Schichtsemantik.} Die kohärente und unabhängige Relation stellen unterschiedliche Anforderungen an gemeinsame Trefferpositionen. Beide Backends stimmten in $10.000$ geprüften Modusentscheidungen und allen $336$ gepaarten Suchläufen überein. C++ beschleunigte die Ende-zu-Ende-Suche aggregiert um den Faktor $2{,}26$; der Suchphasenvergleich zeigt zugleich, dass nun Laden statt Berechnung den größten Anteil der C++-Antwortzeit ausmacht. Worker- und Chunk-Reihen sind abgeschlossen, die Datenbankgrößenreihe nicht. Synthetische Ground Truth ersetzt keine biologische Validierung (Abschnitt~\ref{sec:multiomics}).
 \end{enumerate}
 
 \subsubsection{Abgleich mit den Beiträgen der Arbeit}
 
-In der Einleitung wurden Beiträge zur Architektur, formalen Analyse, Datenbankevaluation, zum VF2-Vergleich, zur Parallelisierung und zu den C++-Backends angekündigt. Die Architektur und Einbettung in die relationale Datenbank werden in Abschnitt~\ref{sec:architektur} beschrieben; Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, ausdrücklich für die Suchrichtung $A_Q \preceq A_k$ und unter Berücksichtigung eines optionalen Kandidatenlimits. Die Evaluation an einer Million synthetischen Netzwerken steht in Abschnitt~\ref{sec:evaluation}. VF2-Vergleich, Parallelisierung und Backend-Vergleich finden sich in den Abschnitten~\ref{sec:vergleich}, \ref{sec:parallel} und \ref{sec:backends}. Der Backend-Beitrag ist nun durch Mikrobenchmark, abgeschlossene Ende-zu-Ende-Messung, Trefferabgleich und Schnittstellenanalyse erfüllt; die Reproduzierbarkeit und Aussagekraft bleiben durch die kleine Stichprobe begrenzt. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Dabei ist zu unterscheiden: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während VF2-, Parallelisierungs- und Backend-Werte aus Messungen stammen.
+In der Einleitung wurden Beiträge zur Architektur, formalen Analyse, Datenbankevaluation, zum VF2-Vergleich, zur Parallelisierung, zu den C++-Backends und zur Multi-Omics-Suche angekündigt. Die Architektur und Einbettung in die relationale Datenbank werden in Abschnitt~\ref{sec:architektur} beschrieben; Korrektheit und Komplexität der Pipeline sind in Abschnitt~\ref{sec:pipeline} bewiesen, ausdrücklich für die Suchrichtung $A_Q \preceq A_k$ und unter Berücksichtigung eines optionalen Kandidatenlimits. Die Evaluation an einer Million synthetischen Netzwerken steht in Abschnitt~\ref{sec:evaluation}. VF2-Vergleich, Parallelisierung und Backend-Vergleich finden sich in den Abschnitten~\ref{sec:vergleich}, \ref{sec:parallel} und \ref{sec:backends}. Abschnitt~\ref{sec:multiomics} beschreibt die geschichtete Suchsemantik sowie die abgeschlossenen Korrektheits-, Mikrobenchmark-, Such-, Worker- und Chunk-Ergebnisse; allein die Datenbankgrößenreihe blieb unvollständig. Der Backend-Beitrag ist durch Mikrobenchmark, abgeschlossene Ende-zu-Ende-Messung, Trefferabgleich und Schnittstellenanalyse erfüllt; die Reproduzierbarkeit und Aussagekraft bleiben durch synthetische Daten und eine einzelne Hardwarekonfiguration begrenzt. Zusammenfassung, Würdigung der Grenzen und Ausblick bilden dieses Kapitel. Dabei ist zu unterscheiden: Die Skalierungskurven in Abschnitt~\ref{sec:evaluation} beruhen auf dem analytischen Modell, während VF2-, Parallelisierungs-, Backend- und die hier beschriebenen Multi-Omics-Werte aus Messungen stammen.
 
 % =====================================================================
 \subsection{Kritische Würdigung und Grenzen}
@@ -1218,13 +1445,14 @@ Die Ergebnisse dieser Arbeit sind belastbar, soweit es um die formalen Aussagen 
 	\item \textbf{Phasenmodell und Schnittstellenkosten.} Die Messung zerlegt die Suchzeit in Vergleichsphase und Rest; der Rest fasst Datenbankzugriff, Datenübergabe, Aufgabenverteilung und Ergebnisaufbau zusammen. Die $0{,}018$ ms für einen trivialen Library-Aufruf sind nur eine Orientierung für die Übergabekosten und dürfen nicht als exakte Korrektur auf größere Matrizen übertragen werden. Auch der frühere CLI-Wert von rund $10$ ms ist eine Messung eines anderen Aufrufpfads und keine kontrollierte Schätzung für alle Plattformen.
 	\item \textbf{Die Kopplungsposition ist eine Gestaltungsposition.} Begriffe wie Trennungsbewusstsein lassen sich in dieser Arbeit nicht messen. Die Fallbeispiele aus dem Versuchsaufbau machen die Position plausibel, belegen sie aber nicht durch eine Studie. Die Gegenargumente (Isolation, Sprachneutralität, Bauaufwand der Library) sind nicht entkräftet, sondern nur dem Einsatzzweck zugeordnet.
 	\item \textbf{Betriebssystemabhängigkeit der C++-Anbindung.} Die Library-Messung stammt von einem Windows-11-Rechner. Bau, Linken, DLL-Laden und Wrapper-Aufruf können sich auf anderen Betriebssystemen unterscheiden. Der strukturelle Unterschied zum CLI-Prozessstart bleibt bestehen, aber die gemessene Größenordnung des Beschleunigungsgewinns ist nicht ohne plattformübergreifende Wiederholung übertragbar.
+	\item \textbf{Synthetische Multi-Omics-Daten und begrenzte Skalierungsstichprobe.} Korrektheits-, Mikrobenchmark-, Such-, Worker- und Chunk-Messungen sind abgeschlossen; die Datenbankgrößenreihe wurde nach $58$ von $96$ Messungen abgebrochen. Die Such- und Skalierungsmessungen stammen von einer einzelnen Windows-11-Konfiguration mit vier physischen Kernen; die Worker- und Chunk-Vergleiche verwenden sechs Queries und zwei Wiederholungen. Die Netzwerke teilen eine Knotenzahl über alle Schichten und enthalten keine realen oder fachlich annotierten Omics-Beziehungen. Der Such-Speedup von $2{,}26$ und der Mikrobenchmark-Speedup von $8{,}11\times$ belegen daher keine allgemeine Beschleunigung oder biologische Validität außerhalb dieser Versuchsanordnung.
 \end{enumerate}
 
 % =====================================================================
 \subsection{Ausblick}
 \label{sec:ausblick}
 
-Die Erweiterungsmöglichkeiten lassen sich in sieben Themenfelder ordnen: die Absicherung von Korrektheit und Suchsemantik, die Verschärfung der Vorauswahl und Indexierung, die Beschleunigung der Vergleiche, die Skalierung auf Systemebene, die Weiterentwicklung der Evaluation, die Anwendungsebene sowie die Kopplung und die Schnittstellen der Implementierungen. Die folgenden Unterabschnitte behandeln jedes Feld einzeln. Wo eine Idee bereits durch die Ergebnisse dieser Arbeit gestützt oder relativiert wird, ist darauf verwiesen.
+Die Erweiterungsmöglichkeiten lassen sich in acht Themenfelder ordnen: die Absicherung von Korrektheit und Suchsemantik, die Verschärfung der Vorauswahl und Indexierung, die Beschleunigung der Vergleiche, die Skalierung auf Systemebene, die Weiterentwicklung der Evaluation, die Anwendungsebene, die Kopplung und die Schnittstellen der Implementierungen sowie die Validierung und Skalierung der Multi-Omics-Suche. Die folgenden Unterabschnitte behandeln jedes Feld einzeln. Wo eine Idee bereits durch die Ergebnisse dieser Arbeit gestützt oder relativiert wird, ist darauf verwiesen.
 
 % ---------------------------------------------------------------------
 \subsubsection*{Themenfeld A: Korrektheit und Suchsemantik}
@@ -1457,6 +1685,29 @@ Die Library-Anbindung ist umgesetzt: Die statische C++-Bibliothek wird mit einem
 
 Offen bleibt der einmalige Aufwand für Bau und Test je Plattform sowie der wiederkehrende Wartungsaufwand bei Änderungen am C++-Kern. Die gemessenen Laufzeiten beantworten die Performance-Frage für die aktuelle Windows-Konfiguration, nicht aber die Portabilität. Automatisierte Builds und direkte Konformitätstests bilden deshalb die Voraussetzung dafür, den beobachteten Beschleunigungsgewinn zuverlässig in künftigen Releases zu erhalten.
 
+% ---------------------------------------------------------------------
+\subsubsection*{Themenfeld H: Multi-Omics-Suche}
+
+\subsubsection{Abgebrochene Datenbankgrößenreihe vervollständigen}
+\label{sec:multiomics_ausblick_benchmark}
+
+Die Ende-zu-Ende-, Worker- und Chunk-Reihen aus Abschnitt~\ref{sec:multiomics_search} sind abgeschlossen und bereits gepaart ausgewertet. Offen blieb die Datenbankgrößenreihe: Die beiden kleinsten Größen ($2.000$ und $5.000$ Zufallsnetzwerke) sind vollständig, bei $10.000$ Netzwerken liegt nur ein Teil vor, und $20.000$ wurde nicht erreicht. Eine Fortsetzung sollte entweder diese Reihe mit denselben Queries und Wiederholungen vervollständigen oder die fehlenden Stufen als eigene Messung neu durchführen. Dabei müssen Anzahl der Multi-Omics-Kandidaten, Ladezeit, Vergleichszeit und Trefferaufbau je Backend getrennt erhalten bleiben.
+
+Für die bereits abgeschlossene Suche sind zusätzlich zur Gesamtzeit die Phasenanteile zu berichten: Mit C++ dominiert nun das Laden, während die Vergleichsphase nur noch $27{,}6\,\%$ der Antwortzeit beansprucht. Die Worker-Ergebnisse sollten im Kontext des Vierkernprozessors und die Chunk-Ergebnisse ausdrücklich als kleine, zweimal wiederholte Stichprobe interpretiert werden. Eine weitergehende statistische Absicherung erfordert mehr Queries, Wiederholungen und weitere Hardwarekonfigurationen; erst danach sind allgemeine Empfehlungen zu Worker-Zahl und Chunk-Größe gerechtfertigt.
+
+\subsubsection{Biologische Semantik und reale Multi-Omics-Daten validieren}
+\label{sec:multiomics_ausblick_biologie}
+
+Die synthetischen Matrizen sichern bekannte technische Sollfälle, bilden aber keine realen Erhebungsprozesse ab. Eine Folgestudie sollte öffentlich verfügbare und fachlich annotierte Multi-Omics-Datensätze auswählen und für jede Schicht dokumentieren, welche Entitäten und Interaktionen die Knoten und Kanten repräsentieren. Vor dem Vergleich sind Zuordnungen gemeinsamer Entitäten zwischen den Schichten festzulegen; falls die Knotenräume nicht identisch sind, muss das Datenmodell diese Zuordnungen explizit statt durch eine künstlich gemeinsame Knotennummerierung repräsentieren.
+
+Gemeinsam mit Fachleuten ist zu prüfen, welche Suchfrage die Modi beantworten sollen. Der kohärente Modus verlangt dieselbe strukturelle Position in allen Schichten, während der unabhängige Modus verschiedene Positionen erlaubt. Diese algorithmische Definition sagt für sich genommen nichts über zeitliche Reihenfolge, Regulation oder Kausalität aus. Eine Evaluation sollte deshalb bekannte positive und negative Beispiele, Präzision und Vollständigkeit sowie eine qualitative Bewertung der gefundenen Muster umfassen. Sie muss außerdem festhalten, ob Knotenlabels, fehlende Messwerte, gerichtete Beziehungen und Schichtgewichte in die Relation eingehen sollen.
+
+\subsubsection{Skalierung und Modellgrenzen mehrschichtiger Netzwerke}
+
+Die Knotenzahl und Schichtzahl wurden im Experiment nur in begrenzten Bereichen variiert. Größere Werte können sowohl die Kosten des Vergleichs als auch die Speicher- und Übergabekosten verändern. Eine Folgeevaluation sollte deshalb Schichtzahlen oberhalb von acht und Netzwerke jenseits von $63$ Knoten untersuchen, sobald die Implementierung und der Speicherbedarf dies erlauben. Dabei ist zu prüfen, ob die Laufzeit annähernd mit der Zahl der Schichten wächst oder ob die gemeinsame Suche und frühe Abbrüche ein anderes Profil erzeugen.
+
+Die aktuelle Versuchskonstruktion verwendet pro Netzwerk eine gemeinsame Knotenzahl für alle Matrizen. Das ist eine klare Ausgangsannahme, aber keine allgemeine Eigenschaft von Omics-Daten. Erweiterungen auf unterschiedliche Knotenräume benötigen explizite Relationen zwischen Schichten und eine formale Definition, wann Teilstrukturen über solche Abbildungen hinweg als Treffer gelten. Vor einer Optimierung sind daher zunächst Relation und biologische Interpretation zu spezifizieren; erst anschließend lassen sich notwendige Datenbankfilter, Komplexitätsaussagen und Ground-Truth-Tests korrekt ableiten.
+
 \subsubsection{Batch- und persistente Prozessschnittstellen als Übergangslösung}
 \label{sec:batch_cli}
 
@@ -1516,23 +1767,27 @@ Die beschriebenen Erweiterungen sollten in einer Reihenfolge umgesetzt werden, d
 		11 & Beschriftete Relation, Label-Indizes (Felder A und B) & fachlich sinnvollere und kleinere Trefferlisten & mittel bis hoch \\
 		12 & Mehrdimensionaler Index, Hash-Index (Feld B) & schärfere Vorauswahl & mittel \\
 		13 & Hybridstrategie mit VF2 und Fallback (Feld C) & Geschwindigkeit bei garantierter Schranke & hoch \\
-		14 & Validierung mit realen Netzwerken (Feld F) & Nachweis der Praxistauglichkeit & hoch \\
-		15 & GPU-Beschleunigung, verteilte Ausführung, jeweils nach den Prüffragen aus Feld G (Feld C) & Skalierung für sehr große Datenbanken & hoch \\
+		14 & Abgebrochene Multi-Omics-Datenbankgrößenreihe vervollständigen (Feld H) & Skalierung über $N$ belastbar beurteilen & mittel \\
+		15 & Multi-Omics-Relation mit realen, annotierten Daten validieren (Felder F und H) & biologische Aussagekraft und Nutzen klären & hoch \\
+		16 & Validierung der allgemeinen Suche mit realen Netzwerken (Feld F) & Nachweis der Praxistauglichkeit & hoch \\
+		17 & GPU-Beschleunigung, verteilte Ausführung, jeweils nach den Prüffragen aus Feld G (Feld C) & Skalierung für sehr große Datenbanken & hoch \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-Die Reihenfolge trennt drei Ziele: Vollständigkeit und semantische Korrektheit (Nummern~1 und~7), reproduzierbare Austauschbarkeit der Backends (Nummern~2 und~5) sowie empirisch belastbare Leistungswerte und darauf aufbauende Optimierungen (Nummern~3, 4, 6 und~8 bis~15). Die Grundentscheidung und erste Messung der Library sind abgeschlossen; Priorität haben nun Konformitätstests, genauere Phasenmessung und Wiederholungen unter kontrollierten Bedingungen. Bei einer Hybridstrategie mit VF2 bleibt die Worst-Case-Garantie nur dann erhalten, wenn der Subgraph Algorithmus als Fallback vorgesehen ist. Die Tests (Nr.~1 und~2) sollten vor algorithmischen Optimierungen (Nr.~8 und~13) stehen. Die detailliertere Instrumentierung (Nr.~3) ist Voraussetzung, um den Nutzen der späteren Parallelisierungsverfeinerung (Nr.~9) zuverlässig beurteilen zu können.
+Die Reihenfolge trennt drei Ziele: Vollständigkeit und semantische Korrektheit (Nummern~1 und~7), reproduzierbare Austauschbarkeit der Backends (Nummern~2 und~5) sowie empirisch belastbare Leistungswerte und darauf aufbauende Optimierungen (Nummern~3, 4, 6 und~8 bis~17). Die Such-, Worker- und Chunk-Messungen sind abgeschlossen; als unmittelbarer Multi-Omics-Messschritt verbleibt die vervollständigte Datenbankgrößenreihe. Bei einer Hybridstrategie mit VF2 bleibt die Worst-Case-Garantie nur dann erhalten, wenn der Subgraph Algorithmus als Fallback vorgesehen ist. Die Tests (Nr.~1 und~2) sollten vor algorithmischen Optimierungen (Nr.~8 und~13) stehen. Die detailliertere Instrumentierung (Nr.~3) ist Voraussetzung, um den Nutzen der späteren Parallelisierungsverfeinerung (Nr.~9) zuverlässig beurteilen zu können; die biologische Validierung der Multi-Omics-Relation folgt auf die technische und statistische Auswertung der vorhandenen Messungen.
 
 % =====================================================================
 \subsection{Abschließende Bemerkung}
 \label{sec:schlussbemerkung}
 
-Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet Architektur, formale Analyse, eine Evaluation an einer Million synthetischer Netzwerke sowie Experimente zu VF2, Parallelisierung und Implementierungsbackends. Ihr zentraler Gedanke ist die Trennung zweier Aufgaben: Eine datenbankseitige Vorauswahl verkleinert den Suchraum, und der Subgraph Algorithmus entscheidet anschließend über die verbliebenen Kandidaten mit einer bewiesenen kubischen Zeitschranke. Die Analyse zeigt, unter welchen Bedingungen diese Pipeline korrekt und vollständig ist; die Experimente zeigen, wie stark die tatsächliche Laufzeit von Kandidatenzahl, Implementierung und Ausführungsmodell abhängt.
+Diese Arbeit beschreibt Gen-DB als Full-Stack-System zur Suche in biologischen Netzwerken und verbindet Architektur, formale Analyse, eine Evaluation an einer Million synthetischer Netzwerke sowie Experimente zu VF2, Parallelisierung, Implementierungsbackends und geschichteten Multi-Omics-Netzwerken. Ihr zentraler Gedanke ist die Trennung zweier Aufgaben: Eine datenbankseitige Vorauswahl verkleinert den Suchraum, und der Subgraph Algorithmus entscheidet anschließend über die verbliebenen Kandidaten mit einer bewiesenen kubischen Zeitschranke. Die Analyse zeigt, unter welchen Bedingungen diese Pipeline korrekt und vollständig ist; die Experimente zeigen, wie stark die tatsächliche Laufzeit von Kandidatenzahl, Implementierung und Ausführungsmodell abhängt.
 
 Besonders deutlich wird das im erneuerten Backend-Experiment. Bei sechs identischen Suchanfragen und $931.899$ Kandidaten sinkt die Laufzeit mit der C++-Library von $1.180{,}28$ auf $185{,}62$ Sekunden, ein Speedup von $6{,}36\times$. Auch der direkte Mikrobenchmark zeigt einen erheblich schnelleren C++-Aufruf. Gleichzeitig ist der Ende-zu-Ende-Gewinn deutlich kleiner als der Mikrobenchmark-Speedup: Nach Beschleunigung des Vergleichskerns machen Datenbankzugriff, Übergabe und Ergebnisaufbau einen großen Teil der verbleibenden Suchzeit aus. Die Messung führt damit nicht nur zu einem positiven Ergebnis für die Library, sondern auch zu einer konkreten nächsten Frage: Welche nichtvergleichenden Phasen lassen sich sicher messen und optimieren, ohne die Korrektheit der Suche zu beeinträchtigen?
 
-Die Ergebnisse bleiben in ihrem Geltungsbereich begrenzt. Die Backend-Messung umfasst sechs einmalig ausgeführte Queries auf synthetischen Daten und einer Windows-11-Konfiguration. Sie belegt weder dieselbe Beschleunigung auf realen biologischen Netzwerken noch auf anderer Hardware; auch stimmen identische Treffer in dieser Stichprobe keinem allgemeinen Korrektheitsbeweis gleich. Offen bleiben außerdem die biologische Angemessenheit der Relation $\preceq$, die Berücksichtigung von Knotenlabels, die Suchrichtung, mögliche Kandidatenlimits und eine breitere statistische Absicherung. Der nächste Entwicklungsschritt ist deshalb nicht allein weitere Beschleunigung, sondern zunächst Konformitätstests, wiederholbare Multi-Plattform-Messungen und feinere Phaseninstrumentierung. Darauf können eine schärfere Vorauswahl, asynchrone Teilergebnisse und reale Anwendungsvalidierung aufbauen.
+Das Multi-Omics-Kapitel überträgt die Untersuchung auf mehrere gekoppelte Netzwerkschichten und unterscheidet eine gemeinsame, kohärente Trefferposition von unabhängigen Trefferpositionen je Schicht. Die abgeschlossene differenzielle Prüfung fand bei $5.000$ Paaren und $10.000$ Modusentscheidungen keine Abweichung zwischen Python und C++; im Mikrobenchmark lag der geometrische Mittelwert des Speedups bei $8{,}11\times$. In der vollständigen Suche mit $336$ gepaarten Läufen je Backend sinkt die summierte Laufzeit von $1.401{,}16$ auf $620{,}43$ Sekunden, ein Speedup von $2{,}26$. Alle $1.722$ erwarteten eingebetteten Treffer wurden gefunden, und die Treffer-IDs stimmten in jedem Paar überein. Die Worker- und Chunk-Messungen zeigen begrenzte, backendabhängige Skalierung; die Datenbankgrößenreihe wurde vor Abschluss abgebrochen. Das sind belastbare technische Ergebnisse für synthetische Daten auf der dokumentierten Hardware, keine Validierung biologischer Muster oder Kausalbeziehungen.
+
+Die Ergebnisse bleiben in ihrem Geltungsbereich begrenzt. Die Multi-Omics-Such-, Worker- und Chunk-Messungen umfassen synthetische Daten und eine Windows-11-Konfiguration mit vier physischen Kernen; Worker- und Chunk-Reihen beruhen auf sechs Queries und zwei Wiederholungen. Die DB-Skalierung ist unvollständig. Keine der Messungen belegt dieselbe Beschleunigung auf realen biologischen Netzwerken oder anderer Hardware; übereinstimmende Treffer in den geprüften Stichproben sind kein allgemeiner Korrektheitsbeweis. Offen bleiben außerdem die biologische Angemessenheit der Relationen, die Berücksichtigung von Knotenlabels, die Suchrichtung, mögliche Kandidatenlimits und eine breitere statistische Absicherung. Als nächste Schritte folgen die Vervollständigung der DB-Größenreihe, Wiederholungen auf weiterer Hardware, Konformitätstests und biologische Validierung mit annotierten Multi-Omics-Daten.
 
 Der zentrale Gedanke der Trennung gilt somit für die Suchpipeline wie für die Sprachgrenze: Eine klar definierte Schnittstelle macht Verantwortung und Kosten nachvollziehbar. Für den untersuchten Suchpfad hat die Library diese Gestaltungsentscheidung nicht nur strukturell, sondern auch experimentell gestützt; die frühere CLI-Messung zeigt zugleich, wie sehr ein ungünstiger Aufrufpfad den Rechenkern verdecken kann. Die Arbeit liefert damit keinen universellen Leistungsanspruch, sondern eine nachvollziehbare Grundlage für Gen-DB: einen formal analysierten Suchablauf, ein konkret gemessenes schnelleres Backend und einen priorisierten Weg von der Prototyp-Implementierung zu einem validierten und belastbar betriebenen Suchsystem.
 
@@ -1702,6 +1957,177 @@ Nature, 585:357--362, 2020.
 Siu Kwan Lam, Antoine Pitrou, Stanley Seibert.
 \emph{Numba: A LLVM-based Python JIT Compiler}.
 In: Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC, 2015.
+
+% --- Mehrschichtige Netzwerke und Multi-Omics ---
+
+\bibitem{kivela2014}
+Mikko Kivelä, Alex Arenas, Marc Barthelemy, James P. Gleeson, Yamir Moreno, Mason A. Porter.
+\emph{Multilayer Networks}.
+Journal of Complex Networks, 2(3):203--271, 2014.
+
+\bibitem{dedomenico2013}
+Manlio De Domenico, Albert Solé-Ribalta, Emanuele Cozzo, Mikko Kivelä, Yamir Moreno, Mason A. Porter, Sergio Gómez, Alex Arenas.
+\emph{Mathematical Formulation of Multilayer Networks}.
+Physical Review X, 3:041022, 2013.
+
+\bibitem{hasin2017}
+Yehudit Hasin, Marcus Seldin, Aldons Lusis.
+\emph{Multi-omics Approaches to Disease}.
+Genome Biology, 18:83, 2017.
+
+\bibitem{wang2014snf}
+Bo Wang, Aziz M. Mezlini, Feyyaz Demir, Marc Fiume, Zhuowen Tu, Michael Brudno, Benjamin Haibe-Kains, Anna Goldenberg.
+\emph{Similarity Network Fusion for Aggregating Data Types on a Genomic Scale}.
+Nature Methods, 11(3):333--337, 2014.
+
+\bibitem{shen2009icluster}
+Ronglai Shen, Adam B. Olshen, Marc Ladanyi.
+\emph{Integrative Clustering of Multiple Genomic Data Types Using a Joint Latent Variable Model with Application to Breast and Lung Cancer Subtype Analysis}.
+Bioinformatics, 25(22):2906--2912, 2009.
+
+\bibitem{meng2016}
+Chen Meng, Oana A. Zeleznik, Gerhard G. Thallinger, Bernhard Kuster, Amin M. Gholami, Aedín C. Culhane.
+\emph{Dimension Reduction Techniques for the Integrative Analysis of Multi-omics Data}.
+Briefings in Bioinformatics, 17(4):628--641, 2016.
+
+\bibitem{ritchie2015}
+Marylyn D. Ritchie, Emily R. Holzinger, Ruowang Li, Sarah A. Pendergrass, Dokyoon Kim.
+\emph{Methods of Integrating Data to Uncover Genotype--Phenotype Interactions}.
+Nature Reviews Genetics, 16:85--97, 2015.
+
+\bibitem{li2018views}
+Yifeng Li, Fang-Xiang Wu, Alioune Ngom.
+\emph{A Review on Machine Learning Principles for Multi-view Biological Data Integration}.
+Briefings in Bioinformatics, 19(2):325--340, 2018.
+
+\bibitem{zhang2012modules}
+Shihua Zhang, Chun-Chi Liu, Wenyuan Li, Hui Shen, Peter W. Laird, Xianghong Jasmine Zhou.
+\emph{Discovery of Multi-dimensional Modules by Integrative Analysis of Cancer Genomic Data}.
+Nucleic Acids Research, 40(19):9379--9391, 2012.
+
+\bibitem{zhang2011mirna}
+Shihua Zhang, Qingjiao Li, Juan Liu, Xianghong Jasmine Zhou.
+\emph{A Novel Computational Framework for Simultaneous Integration of Multiple Types of Genomic Data to Identify microRNA-Gene Regulatory Modules}.
+Bioinformatics, 27(13):i401--i409, 2011.
+
+\bibitem{zhang2005wgcna}
+Bin Zhang, Steve Horvath.
+\emph{A General Framework for Weighted Gene Co-Expression Network Analysis}.
+Statistical Applications in Genetics and Molecular Biology, 4(1):Article 17, 2005.
+
+\bibitem{langfelder2008}
+Peter Langfelder, Steve Horvath.
+\emph{WGCNA: an R Package for Weighted Correlation Network Analysis}.
+BMC Bioinformatics, 9:559, 2008.
+
+\bibitem{hawe2019}
+Jan S. Hawe, Fabian J. Theis, Matthias Heinig.
+\emph{Inferring Interaction Networks from Multi-omics Data}.
+Frontiers in Genetics, 10:535, 2019.
+
+% --- Subgraph-Suche, Graphindizes und Graphdatenbanken ---
+
+\bibitem{yan2005}
+Xifeng Yan, Philip S. Yu, Jiawei Han.
+\emph{Substructure Similarity Search in Graph Databases}.
+In: Proceedings of ACM SIGMOD, S.~766--777, 2005.
+
+\bibitem{shang2008}
+Haichuan Shang, Ying Zhang, Xuemin Lin, Jeffrey Xu Yu.
+\emph{Taming Verification Hardness: An Efficient Algorithm for Testing Subgraph Isomorphism}.
+Proceedings of the VLDB Endowment, 1(1):364--375, 2008.
+
+\bibitem{sun2012}
+Zhao Sun, Hongzhi Wang, Haixun Wang, Bin Shao, Jianzhong Li.
+\emph{Efficient Subgraph Matching on Billion Node Graphs}.
+Proceedings of the VLDB Endowment, 5(9):788--799, 2012.
+
+\bibitem{bi2016}
+Fei Bi, Lijun Chang, Xuemin Lin, Lu Qin, Wenjie Zhang.
+\emph{Efficient Subgraph Matching by Postponing Cartesian Products}.
+In: Proceedings of ACM SIGMOD, S.~1199--1214, 2016.
+
+\bibitem{sun2020}
+Shixuan Sun, Qiong Luo.
+\emph{In-Memory Subgraph Matching: An In-depth Study}.
+In: Proceedings of ACM SIGMOD, S.~1083--1098, 2020.
+
+\bibitem{zou2011gstore}
+Lei Zou, Jinghui Mo, Lei Chen, M. Tamer Özsu, Dongyan Zhao.
+\emph{gStore: Answering SPARQL Queries via Subgraph Matching}.
+Proceedings of the VLDB Endowment, 4(8):482--493, 2011.
+
+\bibitem{zhang2009gaddi}
+Shijie Zhang, Shirong Li, Jiong Yang.
+\emph{GADDI: Distance Index Based Subgraph Matching in Biological Networks}.
+In: Proceedings of EDBT, S.~192--203, 2009.
+
+\bibitem{zhang2010sapper}
+Shijie Zhang, Jiong Yang, Wei Jin.
+\emph{SAPPER: Subgraph Indexing and Approximate Matching in Large Graphs}.
+Proceedings of the VLDB Endowment, 3(1):1185--1194, 2010.
+
+\bibitem{fan2010}
+Wenfei Fan, Jianzhong Li, Shuai Ma, Nan Tang, Yinghui Wu, Yunpeng Wu.
+\emph{Graph Pattern Matching: From Intractable to Polynomial Time}.
+Proceedings of the VLDB Endowment, 3(1):264--275, 2010.
+
+\bibitem{tian2008}
+Yuanyuan Tian, Jignesh M. Patel.
+\emph{TALE: A Tool for Approximate Large Graph Matching}.
+In: Proceedings of IEEE ICDE, S.~963--972, 2008.
+
+\bibitem{zeng2009}
+Zhiping Zeng, Anthony K. H. Tung, Jianyong Wang, Jianhua Feng, Lizhu Zhou.
+\emph{Comparing Stars: On Approximating Graph Edit Distance}.
+Proceedings of the VLDB Endowment, 2(1):25--36, 2009.
+
+\bibitem{gao2010}
+Xinbo Gao, Bing Xiao, Dacheng Tao, Xuelong Li.
+\emph{A Survey of Graph Edit Distance}.
+Pattern Analysis and Applications, 13(1):113--129, 2010.
+
+\bibitem{conte2004}
+Donatello Conte, Pasquale Foggia, Carlo Sansone, Mario Vento.
+\emph{Thirty Years of Graph Matching in Pattern Recognition}.
+International Journal of Pattern Recognition and Artificial Intelligence, 18(3):265--298, 2004.
+
+\bibitem{lai2015}
+Longbin Lai, Lu Qin, Xuemin Lin, Lijun Chang.
+\emph{Scalable Subgraph Enumeration in MapReduce}.
+Proceedings of the VLDB Endowment, 8(10):974--985, 2015.
+
+\bibitem{zhu2016}
+Xiaowei Zhu, Wenguang Chen, Weimin Zheng, Xiaosong Ma.
+\emph{Gemini: A Computation-Centric Distributed Graph Processing System}.
+In: Proceedings of USENIX OSDI, S.~301--316, 2016.
+
+% --- Zeichenketten, Bitparallelität und Hashing ---
+
+\bibitem{myers1999}
+Gene Myers.
+\emph{A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming}.
+Journal of the ACM, 46(5):395--415, 1999.
+
+\bibitem{navarro2001}
+Gonzalo Navarro.
+\emph{A Guided Tour to Approximate String Matching}.
+ACM Computing Surveys, 33(1):31--88, 2001.
+
+\bibitem{gusfield1997}
+Dan Gusfield.
+\emph{Algorithms on Strings, Trees, and Sequences}.
+Cambridge University Press, 1997.
+
+\bibitem{karprabin1987}
+Richard M. Karp, Michael O. Rabin.
+\emph{Efficient Randomized Pattern-Matching Algorithms}.
+IBM Journal of Research and Development, 31(2):249--260, 1987.
+
+\bibitem{knuth1977}
+Donald E. Knuth, James H. Morris, Vaughan R. Pratt.
+\emph{Fast Pattern Matching in Strings}.
+SIAM Journal on Computing, 6(2):323--350, 1977.
 
 \end{thebibliography}
 

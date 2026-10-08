@@ -3,8 +3,8 @@
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-145%20passed-4c1)](tests/)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-brightgreen)](doc/coverage/index.html)
+[![Tests](https://img.shields.io/badge/Tests-309%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-95%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
 ## Inhaltsverzeichnis
@@ -115,6 +115,20 @@ Ein Multi-Omics-Netzwerk besteht aus mehreren Schichten (z. B. Transkriptom, Pro
 Die Suche kennt zwei Modi (`mode`): `coherent` (Standard) verlangt, dass alle Schichten der Query an derselben Position des Kandidaten übereinstimmen, `independent` erlaubt je Schicht eine eigene Position. `coherent` ist strenger; jeder kohärente Treffer ist auch ein unabhängiger Treffer. Ungültige Eingaben (doppelte Schichtnamen, nicht quadratische oder nicht binäre Matrizen, mehr als 63 Knoten, falsche Zahl an Labels) liefern `422`.
 
 Der Algorithmus wird **genauso wie der Subgraph Algorithmus über die `.env`** ausgewählt, es gibt keine neue Einstellung: Zeigt `CSUBGRAPH_LIB_PATH` auf eine `libsubgraphlib.a`, die `MultiOmics` enthält (csubgraph mit `MultiOmics.cpp`), läuft die Suche über die C++-Klasse `MultiOmics`. Dafür wird ein zweiter C-Wrapper (`src/backend/native/csubgraph_omics_shim.cpp`) mit derselben Bibliothek gelinkt und per `ctypes` im Worker-Prozess aufgerufen, gebaut und gecacht wie der Wrapper für den Einzelvergleich. Ist der Pfad nicht gesetzt oder die Bibliothek nicht nutzbar, steht der Grund als Warnung im Log und es läuft die Python-Implementierung (`src/backend/multiomics_python.py`). Eine ältere `libsubgraphlib.a` ohne `MultiOmics` betrifft nur Multi-Omics: der Einzelvergleich bleibt bei C++, Multi-Omics nutzt Python. Nach dem Aktualisieren von csubgraph muss die Bibliothek neu gebaut werden. Beim Start steht im Log, welcher Algorithmus für Multi-Omics gewählt wurde.
+
+#### Multi-Omics-Experiment
+
+Das Experiment `src/experiment_search_multiomics.py` vergleicht die Python- und die C++-Implementierung der Multi-Omics-Suche und besteht aus sechs Teilexperimenten: Korrektheit (ohne Datenbank, inklusive Invarianten), Mikro-Benchmark je Einzelvergleich (Schichtzahl, Knotenzahl, Modus), Ende-zu-Ende-Suche (Anfragengitter, Wiederholungen, Phasen, Speedup mit Konfidenzintervall, Trefferquote gegen bekannte Lösungen), Worker-Skalierung, Chunk-Größe und Datenbankgröße.
+
+```powershell
+python src/experiment_search_multiomics.py --quick      # kleiner Vorabtest
+python src/experiment_search_multiomics.py              # vollständig (mehrere Stunden)
+python src/experiment_search_multiomics.py --only correctness micro
+python src/experiment_search_multiomics.py --plot-from src/results/search_multiomics_<zeit>.json
+python src/experiment_search_multiomics.py --cleanup-only
+```
+
+Das Experiment legt synthetische Netzwerke mit dem Typ `multi_omics_experiment` in der Datenbank an (Zufallsnetzwerke und je eingebetteter Anfrage Netzwerke mit bekannter Lösung); andere Netzwerke bleiben unverändert. `--cleanup` entfernt die Experiment-Netzwerke am Ende, `--rebuild-data` erzeugt sie neu. Die Ergebnisse (JSON, PDF, Textbericht, LaTeX-Tabellen, `plot11_…` bis `plot26_…`) liegen unter `src/results/`. Das Skript ist in `pyproject.toml` unter `omit` eingetragen und zählt nicht zur Testabdeckung.
 
 Die Kandidaten werden nur nach der Knotenzahl (`node_count >= n_Query`) und dem Vorhandensein aller Query-Schichten vorgefiltert. Eine Vorauswahl nach der Kantenzahl gibt es hier bewusst nicht: Mit der Relation des Algorithmus kann ein Graph mit mehr Kanten in einem Graphen mit weniger Kanten enthalten sein (Beispiel in `tests/test_multiomics_python.py::test_edge_count_is_not_monotone`).
 
