@@ -3,8 +3,8 @@
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-309%20passed-4c1)](tests/)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-95%25-brightgreen)](doc/coverage/index.html)
+[![Tests](https://img.shields.io/badge/Tests-326%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-94%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
 ## Inhaltsverzeichnis
@@ -16,6 +16,7 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [1.000.000 Netzwerke](#1000000-netzwerke)
 - [Starten](#starten)
 - [Suchen](#suchen)
+- [Multi-Omics-API](#multi-omics-api)
 - [Testen](#testen)
 - [Erwerb](#erwerb)
 
@@ -366,6 +367,328 @@ INFO:     127.0.0.1:51928 - "GET /api/networks/718195 HTTP/1.1" 200 OK
 2026-10-07 10:48:02 [INFO] POST /api/networks/search - Found 4 matches
 INFO:     127.0.0.1:51928 - "POST /api/networks/search HTTP/1.1" 200 OK
 ```
+
+## Multi-Omics-API
+
+Biologische Prozesse spielen sich selten auf nur einer Ebene ab: Ein Gen wird transkribiert, sein Protein geht Wechselwirkungen ein, Metabolite werden umgesetzt. Die Multi-Omics-API bildet das ab. Ein **Multi-Omics-Netzwerk** besteht aus mehreren **Schichten** (z. B. `transcriptome`, `proteome`, `metabolome`) über **denselben Knoten**. Gesucht wird nicht nur nach der Struktur in einer Schicht, sondern nach einem Muster, das **gleichzeitig in mehreren Schichten** vorkommt.
+
+| | |
+|---|---|
+| **Basis-URL** | `http://127.0.0.1:8000` |
+| **Format** | JSON (`Content-Type: application/json`) |
+| **Interaktive Doku** | `/docs` (Swagger UI) und `/redoc`, jeweils unter dem Tag **Multi-Omics** |
+| **Endpoints** | 3 (anlegen, lesen, suchen) |
+| **Limit** | höchstens **63 Knoten** je Netzwerk, Schichten nur mit `0`/`1` |
+
+> Das Web-Frontend bietet derzeit nur die Suche nach einzelnen Netzwerken. Multi-Omics wird bisher ausschließlich über die REST-API genutzt.
+
+### Konzept
+
+```text
+          Knoten (gemeinsam für alle Schichten):  TP53   MDM2   CDKN1A
+                                                   0      1      2
+
+ Schicht "transcriptome"        Schicht "proteome"
+      0 ──▶ 1                        0 ◀──▶ 1
+      0 ──▶ 2
+```
+
+- **Knoten** sind für alle Schichten gleich. `node_labels` gibt ihnen Namen, die Reihenfolge entspricht den Zeilen und Spalten jeder Matrix.
+- **Jede Schicht** ist eine quadratische Adjazenzmatrix (`n × n`) mit den Werten `0` und `1`. Der Eintrag in Zeile `i`, Spalte `j` beschreibt die Kante zwischen Knoten `i` und `j`.
+- **Schichten werden über ihren Namen identifiziert.** Ein Netzwerk darf jeden Namen nur einmal verwenden.
+- **Gespeichert** wird in `biological_networks` (Metadaten), `omics_networks` (Knoten-Labels) und `omics_layers` (eine Zeile je Schicht, siehe [SQL-Struktur](#sql-strutkur) und `init-db.sql`). `edge_count` ist die Summe über alle Schichten.
+
+### Schnellstart in drei Schritten
+
+Server starten (siehe [Starten](#starten)) und dann in PowerShell:
+
+**1. Netzwerk anlegen**
+
+```powershell
+$body = @'
+{
+  "name": "TP53 Multi-Omics",
+  "organism": "Human",
+  "description": "Transkriptom- und Proteom-Schicht",
+  "node_labels": ["TP53", "MDM2", "CDKN1A"],
+  "layers": [
+    {"layer_name": "transcriptome", "adjacency_matrix": [[0,1,1],[0,0,0],[0,0,0]]},
+    {"layer_name": "proteome",      "adjacency_matrix": [[0,1,0],[1,0,0],[0,0,0]]}
+  ]
+}
+'@
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/multiomics `
+  -ContentType "application/json" -Body $body
+```
+
+**2. Es suchen**
+
+```powershell
+$query = @'
+{
+  "node_labels": ["A", "B"],
+  "layers": [
+    {"layer_name": "transcriptome", "adjacency_matrix": [[0,1],[0,0]]},
+    {"layer_name": "proteome",      "adjacency_matrix": [[0,1],[1,0]]}
+  ],
+  "mode": "coherent"
+}
+'@
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/multiomics/search `
+  -ContentType "application/json" -Body $query | ConvertTo-Json -Depth 6
+```
+
+**3. Ergebnis lesen**
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/multiomics/<network_id> | ConvertTo-Json -Depth 6
+```
+
+### Endpoints im Überblick
+
+| Methode | Pfad | Zweck | Erfolg | Fehler |
+|---|---|---|---|---|
+| `POST` | `/api/multiomics` | Netzwerk mit mehreren Schichten anlegen | `200` | `422`, `500` |
+| `GET` | `/api/multiomics/{network_id}` | Netzwerk mit allen Schichten lesen | `200` | `404`, `422`, `500` |
+| `POST` | `/api/multiomics/search` | Query-Schichten in allen passenden Netzwerken suchen | `200` | `422`, `500` |
+
+Alle Antworten haben dieselbe Hülle: `{"success": true, "data": ...}`.
+
+### POST /api/multiomics – Netzwerk anlegen
+
+**Request**
+
+| Feld | Typ | Pflicht | Beschreibung |
+|---|---|---|---|
+| `name` | string (1–255) | ja | Name des Netzwerks |
+| `organism` | string | ja | Organismus, z. B. `Human` |
+| `node_labels` | string[] | ja | Namen der Knoten, Anzahl = Kantenlänge der Matrizen |
+| `layers` | Objekt[] (mind. 1) | ja | Schichten, siehe unten |
+| `network_type` | string | nein | Standard: `multi_omics` |
+| `description` | string (max. 1000) | nein | Standard: leer |
+
+Jede Schicht in `layers`:
+
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| `layer_name` | string (1–100) | Eindeutiger Name der Schicht, z. B. `proteome` |
+| `adjacency_matrix` | int[][] | Quadratische `n × n`-Matrix mit `0`/`1`; `n` = Anzahl `node_labels` |
+
+**Response** (Beispiel, die ID ist von der Datenbank vergeben)
+
+```json
+{
+  "success": true,
+  "data": {
+    "network_id": 1000003,
+    "name": "TP53 Multi-Omics",
+    "network_type": "multi_omics",
+    "organism": "Human",
+    "description": "Transkriptom- und Proteom-Schicht",
+    "node_count": 3,
+    "edge_count": 4,
+    "layer_names": ["transcriptome", "proteome"]
+  }
+}
+```
+
+`edge_count` ist die Summe aller Kanten über alle Schichten (hier 2 + 2).
+
+### GET /api/multiomics/{network_id} – Netzwerk lesen
+
+Liefert Metadaten, Knoten-Labels und alle Schichten mit Adjazenzmatrix und Kantenzahl je Schicht. Eine unbekannte ID, auch die eines normalen Netzwerks ohne Schichten, liefert `404`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "network_id": 1000003,
+    "name": "TP53 Multi-Omics",
+    "network_type": "multi_omics",
+    "organism": "Human",
+    "description": "Transkriptom- und Proteom-Schicht",
+    "node_labels": ["TP53", "MDM2", "CDKN1A"],
+    "node_count": 3,
+    "edge_count": 4,
+    "layers": [
+      {"layer_name": "transcriptome", "adjacency_matrix": [[0,1,1],[0,0,0],[0,0,0]], "edge_count": 2},
+      {"layer_name": "proteome",      "adjacency_matrix": [[0,1,0],[1,0,0],[0,0,0]], "edge_count": 2}
+    ],
+    "created_at": "2026-10-08T11:54:30"
+  }
+}
+```
+
+### POST /api/multiomics/search – Netzwerke suchen
+
+Gesucht werden alle Netzwerke, in denen das Query-Muster **in jeder** genannten Schicht enthalten ist.
+
+**Request**
+
+| Feld | Typ | Pflicht | Beschreibung |
+|---|---|---|---|
+| `node_labels` | string[] | ja | Labels der Query-Knoten (Anzahl muss zur Matrixgröße passen) |
+| `layers` | Objekt[] (mind. 1) | ja | Query-Schichten (`layer_name`, `adjacency_matrix`) wie beim Anlegen |
+| `mode` | `coherent` \| `independent` | nein | Standard: `coherent`, siehe [Suchmodi](#die-zwei-suchmodi-coherent-und-independent) |
+
+**So läuft die Suche ab**
+
+```mermaid
+flowchart LR
+    Q[Query mit Schichten] --> V[Eingabe prüfen]
+    V --> F["Vorfilter in SQL:<br/>alle Schichtnamen vorhanden<br/>node_count ≥ Query-Knoten"]
+    F --> P["Parallel vergleichen<br/>(ProcessPool, Worker)"]
+    P --> M[Treffer mit match_type]
+```
+
+1. Die Eingabe wird validiert (siehe [Fehlerbehandlung](#fehlerbehandlung)).
+2. In der Datenbank bleiben nur Netzwerke übrig, die **alle** Schichtnamen der Query besitzen und mindestens so viele Knoten haben. Weitere, nicht abgefragte Schichten des Netzwerks sind erlaubt.
+3. Die Kandidaten werden in Chunks auf die Worker-Prozesse verteilt und mit dem Multi-Omics-Algorithmus verglichen (C++ oder Python, siehe [Multi-Omics-Algorithmus](#multi-omics)).
+4. Zurück kommen die Treffer, sortiert nach Knotenzahl (aufsteigend), dann nach `network_id`.
+
+Eine Vorauswahl nach der Kantenzahl gibt es bewusst nicht, weil nach der Relation des Algorithmus ein Graph mit mehr Kanten in einem Graphen mit weniger Kanten enthalten sein kann.
+
+**Beispiel**: Das Muster „Kante `0→1` im Transkriptom, Wechselwirkung `0↔1` im Proteom“ wird im oben angelegten Netzwerk gefunden.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "network_id": 1000003,
+      "name": "TP53 Multi-Omics",
+      "network_type": "multi_omics",
+      "organism": "Human",
+      "node_labels": ["TP53", "MDM2", "CDKN1A"],
+      "node_count": 3,
+      "edge_count": 4,
+      "layer_names": ["transcriptome", "proteome"],
+      "mode": "coherent",
+      "match_type": "subgraph"
+    }
+  ]
+}
+```
+
+**Felder eines Treffers**
+
+| Feld | Bedeutung |
+|---|---|
+| `network_id`, `name`, `network_type`, `organism` | Metadaten des gefundenen Netzwerks |
+| `node_labels`, `node_count` | Knoten des gefundenen Netzwerks |
+| `edge_count` | Kanten über **alle** Schichten des gefundenen Netzwerks (auch über nicht abgefragte) |
+| `layer_names` | Die verglichenen Schichten (die der Query) |
+| `mode` | Der verwendete Suchmodus |
+| `match_type` | `subgraph`: die Query ist im Netzwerk enthalten. `exact`: Query und Netzwerk sind gleich (gleiche Knotenzahl, gegenseitig enthalten) |
+
+Findet die Suche nichts, kommt `{"success": true, "data": []}`.
+
+### Die zwei Suchmodi: coherent und independent
+
+| Modus | Bedeutung | Wann nutzen? |
+|---|---|---|
+| `coherent` (Standard) | Alle Query-Schichten müssen **an derselben Position** des Netzwerks übereinstimmen | Das Muster soll wirklich **gemeinsam** auftreten, z. B. dieselben Gene regulieren auf Transkript- **und** Proteinebene |
+| `independent` | Jede Schicht darf **an einer eigenen Position** übereinstimmen | Nur wissen, ob jede Schicht für sich das Muster enthält |
+
+`coherent` ist strenger: Jeder kohärente Treffer ist auch ein unabhängiger Treffer, umgekehrt gilt das nicht.
+
+**Beispiel für den Unterschied.** Das Netzwerk „Kaskade“ hat 3 Knoten, im Transkriptom die Kanten `0→1` und `0→2`, im Proteom nur `0→2`:
+
+```json
+{
+  "name": "Kaskade", "organism": "Human",
+  "node_labels": ["A", "B", "C"],
+  "layers": [
+    {"layer_name": "transcriptome", "adjacency_matrix": [[0,1,1],[0,0,0],[0,0,0]]},
+    {"layer_name": "proteome",      "adjacency_matrix": [[0,0,1],[0,0,0],[0,0,0]]}
+  ]
+}
+```
+
+Die Query verlangt in beiden Schichten eine Kante `0→1`:
+
+```json
+{
+  "node_labels": ["X", "Y"],
+  "layers": [
+    {"layer_name": "transcriptome", "adjacency_matrix": [[0,1],[0,0]]},
+    {"layer_name": "proteome",      "adjacency_matrix": [[0,1],[0,0]]}
+  ],
+  "mode": "independent"
+}
+```
+
+- `"mode": "independent"` findet „Kaskade“: Im Transkriptom steckt die Kante an Position `0→1`, im Proteom an Position `0→2`.
+- `"mode": "coherent"` findet „Kaskade“ **nicht**: Es gibt keine Position, an der beide Schichten das Muster gleichzeitig zeigen.
+
+### Fehlerbehandlung
+
+Fehler kommen als `{"detail": "..."}` mit passendem Statuscode.
+
+| Status | Ursache | Beispiel für `detail` |
+|---|---|---|
+| `422` | Inhaltlich ungültige Eingabe | `layer names must be unique` |
+| `422` | Matrix nicht quadratisch oder Schichten verschieden groß | `layers: layer 0 must be a square 2x2 matrix` |
+| `422` | Matrix enthält andere Werte als `0`/`1` | `layers: layer 0 must contain only 0 and 1` |
+| `422` | Mehr als 63 Knoten | `layers has 64 nodes, at most 63 are supported` |
+| `422` | Anzahl `node_labels` passt nicht zur Matrixgröße | `number of node labels must equal the size of the adjacency matrices` |
+| `422` | Pflichtfeld fehlt, falscher Typ oder ungültiger `mode` | Standardmeldung von FastAPI/Pydantic (Liste mit `loc` und `msg`) |
+| `404` | Netzwerk existiert nicht (nur `GET`) | `Multi-omics network not found` |
+| `500` | Datenbank- oder Verarbeitungsfehler | Fehlertext, Details im Server-Log |
+
+### Netzwerke löschen
+
+Multi-Omics-Netzwerke stehen auch in `biological_networks` und werden mit dem normalen Endpoint entfernt. `ON DELETE CASCADE` löscht automatisch alle Schichten mit:
+
+```powershell
+Invoke-RestMethod -Method Delete http://127.0.0.1:8000/api/networks/<network_id>
+```
+
+### Python-Client
+
+```python
+import requests
+
+BASE = "http://127.0.0.1:8000"
+
+# 1. Netzwerk anlegen
+created = requests.post(f"{BASE}/api/multiomics", json={
+    "name": "TP53 Multi-Omics",
+    "organism": "Human",
+    "node_labels": ["TP53", "MDM2", "CDKN1A"],
+    "layers": [
+        {"layer_name": "transcriptome", "adjacency_matrix": [[0, 1, 1], [0, 0, 0], [0, 0, 0]]},
+        {"layer_name": "proteome",      "adjacency_matrix": [[0, 1, 0], [1, 0, 0], [0, 0, 0]]},
+    ],
+})
+created.raise_for_status()
+network_id = created.json()["data"]["network_id"]
+
+# 2. Suchen
+result = requests.post(f"{BASE}/api/multiomics/search", json={
+    "node_labels": ["A", "B"],
+    "layers": [
+        {"layer_name": "transcriptome", "adjacency_matrix": [[0, 1], [0, 0]]},
+        {"layer_name": "proteome",      "adjacency_matrix": [[0, 1], [1, 0]]},
+    ],
+    "mode": "coherent",
+})
+result.raise_for_status()
+for match in result.json()["data"]:
+    print(match["network_id"], match["name"], match["match_type"])
+
+# 3. Aufräumen
+requests.delete(f"{BASE}/api/networks/{network_id}")
+```
+
+### Hinweise und Grenzen
+
+- **Struktur statt Namen:** Der Vergleich arbeitet auf den Matrizen. Die `node_labels` der Query werden nur auf die richtige Anzahl geprüft, nicht mit den Labels des Netzwerks abgeglichen.
+- **Schichten nach Name:** Die Reihenfolge der Schichten in der Query spielt keine Rolle, aber jeder Query-Schichtname muss im Kandidaten vorkommen.
+- **Gleiche Schichtzahl:** Innerhalb einer Query müssen alle Schichten dieselbe Größe `n` haben.
+- **Maximal 63 Knoten:** Die Zeilenkomponenten je Schicht werden als `BIGINT[]` gespeichert.
+- **Suchdauer:** Sie wächst mit der Zahl der Kandidaten. Mit `CSUBGRAPH_LIB_PATH` läuft der Vergleich in C++ und deutlich schneller als in Python (Messungen siehe [Multi-Omics-Experiment](#multi-omics-experiment)).
+- **Bestehende Datenbank:** Die Tabellen `omics_networks` und `omics_layers` samt Index stehen in `init-db.sql` und lassen sich dort nachträglich ausführen.
 
 ## Testen
 

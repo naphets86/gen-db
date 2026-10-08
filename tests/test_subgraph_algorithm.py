@@ -244,7 +244,7 @@ class TestSubgraphEdgeCases:
 
         assert len(matches) == 1
         assert 'error' in matches[0]
-        assert 'Install with: pip install git+https://github.com/hjstephan86/subgraph.git' in matches[0]['message']
+        assert 'Install with: pip install git+https://github.com/naphets86/subgraph.git' in matches[0]['message']
 
     def test_subgraph_empty_database(self, clean_database, monkeypatch):
         monkeypatch.setattr('backend.crud.get_db_connection', lambda: clean_database)
