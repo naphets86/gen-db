@@ -17,8 +17,10 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [Server starten](#server-starten)
 - [Netzwerke suchen](#netzwerke-suchen)
 - [Multi-Omics-API](#multi-omics-api)
+- [Universelle Kodierung](#universelle-kodierung-universal-coding)
 - [Automatisch testen](#automatisch-testen)
-- [Erwerb](#erwerb)
+- [Wahrheit: Pyreverse](#wahrheit-pyreverse)
+- [Erwerb Gen-DB](#erwerb-gen-db)
 
 ## Voraussetzungen
 
@@ -134,6 +136,52 @@ Das Experiment legt synthetische Netzwerke mit dem Typ `multi_omics_experiment` 
 Die Kandidaten werden nur nach der Knotenzahl (`node_count >= n_Query`) und dem Vorhandensein aller Query-Schichten vorgefiltert. Eine Vorauswahl nach der Kantenzahl gibt es hier bewusst nicht: Mit der Relation des Algorithmus kann ein Graph mit mehr Kanten in einem Graphen mit weniger Kanten enthalten sein (Beispiel in `tests/test_multiomics_python.py::test_edge_count_is_not_monotone`).
 
 Die Datenbank-Tabellen für Multi-Omics stehen in `init-db.sql`; bei einer bestehenden Datenbank genügt es, die beiden neuen `CREATE TABLE`-Anweisungen und den Index auszuführen. Das Web-Frontend nutzt die Multi-Omics-Endpoints noch nicht.
+
+## Universelle Kodierung (Universal Coding)
+
+Die universelle Kodierung stellt eine gemeinsame, schemaabhängige Repräsentation für biologische Strukturen bereit. Der Kern ist nicht auf einfache Graphen oder Multi-Omics beschränkt: Knoten können Merkmale tragen; Relationen können verschiedene Namen, Stelligkeiten und Gewichtsstufen haben. Ein Schema legt diese Eigenschaften und damit die Reihenfolge der Kodierungsschichten fest. Änderungen an dieser Schichtanordnung benötigen eine neue Schema-Version.
+
+### Datenmodell und Kodierung
+
+- Ein `Schema` definiert Knotenmerkmale sowie Relationstypen mit Stelligkeit und Gewichtsstufen.
+- Eine `Structure` enthält die Entitäten, ihre Merkmale und die typisierten Relationstupel.
+- `SchemaEncoder` kodiert eine Struktur verlustfrei als Stapel von Schichten; jede Spalte repräsentiert entweder eine Entität oder, bei Relationen mit mehr als zwei Argumenten, ein Relationstupel. Die Schichten kodieren Existenz, Merkmale, binäre Relationen, Inzidenzen und Gewichte.
+- `decode` rekonstruiert die Struktur und prüft abschließend, dass die Eingabe tatsächlich im Bild der Kodierung liegt (`encode(decode(stapel)) == stapel`). Fehlerhafte oder schemafremde Stapel werden zurückgewiesen.
+- Die Koordinatenstrategie gehört zum Schema: `register` vergibt stabile globale Entitätskoordinaten; `local` verwendet die Position innerhalb einer Struktur. Abfragen lesen das Register nur und vergeben für unbekannte Entitäten keine dauerhaft verwendbaren Trefferkoordinaten.
+
+Der strukturunabhängige Vergleich arbeitet auf Mengenfolgen und kennt die Modi `independent` und `coherent`. Im unabhängigen Modus darf jede aktive Schicht ihr passendes Nachbarpaar an einer eigenen Position finden. Im kohärenten Modus müssen die aktiven Schichten dasselbe Positionspaar gemeinsam belegen. Aktive Schichten können explizit per Index oder Name gewählt werden; ohne Auswahl werden standardmäßig die nichtleeren Schichten der Query außer der Existenzschicht verwendet.
+
+### Speicherung und Suche
+
+Die universellen Tabellen in `init-db.sql` ergänzen `biological_networks`:
+
+| Tabelle | Zweck |
+|---|---|
+| `universal_schemas` | Versionierte Schema-Definitionen |
+| `entity_register` | Stabile globale Koordinaten für Entitäten im Register-Modus |
+| `universal_structures` | Kodierter Stapel und Entitätsreihenfolge je Netzwerk |
+| `universal_components` | Wörterbuch der Mengenkomponenten je Schema und Schicht |
+| `universal_pairs` | Invertierter Index zyklischer und linearer Komponentenpaare |
+
+Beim Einfügen erzeugt `crud.create_universal_structure` die Metadaten, den Stapel, die Komponenten und die Paarindexeinträge in einer Transaktion. `crud.search_universal` kodiert die Query und schneidet die passenden Posting-Listen über die aktiven Schichten. Für die Richtung „gespeicherte Struktur enthält Query“ werden zyklische Kandidatenpaare mit linearen Query-Paaren abgeglichen. Der Modus `independent` benötigt danach keinen Einzelvergleich; `coherent` verifiziert die Kandidaten zusätzlich mit der kohärenten Relation. Für diese Relation gibt es absichtlich keinen Ausschlussfilter anhand von Knoten- oder Kantenzahl.
+
+Für reine Mehrschicht-Adjazenzmatrizen gibt es `matrix_schema`, `encode_matrices` und `matrix_search_layers`. Jede Matrixschicht wird dabei als eigener zweistelliger Relationstyp kodiert. Das kann Multi-Omics-Strukturen im universellen Modell abbilden; es ist jedoch nicht mit der bestehenden Multi-Omics-Speicherung in `omics_networks` und `omics_layers` gleichzusetzen.
+
+### Aktueller Integrationsstand
+
+Die universelle Kodierung ist derzeit auf Kern-, Schema- und CRUD-Ebene implementiert und wird durch die Universal-Tests geprüft. Die normalen HTTP- und Frontend-Suchwege verwenden sie noch nicht:
+
+- `/api/networks/search` ruft `crud.search_subgraph` auf und sucht in `network_matrices` mit dem bisherigen Subgraph-Algorithmus.
+- `/api/multiomics/search` ruft `crud.search_multiomics` auf und sucht in `omics_networks` und `omics_layers` mit dem Multi-Omics-Algorithmus.
+- `crud.search_universal` ist vorhanden, aber `app.py` stellt dafür derzeit keinen HTTP-Endpunkt bereit. Das Frontend kann diesen Suchpfad daher ebenfalls nicht aufrufen.
+- `db-populate.py` erzeugt standardmäßig 1.000.000 klassische Einzelnetzwerke und 1.000 Multi-Omics-Datensätze. Die Befüllung schreibt jeweils sowohl in die bisherigen Tabellen als auch in `universal_structures`, `universal_components` und `universal_pairs`; sie verwendet dafür die versionierten Schemata `gen-db-populated-graph` und `gen-db-populated-multiomics`. Die Universal-Stapel und Paarlisten werden batchweise in derselben Transaktion wie die jeweiligen klassischen Zeilen geschrieben. Das Skript setzt voraus, dass `init-db.sql` einschließlich der universellen Tabellen ausgeführt wurde. Im Repository heißt das Skript `db-populate.py`; eine Datei `db-populate.sql` gibt es nicht.
+- Der Populate-Dual-Write erzwingt Universal Coding für diese erzeugten Datensätze, stellt aber keine automatische Migration vorhandener Netzwerke dar. Auch die normalen HTTP-Erstellungsrouten schreiben bislang nur ihre klassischen Tabellen; die HTTP-Suchrouten nutzen weiterhin die oben beschriebenen klassischen Pfade.
+
+Der Populate-Pfad schreibt bewusst in beide Repräsentationen, sodass die bestehenden Endpoints ihre bisherigen Daten weiterhin finden. Für eine vollständige Laufzeitintegration fehlen weiterhin passende HTTP-Schemas und Endpunkte, Universal-Suchaufrufe in den bestehenden Routen und eine Entscheidung, welche bereits vorhandenen Netzwerk- und Multi-Omics-Datensätze automatisch konvertiert werden.
+
+### Nächster Evaluierungsschritt
+
+Ein weiteres reines Backend-Geschwindigkeitsexperiment ist vor der Integration wenig aussagekräftig: Die vorhandenen Experimente vergleichen klassische und Multi-Omics-Backends, nicht die universelle Suche. Vorrangig sind ein durchgängiger Schreib- und Suchpfad sowie Korrektheitstests, die dieselben Strukturen über direkte Universal-CRUD-Aufrufe und die neue API abgleichen. Danach lohnt sich ein kontrollierter Vergleich auf derselben Datenbasis, einschließlich Indexaufbau, Speicherbedarf, Kandidatenzahl und Ende-zu-Ende-Laufzeit. Die bereits erfolgreichen Tests belegen die getesteten Kern- und Datenbankfälle, aber noch nicht die Nutzung durch Frontend oder bestehende Such-APIs.
 
 ## SQL-Strutkur
 
@@ -292,7 +340,7 @@ Der lokale Server wird mit einem kurzen Uvicorn-Befehl gestartet und anschließe
 
 Befehl:
 ```bash
-python -m uvicorn src.backend.app:app --reload
+python -m uvicorn src.backend.app:app
 ```
 
 URL:
@@ -303,25 +351,26 @@ http://127.0.0.1:8000
 
 Ausgabe:
 ```bash
-(venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app --reload
+(venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app
 INFO:     Will watch for changes in these directories: ['C:\\Users\\Internet\\Git\\gen-db']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [4128] using WatchFiles
-2026-10-07 10:46:19 [INFO] Configuration loaded (ENV=development)
-INFO:     Started server process [7012]
+INFO:     Started reloader process [6400] using WatchFiles
+2026-10-09 16:40:02 [INFO] Configuration loaded (ENV=development)
+INFO:     Started server process [13572]
 INFO:     Waiting for application startup.
-2026-10-07 10:46:19 [INFO] Starting Gen API - Environment: development
-2026-10-07 10:46:19 [INFO] Subgraph algorithm selected: csubgraph (C++)
-2026-10-07 10:46:19 [INFO] ProcessPoolExecutor ready for Subgraph Executor
+2026-10-09 16:40:03 [INFO] Starting Gen API - Environment: development
+2026-10-09 16:40:03 [INFO] Subgraph algorithm selected: csubgraph (C++)
+2026-10-09 16:40:03 [INFO] Multi-omics algorithm selected: csubgraph (C++)
+2026-10-09 16:40:03 [INFO] ProcessPoolExecutor ready for Subgraph Executor
 INFO:     Application startup complete.
-2026-10-07 10:46:52 [INFO] GET / - Serving frontend
-INFO:     127.0.0.1:51928 - "GET / HTTP/1.1" 200 OK
-2026-10-07 10:46:53 [INFO] GET /api/networks limit=33 random=True
-2026-10-07 10:46:53 [INFO] get_all_networks: limit=33 random_sample=True
-2026-10-07 10:46:58 [INFO] get_all_networks: Fetched 33 records
-2026-10-07 10:46:58 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57531 - "GET /favicon.ico HTTP/1.1" 204 No Content
+2026-10-09 16:40:15 [INFO] GET / - Serving frontend
+INFO:     127.0.0.1:53369 - "GET / HTTP/1.1" 200 OK
+2026-10-09 16:40:15 [INFO] GET /api/networks limit=33 random=True
+2026-10-09 16:40:15 [INFO] get_all_networks: limit=33 random_sample=True
+2026-10-09 16:40:21 [INFO] get_all_networks: Fetched 33 records
+2026-10-09 16:40:21 [INFO] GET /api/networks - Returned 33 networks
+INFO:     127.0.0.1:53369 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51969 - "GET /favicon.ico HTTP/1.1" 204 No Content
 ```
 
 ## Netzwerke suchen
@@ -330,42 +379,15 @@ Die Suche läuft über das Web-Frontend und ermöglicht den Vergleich biologisch
 
 Ausgabe:
 ```bash
-(venv) PS C:\Users\Internet\Git\gen-db> python -m uvicorn src.backend.app:app --reload
-INFO:     Will watch for changes in these directories: ['C:\\Users\\Internet\\Git\\gen-db']
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [4128] using WatchFiles
-2026-10-07 10:46:19 [INFO] Configuration loaded (ENV=development)
-INFO:     Started server process [7012]
-INFO:     Waiting for application startup.
-2026-10-07 10:46:19 [INFO] Starting Gen API - Environment: development
-2026-10-07 10:46:19 [INFO] Subgraph algorithm selected: csubgraph (C++)
-2026-10-07 10:46:19 [INFO] ProcessPoolExecutor ready for Subgraph Executor
-INFO:     Application startup complete.
-2026-10-07 10:46:52 [INFO] GET / - Serving frontend
-INFO:     127.0.0.1:51928 - "GET / HTTP/1.1" 200 OK
-2026-10-07 10:46:53 [INFO] GET /api/networks limit=33 random=True
-2026-10-07 10:46:53 [INFO] get_all_networks: limit=33 random_sample=True
-2026-10-07 10:46:58 [INFO] get_all_networks: Fetched 33 records
-2026-10-07 10:46:58 [INFO] GET /api/networks - Returned 33 networks
-INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57531 - "GET /favicon.ico HTTP/1.1" 204 No Content
-2026-10-07 10:47:03 [INFO] GET /api/networks/205670
-2026-10-07 10:47:03 [INFO] get_network_by_id: network_id=205670
-2026-10-07 10:47:03 [INFO] get_network_by_id: Found network 'gene_regulation_E._coli_205670'
-2026-10-07 10:47:03 [INFO] GET /api/networks/205670 - Found: gene_regulation_E._coli_205670
-INFO:     127.0.0.1:51928 - "GET /api/networks/205670 HTTP/1.1" 200 OK
-2026-10-07 10:47:07 [INFO] GET /api/networks/718195
-2026-10-07 10:47:07 [INFO] get_network_by_id: network_id=718195
-2026-10-07 10:47:08 [INFO] get_network_by_id: Found network 'protein_Homo_sapiens_718195'
-2026-10-07 10:47:08 [INFO] GET /api/networks/718195 - Found: protein_Homo_sapiens_718195
-INFO:     127.0.0.1:51928 - "GET /api/networks/718195 HTTP/1.1" 200 OK
-2026-10-07 10:47:10 [INFO] POST /api/networks/search - nodes=16
-2026-10-07 10:47:10 [INFO] search_subgraph: Starting search for subgraph with 16 nodes
-2026-10-07 10:47:45 [INFO] search_subgraph: 277270 candidates for query (n=16, e=58)
-2026-10-07 10:47:45 [INFO] ProcessPoolExecutor initialized with 2 workers
-2026-10-07 10:48:01 [INFO] search_subgraph: Found 4 matches
-2026-10-07 10:48:02 [INFO] POST /api/networks/search - Found 4 matches
-INFO:     127.0.0.1:51928 - "POST /api/networks/search HTTP/1.1" 200 OK
+...
+2026-10-09 16:40:36 [INFO] POST /api/networks/search - nodes=15
+2026-10-09 16:40:36 [INFO] search_subgraph: Starting search for subgraph with 15 nodes
+2026-10-09 16:41:03 [INFO] search_subgraph: 302116 candidates for query (n=15, e=63)
+2026-10-09 16:41:03 [INFO] ProcessPoolExecutor initialized with 2 workers
+2026-10-09 16:41:19 [INFO] search_subgraph: Found 2 matches
+2026-10-09 16:41:20 [INFO] POST /api/networks/search - Found 2 matches
+INFO:     127.0.0.1:51974 - "POST /api/networks/search HTTP/1.1" 200 OK
+...
 ```
 
 ## Multi-Omics-API
@@ -705,18 +727,9 @@ pytest
 ```
 Der Coverage-Report wird automatisch generiert nach `doc/coverage/index.html`.
 
-## Erwerb
+## Wahrheit: Pyreverse
 
-Der Preis für diese Software beträgt 3.745.000,00 EUR.
-
-### Zahlungsinformationen
-
-Name: Stephan Epp  
-IBAN: DE24 5003 1900 0012 5603 20
-BIC: BBVADEFFXXX
-
-
-## Outtake: Pyreverse & Graphviz
+Die Wahrheit steht immer im Code.
 
 ```bash
 (venv) PS C:\Users\Internet\Git\gen-db> pyreverse -o dot -p gen .\src\backend\
@@ -727,3 +740,13 @@ Analysed 13 modules with a total of 14 imports
 (venv) PS C:\Users\Internet\Git\gen-db> dot -Tpdf packages_gen_fixed.dot -o packages_gen_compact.pdf
 (venv) PS C:\Users\Internet\Git\gen-db> 
 ```
+
+## Erwerb Gen-DB
+
+Der Preis für diese Software beträgt 5.745.000,00 EUR.
+
+### Zahlungsinformationen
+
+Name: Stephan Epp  
+IBAN: DE24 5003 1900 0012 5603 20
+BIC: BBVADEFFXXX
