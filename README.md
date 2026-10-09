@@ -18,6 +18,7 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [Netzwerke suchen](#netzwerke-suchen)
 - [Multi-Omics-API](#multi-omics-api)
 - [Universelle Kodierung](#universelle-kodierung-universal-coding)
+  - [Universal-Experiment](#universal-experiment-indexsuche-gegen-einzelvergleiche)
 - [Automatisch testen](#automatisch-testen)
 - [Wahrheit: Pyreverse](#wahrheit-pyreverse)
 - [Erwerb Gen-DB](#erwerb-gen-db)
@@ -179,9 +180,70 @@ Die universelle Kodierung ist derzeit auf Kern-, Schema- und CRUD-Ebene implemen
 
 Der Populate-Pfad schreibt bewusst in beide Repräsentationen, sodass die bestehenden Endpoints ihre bisherigen Daten weiterhin finden. Für eine vollständige Laufzeitintegration fehlen weiterhin passende HTTP-Schemas und Endpunkte, Universal-Suchaufrufe in den bestehenden Routen und eine Entscheidung, welche bereits vorhandenen Netzwerk- und Multi-Omics-Datensätze automatisch konvertiert werden.
 
-### Nächster Evaluierungsschritt
+### Universal-Experiment: Indexsuche gegen Einzelvergleiche
 
-Ein weiteres reines Backend-Geschwindigkeitsexperiment ist vor der Integration wenig aussagekräftig: Die vorhandenen Experimente vergleichen klassische und Multi-Omics-Backends, nicht die universelle Suche. Vorrangig sind ein durchgängiger Schreib- und Suchpfad sowie Korrektheitstests, die dieselben Strukturen über direkte Universal-CRUD-Aufrufe und die neue API abgleichen. Danach lohnt sich ein kontrollierter Vergleich auf derselben Datenbasis, einschließlich Indexaufbau, Speicherbedarf, Kandidatenzahl und Ende-zu-Ende-Laufzeit. Die bereits erfolgreichen Tests belegen die getesteten Kern- und Datenbankfälle, aber noch nicht die Nutzung durch Frontend oder bestehende Such-APIs.
+Das Experiment `src/experiment_search_universal.py` ist der experimentelle Teil des Kapitels „Universelle Kodierung“ (`science/gen-db-universelle-kodierung.tex`, Abschnitt „Vorbereitung des zweiten Schritts“). Bei gleichen Anfragen und gleichen Daten vergleicht es die Suche über den SQL-Paarindex mit Einzelvergleichen in Python und mit der nativen Bibliothek. Aufbau und Auswertung folgen den Experimenten `experiment_search_workers.py`, `experiment_search_backends.py` und `experiment_search_multiomics.py`.
+
+**Verglichene Varianten** (`--backends` wählt aus; Referenz für Speedups ist `python`):
+
+| Variante | Beschreibung |
+|---|---|
+| `index` | `crud.search_universal`: Suche über den SQL-Paarindex (`universal_pairs`), ohne Prozess-Pool. Im Modus `independent` ist das Ergebnis der Schnitt der Trefferlisten, im Modus `coherent` werden die Kandidaten verifiziert. |
+| `python` | Einzelvergleiche mit `universal_core.compare_stacks` (`subgraph_executor.compare_many_universal`, Prozess-Pool): alle gespeicherten Stapel des Schemas mit ausreichender Länge werden geladen und einzeln verglichen, ohne Index. |
+| `mo_python` | bisherige Multi-Omics-Pipeline (`crud.search_multiomics`) mit `multiomics_python` (Vorfilter über Schichtnamen und Knotenzahl, Einzelvergleiche im Pool). |
+| `cpp` | dieselbe Pipeline mit der nativen Bibliothek (`MultiOmics` aus csubgraph über `CSUBGRAPH_LIB_PATH`). Es wird geprüft, dass kein stiller Fallback auf Python stattfindet. |
+
+**Teilexperimente** (`--only` wählt einzelne aus):
+
+| Teilexperiment | Inhalt |
+|---|---|
+| `correctness` | Korrektheit ohne Datenbank: `universal_core` gegen `multiomics_python` (und C++) auf Zufallspaaren sowie eingebetteten, identischen und umgekehrten Paaren, beide Modi, auch auf Schichtauswahlen. Invarianten: Symmetrie, kohärent ⇒ unabhängig, Monotonie unter Projektion. Zusätzlich im Speicher: `PairIndex` gegen Einzelvergleiche, auch nach Löschen und erneutem Einfügen. |
+| `micro` | Mikro-Benchmark ohne Datenbank: Zeit je Einzelvergleich nach Schichtzahl, Knotenzahl, Modus und Paartyp, dazu die Aufrufkosten. |
+| `memory` | Indexsuche im Speicher (`PairIndex`) gegen lineare Suche in Abhängigkeit von der Zahl gespeicherter Stapel; Aufbau- und Anfragezeit, Trefferlast, lineare Anpassung und Skalierungsexponent in N. |
+| `search` | Ende-zu-Ende-Suche mit allen Varianten: Anfragengitter (Schichtzahl × Knotenzahl × Typ), Modi, Wiederholungen, Phasen (Laden, Vergleichen, Rest), Kandidaten, Treffer, Speedup mit Konfidenzintervall, Übereinstimmung der Treffer aller Varianten, Trefferquote gegen bekannte Lösungen. |
+| `workers` | Skalierung mit 1, 2, 3, … Workern (nur Varianten mit Prozess-Pool). |
+| `chunksize` | Einfluss der Chunk-Größe der parallelen Einzelvergleiche. |
+| `dbsize` | Skalierung mit der Datenbankgröße, Exponent `t ~ N^b` je Variante, dazu Speicherbedarf und Einfügezeit des Index. |
+
+**Versuchsaufbau**
+
+- Alle Varianten arbeiten auf derselben Datenbasis: ein Matrixschema (`universal_schema.matrix_schema`, lokale Koordinaten) mit `--schema-layers` Schichten (Genom, Transkriptom, Proteom, Metabolom, Epigenom, Lipidom). Jedes Netzwerk wird gleichzeitig als universelle Struktur (`universal_structures`, Wörterbuch, Paarindex) und als Multi-Omics-Netzwerk (`omics_*`) abgelegt.
+- Die Daten sind synthetisch (Typ `universal_experiment`): Zufallsnetzwerke `uc_exp_rand_…` (Anzahl `--networks`, deterministisch aus `--seed`) und je eingebetteter Anfrage Netzwerke mit bekannter Lösung `uc_exp_plant_…` (identische Kopie, kohärent eingebettet, nur unabhängig eingebettet). Damit gibt es neben dem Variantenvergleich eine Ground Truth. Andere Netzwerke bleiben unverändert.
+- Treffer sind Anfrage ⊆ gespeicherte Struktur (`keep_B`, `equal_keep_A`, `equal_keep_B`). Anfragen haben mindestens vier Knoten.
+- Jede Messung wird `--reps` mal wiederholt; die Reihenfolge der Varianten wechselt je Wiederholung, die der Anfragen wird zufällig gemischt; Aufwärmanfragen werden verworfen. Gemessen wird die Wanduhrzeit der gesamten Suche.
+- Der API-Server darf während des Experiments nicht laufen. Fremde Multi-Omics-Netzwerke in der Datenbank verlangsamen die Varianten `mo_python` und `cpp` und werden im Bericht als Warnung vermerkt; vorher am besten `python src/experiment_search_multiomics.py --cleanup-only` ausführen.
+- Beim Löschen vieler Netzwerke legt das Skript kurzzeitig den Hilfsindex `idx_exp_universal_pairs_network` auf `universal_pairs(network_id)` an und entfernt ihn danach wieder.
+
+**Aufruf** (im Projektordner, damit die `.env` gefunden wird):
+
+```powershell
+python src/experiment_search_universal.py                  # vollständig, dauert Stunden
+python src/experiment_search_universal.py --quick          # kleiner Vorabtest
+python src/experiment_search_universal.py --only correctness micro memory
+python src/experiment_search_universal.py --backends index python --networks 5000
+python src/experiment_search_universal.py --csubgraph-lib-path C:\...\libsubgraphlib.a
+python src/experiment_search_universal.py --cleanup-only   # Experiment-Netzwerke und -Schemata löschen
+```
+
+Wichtige Optionen (Standardwerte): `--networks 20000`, `--schema-layers 5`, `--min-nodes 4`, `--max-nodes 40` (höchstens 63), `--workers 2`, `--worker-scaling 1 2 3 4`, `--reps 3`, `--warmup 1`, `--seed 42`, `--query-sizes 4 6 8 12 16 24 32`, `--query-layers 1 2 3 4`, `--plants 3`, `--results-dir src/results`. `--rebuild-data` erzeugt die Experiment-Netzwerke neu, `--cleanup` entfernt sie am Ende (sonst bleiben sie für einen schnellen Neustart in der Datenbank). `python src/experiment_search_universal.py --help` listet alle Optionen.
+
+**Ergebnisse** (`src/results/`, Dateiname mit Zeitstempel):
+
+- `search_universal_<zeit>.json`: Metadaten, Anfragen, alle Einzelmessungen, Auswertung (wird während der Messung regelmäßig gespeichert)
+- `search_universal_<zeit>.pdf`: Diagramme auf mehreren Seiten
+- `search_universal_<zeit>.txt`: Textbericht
+- `search_universal_<zeit>_tabellen.tex`: Tabellen für `gen-db.tex` (`\input{...}`)
+- `plot27_universal_…` bis `plot45_universal_…`: Einzeldiagramme für `\includegraphics`
+
+Aus einer vorhandenen JSON-Datei lassen sich PDF, Diagramme, Tabellen und Bericht ohne neuen Messlauf erzeugen:
+
+```powershell
+python src/experiment_search_universal.py --plot-from src/results/search_universal_<zeit>.json
+```
+
+Für die Diagramme wird `matplotlib` benötigt, für die Variante `cpp` eine `libsubgraphlib.a` mit `MultiOmics`. Das Skript ist in `pyproject.toml` unter `omit` eingetragen und zählt nicht zur Testabdeckung. Bisher liegt noch kein Messlauf dieses Experiments unter `src/results/`; die Aussagen der Sätze im Kapitel „Universelle Kodierung“ sind damit noch nicht durch Messwerte belegt.
+
+Die Experimente messen die Suche auf Funktionsebene (`crud.search_universal`). Die HTTP- und Frontend-Suchwege nutzen die universelle Suche weiterhin nicht (siehe [Aktueller Integrationsstand](#aktueller-integrationsstand)); vorrangig bleiben ein durchgängiger Schreib- und Suchpfad über die API sowie Korrektheitstests, die dieselben Strukturen über direkte Universal-CRUD-Aufrufe und die API abgleichen.
 
 ## SQL-Strutkur
 

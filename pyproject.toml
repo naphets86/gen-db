@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "biological-network-database"
-version = "6.0.0"
-description = "Biological Network Database mit PostgreSQL-Backend, FastAPI-basierter REST-API und Web-Frontend"
+version = "6.1.0"
+description = "Biological Network Database mit PostgreSQL-Backend, FastAPI-basierter REST-API, Web-Frontend, Multi-Omics-Suche und universeller Kodierung mit SQL-Paarindex"
 authors = [
     {name = "Stephan Epp"}
 ]
@@ -44,6 +44,7 @@ omit = [
     "src/experiment_search_workers.py",
     "src/experiment_search_backends.py",
     "src/experiment_search_multiomics.py",
+    "src/experiment_search_universal.py",
     "db-populate.py"
 ]
 
@@ -57,3 +58,11 @@ markers = [
     "integration: API or component integration test",
     "slow: computationally expensive test",
 ]
+
+# Experimente (nicht Teil der Testabdeckung), Aufruf aus dem Projektordner:
+#   python src/experiment_search_workers.py
+#   python src/experiment_search_backends.py
+#   python src/experiment_search_multiomics.py
+#   python src/experiment_search_universal.py
+# Abhängigkeiten der Experimente: numpy, matplotlib, psycopg2-binary (alle in [project.dependencies]);
+# optional libsubgraphlib.a (CSUBGRAPH_LIB_PATH) für die C++-Varianten.
