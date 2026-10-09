@@ -1,0 +1,31 @@
+digraph "packages_gen" {
+rankdir=BT
+charset="utf-8"
+"backend" [color="black", label=<backend>, shape="box", style="solid"];
+"backend.app" [color="black", label=<backend.app>, shape="box", style="solid"];
+"backend.config" [color="black", label=<backend.config>, shape="box", style="solid"];
+"backend.crud" [color="black", label=<backend.crud>, shape="box", style="solid"];
+"backend.csubgraph_native" [color="black", label=<backend.csubgraph_native>, shape="box", style="solid"];
+"backend.database" [color="black", label=<backend.database>, shape="box", style="solid"];
+"backend.models" [color="black", label=<backend.models>, shape="box", style="solid"];
+"backend.multiomics_python" [color="black", label=<backend.multiomics_python>, shape="box", style="solid"];
+"backend.schemas" [color="black", label=<backend.schemas>, shape="box", style="solid"];
+"backend.subgraph_executor" [color="black", label=<backend.subgraph_executor>, shape="box", style="solid"];
+"backend.universal_core" [color="black", label=<backend.universal_core>, shape="box", style="solid"];
+"backend.universal_index" [color="black", label=<backend.universal_index>, shape="box", style="solid"];
+"backend.universal_schema" [color="black", label=<backend.universal_schema>, shape="box", style="solid"];
+"backend.app" -> "backend.config" [arrowhead="open", arrowtail="none"];
+"backend.app" -> "backend.models" [arrowhead="open", arrowtail="none"];
+"backend.app" -> "backend.schemas" [arrowhead="open", arrowtail="none"];
+"backend.app" -> "backend.subgraph_executor" [arrowhead="open", arrowtail="none"];
+"backend.crud" -> "backend.database" [arrowhead="open", arrowtail="none"];
+"backend.crud" -> "backend.models" [arrowhead="open", arrowtail="none"];
+"backend.crud" -> "backend.subgraph_executor" [arrowhead="open", arrowtail="none"];
+"backend.crud" -> "backend.universal_core" [arrowhead="open", arrowtail="none"];
+"backend.crud" -> "backend.universal_schema" [arrowhead="open", arrowtail="none"];
+"backend.database" -> "backend.config" [arrowhead="open", arrowtail="none"];
+"backend.models" -> "backend.universal_schema" [arrowhead="open", arrowtail="none"];
+"backend.subgraph_executor" -> "backend.config" [arrowhead="open", arrowtail="none"];
+"backend.universal_index" -> "backend.universal_core" [arrowhead="open", arrowtail="none"];
+"backend.universal_schema" -> "backend.universal_core" [arrowhead="open", arrowtail="none"];
+}

@@ -714,3 +714,16 @@ Der Preis für diese Software beträgt 3.745.000,00 EUR.
 Name: Stephan Epp  
 IBAN: DE24 5003 1900 0012 5603 20
 BIC: BBVADEFFXXX
+
+
+## Outtake: Pyreverse & Graphviz
+
+```bash
+(venv) PS C:\Users\Internet\Git\gen-db> pyreverse -o dot -p gen .\src\backend\
+Analysed 13 modules with a total of 14 imports
+(venv) PS C:\Users\Internet\Git\gen-db> (Get-Content classes_gen.dot) -replace 'rankdir=LR', 'rankdir=TB' -replace 'charset="utf-8"', 'charset="utf-8"; rankdir=TB; nodesep=0.2; ranksep=0.4;' | Set-Content classes_gen_fixed.dot
+(venv) PS C:\Users\Internet\Git\gen-db> dot -Tpdf classes_gen_fixed.dot -o classes_gen_compact.pdf
+(venv) PS C:\Users\Internet\Git\gen-db> (Get-Content packages_gen.dot) -replace 'rankdir=LR', 'rankdir=TB' -replace 'charset="utf-8"', 'charset="utf-8"; rankdir=TB; nodesep=0.3; ranksep=0.5;' | Set-Content packages_gen_fixed.dot
+(venv) PS C:\Users\Internet\Git\gen-db> dot -Tpdf packages_gen_fixed.dot -o packages_gen_compact.pdf
+(venv) PS C:\Users\Internet\Git\gen-db> 
+```
