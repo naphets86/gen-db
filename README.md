@@ -3,8 +3,8 @@
 Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-326%20passed-4c1)](tests/)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-94%25-brightgreen)](doc/coverage/index.html)
+[![Tests](https://img.shields.io/badge/Tests-727%20passed-4c1)](tests/)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-97%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
 ## Inhaltsverzeichnis
@@ -694,6 +694,12 @@ requests.delete(f"{BASE}/api/networks/{network_id}")
 
 Die automatisierten Tests laufen gegen eine separate Test-Datenbank, damit die Validierung der Funktionalität ohne Einfluss auf die lokale Entwicklungsumgebung erfolgt.
 
+Den `CSUBGRAPH_LIB_PATH` setzen:
+```bash
+$env:CSUBGRAPH_LIB_PATH="C:\Users\Internet\Git\csubgraph\build\libsubgraphlib.a"
+```
+
+Automatische Tests ausführen:
 ```bash
 pytest
 ```

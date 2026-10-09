@@ -362,11 +362,12 @@ class TestAgreementWithPairwiseComparison:
     LAYER_COUNT = 2
 
     @pytest.fixture(scope="class")
-    def database(self):
+    @classmethod
+    def database(cls):
         rng = random.Random(7)
-        index = PairIndex(self.LAYER_COUNT)
+        index = PairIndex(cls.LAYER_COUNT)
         for number in range(60):
-            index.add(f"k{number}", _random_stack(rng, self.LAYER_COUNT, rng.randint(2, 5)))
+            index.add(f"k{number}", _random_stack(rng, cls.LAYER_COUNT, rng.randint(2, 5)))
         return index
 
     @pytest.mark.parametrize("mode", MODES)
