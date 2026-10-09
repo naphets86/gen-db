@@ -36,6 +36,15 @@ CSUBGRAPH_LIB_PATH und einen zweiten Wrapper), sonst die Python-Implementierung 
 noch nicht, bleibt der Einzelvergleich bei C++ und nur Multi-Omics nutzt Python (mit Warnung).
 Die Rückgabewerte sind dieselben wie oben (A = Query, B = Kandidat).
 
+UNIVERSELLE KODIERUNG:
+``execute_universal_comparison`` und ``compare_many_universal`` vergleichen beliebige Stapel von
+Mengenfolgen (``universal_core``) mit denselben Rückgabewerten. Sie laufen immer in Python (der
+Kern kennt keine 64-Bit-Grenze); die C++-Bibliothek bleibt ein Beschleuniger für Stapel mit
+lokalen Koordinaten bis 63 Knoten, die über ``execute_multiomics_comparison`` laufen. Die
+Indexsuche (``universal_index``, ``crud.search_universal``) braucht den Prozess-Pool nicht: sie
+vergleicht nicht, sondern liest Trefferlisten. Der Pool dient hier als Referenz für
+Einzelvergleiche.
+
 KONFIGURATION VIA PYDANTIC:
 - Anzahl Worker über Config.subgraph_max_workers (SUBGRAPH_MAX_WORKERS)
 - Pfad zu libsubgraphlib.a über Config.csubgraph_lib_path (CSUBGRAPH_LIB_PATH)
@@ -50,7 +59,7 @@ from typing import List, Optional, Sequence, Tuple
 import numpy as np
 from subgraph import Subgraph
 
-from . import csubgraph_native, multiomics_python
+from . import csubgraph_native, multiomics_python, universal_core
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +250,18 @@ def _compare_layers_with_python(stack_a: np.ndarray, stack_b: np.ndarray, mode: 
     return _map_layered_result(result, stack_a, stack_b)
 
 
+def _map_universal_result(result: str, stack_a: universal_core.Stack, stack_b: universal_core.Stack,
+                          layers: Optional[Sequence[int]]) -> ComparisonResult:
+    """Setzt ein Ergebnis von universal_core in die Gen-DB-Werte um (wie _map_layered_result)."""
+    if result == "IDENTICAL":
+        # Wie beim Einzelvergleich: A behalten, wenn A mindestens so viel Belegung hat
+        keep_a = stack_a.project(layers).occupancy >= stack_b.project(layers).occupancy
+        return ("equal_keep_A" if keep_a else "equal_keep_B"), None
+    if result in _CSUBGRAPH_RESULTS:
+        return _CSUBGRAPH_RESULTS[result], None
+    return None, f"universal comparison returned unknown result: {result!r}"
+
+
 def get_executor(max_workers: Optional[int] = None) -> ProcessPoolExecutor:
     """
     Gibt globalen ProcessPoolExecutor zurück (Singleton).
@@ -352,6 +373,76 @@ def execute_multiomics_comparison(layers_a: LayerStack, layers_b: LayerStack,
 
     except Exception as e:
         return None, f"Unexpected error: {str(e)}"
+
+
+def execute_universal_comparison(stack_a: universal_core.Stack, stack_b: universal_core.Stack,
+                                 mode: str = "coherent",
+                                 layers: Optional[Sequence[int]] = None) -> ComparisonResult:
+    """
+    Vergleicht zwei Stapel der universellen Kodierung mit ``universal_core.compare_stacks``.
+
+    Wird im Worker-Prozess ausgeführt. Fehler werden nicht geworfen, sondern als Fehlertext
+    zurückgegeben.
+
+    Args:
+        stack_a: Stapel der Query
+        stack_b: Stapel des Kandidaten (gleiche Schichtzahl)
+        mode: ``"coherent"`` oder ``"independent"``
+        layers: aktive Schichten (``None`` = alle)
+
+    Returns:
+        Tuple (decision, error_message). Bei Erfolg ist error_message None.
+    """
+    try:
+        result = universal_core.compare_stacks(stack_a, stack_b, mode, layers)
+        return _map_universal_result(result, stack_a, stack_b, layers)
+    except Exception as e:
+        return None, f"Unexpected error: {str(e)}"
+
+
+def _compare_universal_to_query(query: universal_core.Stack, candidate: universal_core.Stack,
+                                mode: str, layers: Optional[Sequence[int]]) -> ComparisonResult:
+    """Hilfsfunktion für Batch-Verarbeitung (muss auf Modulebene liegen)."""
+    return execute_universal_comparison(query, candidate, mode, layers)
+
+
+def compare_many_universal(
+    query: universal_core.Stack,
+    candidates: Sequence[universal_core.Stack],
+    mode: str = "coherent",
+    layers: Optional[Sequence[int]] = None,
+    chunksize: int = DEFAULT_CHUNKSIZE,
+) -> List[ComparisonResult]:
+    """
+    Vergleicht eine Query mit vielen Stapeln parallel (Referenz für die Indexsuche).
+
+    Verteilt die Kandidaten wie ``compare_many`` in Chunks auf alle Worker. Die Reihenfolge
+    der Ergebnisse entspricht der Reihenfolge von ``candidates``.
+
+    Args:
+        query: Stapel der Query
+        candidates: Stapel der Kandidaten (gleiche Schichtzahl wie die Query)
+        mode: ``"coherent"`` oder ``"independent"``
+        layers: aktive Schichten (``None`` = alle)
+        chunksize: Anzahl Vergleiche pro Task
+
+    Returns:
+        Liste von (decision, error_message) pro Kandidat
+    """
+    if not candidates:
+        return []
+
+    executor = get_executor()
+    return list(
+        executor.map(
+            _compare_universal_to_query,
+            [query] * len(candidates),
+            candidates,
+            [mode] * len(candidates),
+            [layers] * len(candidates),
+            chunksize=max(1, chunksize),
+        )
+    )
 
 
 def _compare_multiomics_to_query(query: LayerStack, candidate: LayerStack, mode: str) -> ComparisonResult:

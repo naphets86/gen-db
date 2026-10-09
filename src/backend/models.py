@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from datetime import datetime
 
+from .universal_schema import Structure
+
 
 @dataclass
 class Network:
@@ -231,6 +233,111 @@ class MultiOmicsSearchMatch:
     edge_count: int
     node_labels: List[str]
     layer_names: List[str]
+    mode: str
+    match_type: str
+    subgraph_result: str
+
+
+# ============================================================================
+# Universelle Kodierung (beliebige Strukturen eines Schemas)
+# ============================================================================
+
+@dataclass
+class UniversalStructureCreationResult:
+    """
+    Resultat nach erfolgreicher Erstellung einer universell kodierten Struktur
+
+    Attributes:
+        network_id: ID des neu erstellten Netzwerks
+        name: Name
+        network_type: Typ
+        organism: Organismus
+        description: Beschreibung
+        schema_name: Name des Schemas
+        schema_version: Version des Schemas
+        node_count: Anzahl Entitäten |V|
+        edge_count: Anzahl aller Relationstupel
+        length: Länge des kodierten Stapels (Entitäts- plus Relationsspalten)
+        signature_hash: SHA-256 Hash des kodierten Stapels
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    schema_name: str
+    schema_version: int
+    node_count: int
+    edge_count: int
+    length: int
+    signature_hash: str
+
+
+@dataclass
+class UniversalStructureRecord:
+    """
+    Domain Model einer universell kodierten Struktur
+
+    Attributes:
+        network_id: Eindeutige Netzwerk-ID (gleiche ID wie in biological_networks)
+        name: Name des Netzwerks
+        network_type: Typ des Netzwerks
+        organism: Organismus
+        description: Beschreibung
+        schema_name: Name des Schemas
+        schema_version: Version des Schemas
+        node_count: Anzahl Entitäten |V|
+        edge_count: Anzahl aller Relationstupel
+        length: Länge des kodierten Stapels
+        entity_names: Entitäten in Spaltenreihenfolge
+        structure: die aus dem Stapel zurückgewonnene Struktur
+        signature_hash: SHA-256 Hash des kodierten Stapels
+        created_at: Erstell-Zeitstempel
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    schema_name: str
+    schema_version: int
+    node_count: int
+    edge_count: int
+    length: int
+    entity_names: List[str]
+    structure: Structure
+    signature_hash: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+@dataclass
+class UniversalSearchMatch:
+    """
+    Suchresultat für die Indexsuche über universell kodierte Strukturen
+
+    Attributes:
+        network_id: Gefundenes Netzwerk
+        name: Name des Netzwerks
+        network_type: Typ des Netzwerks
+        organism: Organismus
+        node_count: Anzahl Entitäten |V|
+        edge_count: Anzahl aller Relationstupel
+        schema_name: Name des Schemas
+        schema_version: Version des Schemas
+        layers: Namen der aktiven Schichten der Anfrage
+        mode: Verwendeter Modus ('coherent' oder 'independent')
+        match_type: Art des Match ('exact' = gegenseitig enthalten, 'subgraph' = Query ist enthalten)
+        subgraph_result: Rohes Ergebnis ('keep_B', 'equal_keep_A', 'equal_keep_B')
+    """
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    node_count: int
+    edge_count: int
+    schema_name: str
+    schema_version: int
+    layers: List[str]
     mode: str
     match_type: str
     subgraph_result: str

@@ -45,6 +45,65 @@ CREATE TABLE IF NOT EXISTS omics_layers (
 
 CREATE INDEX IF NOT EXISTS idx_omics_layers_name ON omics_layers(layer_name);
 
+-- Universelle Kodierung: beliebige Strukturen eines Schemas werden als Stapel von Mengenfolgen
+-- gespeichert und über einen invertierten Paarindex gesucht (siehe science/gen-db-universelle-kodierung.tex).
+-- Die Metadaten stehen wie bei jedem Netzwerk in biological_networks (node_count = Entitäten,
+-- edge_count = Summe aller Relationstupel); Löschen dort entfernt über CASCADE auch Stapel und Indexeinträge.
+
+-- Entitätsregister kappa: jede Entität erhält beim ersten Auftreten eine neue, größere Koordinate.
+CREATE TABLE IF NOT EXISTS entity_register (
+    coordinate BIGSERIAL PRIMARY KEY,
+    entity TEXT NOT NULL UNIQUE
+);
+
+-- Schemata (Knotenmerkmale, Relationstypen, Koordinatensystem), versioniert.
+CREATE TABLE IF NOT EXISTS universal_schemas (
+    schema_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    version INTEGER NOT NULL CHECK (version >= 1),
+    layer_count INTEGER NOT NULL CHECK (layer_count >= 1),
+    definition JSONB NOT NULL,
+    UNIQUE (name, version)
+);
+
+-- Der kodierte Stapel je Struktur: layers = Schichten -> Komponenten -> sortierte Koordinaten;
+-- entity_names = Entitäten in Spaltenreihenfolge (für die Rückgewinnung der Struktur).
+CREATE TABLE IF NOT EXISTS universal_structures (
+    network_id INTEGER PRIMARY KEY REFERENCES biological_networks(network_id) ON DELETE CASCADE,
+    schema_id INTEGER NOT NULL REFERENCES universal_schemas(schema_id),
+    length INTEGER NOT NULL CHECK (length >= 0),
+    entity_names TEXT[] NOT NULL,
+    layers JSONB NOT NULL,
+    signature_hash VARCHAR(64)
+);
+
+CREATE INDEX IF NOT EXISTS idx_universal_structures_schema ON universal_structures(schema_id);
+
+-- Wörterbuch iota_l: jede vorkommende Komponente einer Schicht erhält eine Zahl.
+-- members_hash ist der SHA-256 der sortierten Elemente (kurzer, eindeutiger Schlüssel).
+CREATE TABLE IF NOT EXISTS universal_components (
+    component_id BIGSERIAL PRIMARY KEY,
+    schema_id INTEGER NOT NULL REFERENCES universal_schemas(schema_id) ON DELETE CASCADE,
+    layer_index INTEGER NOT NULL,
+    members_hash VARCHAR(64) NOT NULL,
+    members BIGINT[] NOT NULL,
+    UNIQUE (schema_id, layer_index, members_hash)
+);
+
+-- Paarindex: je Schicht und Art (cyc = zyklisch, lin = linear) zu jedem Komponentenpaar die
+-- Netzwerke, in denen es vorkommt, mit der Länge des Stapels. Der Primärschlüssel ist der
+-- B-Baum über Schema, Schicht, Art und Paar, über den die Suche liest.
+CREATE TABLE IF NOT EXISTS universal_pairs (
+    schema_id INTEGER NOT NULL,
+    layer_index INTEGER NOT NULL,
+    kind CHAR(3) NOT NULL CHECK (kind IN ('cyc', 'lin')),
+    first_id BIGINT NOT NULL,
+    second_id BIGINT NOT NULL,
+    network_id INTEGER NOT NULL REFERENCES biological_networks(network_id) ON DELETE CASCADE,
+    length INTEGER NOT NULL,
+    PRIMARY KEY (schema_id, layer_index, kind, first_id, second_id, network_id)
+);
+
 INSERT INTO biological_networks (name, network_type, organism, description, node_count, edge_count)
 VALUES
     ('Glycolysis', 'metabolic', 'Homo sapiens', 'Glucose breakdown pathway', 7, 6),

@@ -10,19 +10,29 @@ Dependencies:
 - Database (Verbindung)
 - Subgraph Executor (Subgraph Algorithmus; C++ über CSUBGRAPH_LIB_PATH, sonst Python-Dependency)
 - Multi-Omics (Mehrschicht-Netzwerke, siehe multiomics_python und MultiOmics in csubgraph)
+- Universelle Kodierung (beliebige Strukturen eines Schemas als Stapel, Suche über den
+  invertierten Paarindex, siehe universal_core, universal_schema und universal_index)
 """
 
+import json
 import logging
 import hashlib
 import numpy as np
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 from .database import get_db_connection, get_db_cursor
 from .subgraph_executor import compare_many, compare_many_multiomics
 from .models import (
     Network, NetworkSummary, SearchMatch, NetworkCreationResult,
     OmicsLayer, MultiOmicsNetwork, MultiOmicsCreationResult, MultiOmicsSearchMatch,
+    UniversalStructureCreationResult, UniversalStructureRecord, UniversalSearchMatch,
 )
 from . import multiomics_python
+from .universal_core import MODES as UNIVERSAL_MODES
+from .universal_core import Stack, compare_stacks, cyclic_pairs, linear_pairs
+from .universal_schema import (
+    LocalCoordinates, QueryCoordinates, RegisterCoordinates, Schema, SchemaEncoder, Structure,
+    resolve_active_layers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -609,4 +619,450 @@ def search_multiomics(
             logger.warning(f"search_multiomics: {failed} of {len(candidate_list)} comparisons failed")
 
         logger.info(f"search_multiomics: Found {len(matches)} matches")
+        return matches
+
+
+# ============================================================================
+# Universelle Kodierung (beliebige Strukturen eines Schemas, Indexsuche)
+# ============================================================================
+
+# Übersetzung der Ergebnisse von universal_core.compare_stacks (A = Query, B = gespeicherte
+# Struktur) in die Werte der übrigen Suchen; nur diese gelten als Treffer.
+UNIVERSAL_MATCH_RESULTS = {
+    'KEEP_B': 'keep_B',
+    'EQUAL_KEEP_A': 'equal_keep_A',
+    'EQUAL_KEEP_B': 'equal_keep_B',
+    'IDENTICAL': 'equal_keep_A',
+}
+
+
+def component_hash(component: Iterable[int]) -> str:
+    """Eindeutiger kurzer Schlüssel einer Komponente (SHA-256 der sortierten Elemente)."""
+    return hashlib.sha256(",".join(str(member) for member in sorted(component)).encode()).hexdigest()
+
+
+def stack_signature_hash(stack: Stack) -> str:
+    """SHA-256 Hash des kodierten Stapels (stabil, unabhängig von der Mengenreihenfolge)."""
+    return hashlib.sha256(json.dumps(stack.to_lists(), separators=(",", ":")).encode()).hexdigest()
+
+
+def register_universal_schema(schema: Schema) -> int:
+    """
+    Legt ein Schema an (idempotent) und gibt seine ID zurück.
+
+    Ist unter Name und Version bereits ein *anderes* Schema gespeichert, wird abgelehnt: Die
+    Schichtanordnung eines Schemas ändert sich nie, Änderungen bekommen eine neue Version.
+
+    Raises:
+        ValueError: Name und Version sind mit abweichender Definition bereits vergeben
+        Exception: Bei Datenbankfehler
+    """
+    with get_db_connection() as conn:
+        cursor = get_db_cursor(conn)
+        cursor.execute("""
+            SELECT schema_id, definition FROM universal_schemas
+            WHERE name = %s AND version = %s
+        """, (schema.name, schema.version))
+        row = cursor.fetchone()
+        if row:
+            if Schema.from_dict(row['definition']) != schema:
+                raise ValueError(
+                    f"schema {schema.name!r} version {schema.version} is already registered "
+                    "with a different definition"
+                )
+            return row['schema_id']
+
+        cursor.execute("""
+            INSERT INTO universal_schemas (name, version, layer_count, definition)
+            VALUES (%s, %s, %s, %s::jsonb)
+            RETURNING schema_id
+        """, (schema.name, schema.version, schema.layer_count, json.dumps(schema.to_dict())))
+        schema_id = cursor.fetchone()['schema_id']
+        logger.info(
+            f"register_universal_schema: schema_id={schema_id} name={schema.name} "
+            f"version={schema.version} layers={schema.layer_count}"
+        )
+        return schema_id
+
+
+def get_universal_schema(name: str, version: Optional[int] = None) -> Optional[Schema]:
+    """
+    Holt ein Schema (ohne Version die neueste).
+
+    Returns:
+        Schema oder None, wenn nicht vorhanden
+    """
+    with get_db_connection() as conn:
+        cursor = get_db_cursor(conn)
+        loaded = _load_schema(cursor, name, version, required=False)
+        return loaded[1] if loaded else None
+
+
+def _load_schema(cursor, name: str, version: Optional[int],
+                 required: bool = True) -> Optional[Tuple[int, Schema]]:
+    """Lädt (schema_id, Schema); ohne Version die neueste. Fehlt es: ValueError oder None."""
+    if version is None:
+        cursor.execute("""
+            SELECT schema_id, definition FROM universal_schemas
+            WHERE name = %s ORDER BY version DESC LIMIT 1
+        """, (name,))
+    else:
+        cursor.execute("""
+            SELECT schema_id, definition FROM universal_schemas
+            WHERE name = %s AND version = %s
+        """, (name, version))
+    row = cursor.fetchone()
+    if not row:
+        if required:
+            raise ValueError(f"unknown schema {name!r}" + (f" version {version}" if version else ""))
+        return None
+    return row['schema_id'], Schema.from_dict(row['definition'])
+
+
+def _register_entities(cursor, names: Sequence[str]) -> Dict[str, int]:
+    """Vergibt Koordinaten für neue Entitäten (bestehende bleiben unverändert) und liefert alle."""
+    unique = list(dict.fromkeys(names))
+    if not unique:
+        return {}
+    cursor.execute("""
+        INSERT INTO entity_register (entity)
+        SELECT unnest(%s::text[])
+        ON CONFLICT (entity) DO NOTHING
+    """, (unique,))
+    return _lookup_entities(cursor, unique)
+
+
+def _lookup_entities(cursor, names: Sequence[str]) -> Dict[str, int]:
+    """Koordinaten der bereits registrierten Entitäten (vergibt nichts)."""
+    unique = list(dict.fromkeys(names))
+    if not unique:
+        return {}
+    cursor.execute("""
+        SELECT entity, coordinate FROM entity_register WHERE entity = ANY(%s)
+    """, (unique,))
+    return {row['entity']: row['coordinate'] for row in cursor.fetchall()}
+
+
+def _next_free_coordinate(cursor) -> int:
+    """Kleinste Koordinate oberhalb aller vergebenen."""
+    cursor.execute("SELECT COALESCE(MAX(coordinate), -1) + 1 AS next_free FROM entity_register")
+    return cursor.fetchone()['next_free']
+
+
+def _encoder(cursor, schema: Schema, structure: Structure, write: bool) -> SchemaEncoder:
+    """Kodierer mit dem Koordinatensystem des Schemas (Schreiben vergibt, Suchen liest nur)."""
+    names = list(structure.entities)
+    if schema.coordinates == "local":
+        return SchemaEncoder(schema, LocalCoordinates(names))
+    if write:
+        return SchemaEncoder(schema, RegisterCoordinates(_register_entities(cursor, names), frozen=True))
+    known = RegisterCoordinates(_lookup_entities(cursor, names), frozen=True)
+    return SchemaEncoder(schema, QueryCoordinates(known, _next_free_coordinate(cursor)))
+
+
+def _store_components(cursor, schema_id: int, stack: Stack) -> Dict[Tuple[int, str], int]:
+    """Legt alle Komponenten des Stapels im Wörterbuch an und liefert ihre Zahlen je (Schicht, Hash)."""
+    distinct = {(layer_index, component_hash(component)): component
+                for layer_index, layer in enumerate(stack.layers) for component in layer}
+    payload = [[layer_index, digest, sorted(component)]
+               for (layer_index, digest), component in sorted(distinct.items())]
+    cursor.execute("""
+        INSERT INTO universal_components (schema_id, layer_index, members_hash, members)
+        SELECT %s, (e->>0)::int, e->>1, ARRAY(SELECT jsonb_array_elements_text(e->2)::bigint)
+        FROM jsonb_array_elements(%s::jsonb) AS e
+        ON CONFLICT (schema_id, layer_index, members_hash) DO NOTHING
+    """, (schema_id, json.dumps(payload)))
+    return _component_ids(cursor, schema_id, [digest for _, digest in distinct])
+
+
+def _component_ids(cursor, schema_id: int, digests: Sequence[str]) -> Dict[Tuple[int, str], int]:
+    """Zahlen der im Wörterbuch vorhandenen Komponenten je (Schicht, Hash)."""
+    cursor.execute("""
+        SELECT layer_index, members_hash, component_id FROM universal_components
+        WHERE schema_id = %s AND members_hash = ANY(%s)
+    """, (schema_id, list(dict.fromkeys(digests))))
+    return {(row['layer_index'], row['members_hash']): row['component_id']
+            for row in cursor.fetchall()}
+
+
+def _pair_columns(stack: Stack, ids: Mapping[Tuple[int, str], int]) -> Tuple[List, List, List, List]:
+    """Indexeinträge (Schicht, Art, erstes, zweites Element) aller zyklischen und linearen Paare."""
+    layer_indices: List[int] = []
+    kinds: List[str] = []
+    firsts: List[int] = []
+    seconds: List[int] = []
+    for layer_index, layer in enumerate(stack.layers):
+        sequence = [ids[(layer_index, component_hash(component))] for component in layer]
+        for kind, pairs in (('cyc', cyclic_pairs(sequence)), ('lin', linear_pairs(sequence))):
+            for first, second in sorted(pairs):
+                layer_indices.append(layer_index)
+                kinds.append(kind)
+                firsts.append(first)
+                seconds.append(second)
+    return layer_indices, kinds, firsts, seconds
+
+
+def create_universal_structure(
+    schema_name: str,
+    name: str,
+    network_type: str,
+    organism: str,
+    description: str,
+    entities: Union[Mapping[str, Iterable[str]], Iterable[str]],
+    relations: Optional[Mapping[str, Any]] = None,
+    schema_version: Optional[int] = None
+) -> UniversalStructureCreationResult:
+    """
+    Kodiert eine Struktur nach ihrem Schema und legt sie samt Indexeinträgen an
+
+    Metadaten liegen wie bei jedem Netzwerk in biological_networks (node_count = Entitäten,
+    edge_count = Summe aller Relationstupel), der Stapel in universal_structures, die Komponenten im
+    Wörterbuch (universal_components) und die zyklischen und linearen Paare im Paarindex
+    (universal_pairs). Alles geschieht in einer Transaktion.
+
+    Args:
+        schema_name: Name des registrierten Schemas
+        name: Name des Netzwerks
+        network_type: Typ (z.B. 'regulatory')
+        organism: Organismus
+        description: Beschreibung
+        entities: Entität -> Merkmale oder nur eine Folge von Entitäten (bei lokalen
+            Koordinaten bestimmt die Reihenfolge die Koordinaten)
+        relations: Relationstyp -> {Tupel: Gewicht} oder Folge von Tupeln (Gewicht 1)
+        schema_version: Version des Schemas (Standard: die neueste)
+
+    Returns:
+        UniversalStructureCreationResult mit den Details des erstellten Netzwerks
+
+    Raises:
+        ValueError: Unbekanntes Schema oder ungültige Struktur (siehe Structure.build)
+        Exception: Bei Datenbankfehler
+    """
+    logger.info(f"create_universal_structure: name={name} schema={schema_name} organism={organism}")
+
+    with get_db_connection() as conn:
+        cursor = get_db_cursor(conn)
+
+        schema_id, schema = _load_schema(cursor, schema_name, schema_version)
+        structure = Structure.build(schema, entities, relations)
+        encoder = _encoder(cursor, schema, structure, write=True)
+        stack = encoder.encode(structure)
+
+        node_count = len(structure.entities)
+        edge_count = sum(len(rows) for rows in structure.relations.values())
+        entity_names = sorted(structure.entities, key=encoder.coordinates)
+        sig_hash = stack_signature_hash(stack)
+
+        cursor.execute("""
+            INSERT INTO biological_networks
+            (name, network_type, organism, description, node_count, edge_count)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING network_id
+        """, (name, network_type, organism, description, node_count, edge_count))
+        network_id = cursor.fetchone()['network_id']
+
+        ids = _store_components(cursor, schema_id, stack)
+
+        cursor.execute("""
+            INSERT INTO universal_structures
+            (network_id, schema_id, length, entity_names, layers, signature_hash)
+            VALUES (%s, %s, %s, %s, %s::jsonb, %s)
+        """, (network_id, schema_id, stack.length, entity_names,
+              json.dumps(stack.to_lists(), separators=(",", ":")), sig_hash))
+
+        layer_indices, kinds, firsts, seconds = _pair_columns(stack, ids)
+        if layer_indices:
+            cursor.execute("""
+                INSERT INTO universal_pairs
+                (schema_id, layer_index, kind, first_id, second_id, network_id, length)
+                SELECT %s, t.layer_index, t.kind, t.first_id, t.second_id, %s, %s
+                FROM unnest(%s::int[], %s::text[], %s::bigint[], %s::bigint[])
+                     AS t(layer_index, kind, first_id, second_id)
+            """, (schema_id, network_id, stack.length, layer_indices, kinds, firsts, seconds))
+
+        logger.info(
+            f"create_universal_structure: Created network_id={network_id} nodes={node_count} "
+            f"edges={edge_count} length={stack.length} pairs={len(layer_indices)}"
+        )
+
+        return UniversalStructureCreationResult(
+            network_id=network_id,
+            name=name,
+            network_type=network_type,
+            organism=organism,
+            description=description,
+            schema_name=schema.name,
+            schema_version=schema.version,
+            node_count=node_count,
+            edge_count=edge_count,
+            length=stack.length,
+            signature_hash=sig_hash
+        )
+
+
+def get_universal_structure_by_id(network_id: int) -> Optional[UniversalStructureRecord]:
+    """
+    Holt eine universell kodierte Struktur und gewinnt sie aus ihrem Stapel zurück
+
+    Args:
+        network_id: ID des Netzwerks
+
+    Returns:
+        UniversalStructureRecord oder None, wenn nicht vorhanden (auch wenn die ID zu einem
+        Netzwerk ohne Stapel gehört)
+
+    Raises:
+        ValueError: Der gespeicherte Stapel liegt nicht im Bild der Kodierung seines Schemas
+        Exception: Bei Datenbankfehler
+    """
+    logger.info(f"get_universal_structure_by_id: network_id={network_id}")
+
+    with get_db_connection() as conn:
+        cursor = get_db_cursor(conn)
+        cursor.execute("""
+            SELECT bn.*, us.length, us.entity_names, us.layers, us.signature_hash,
+                   sc.name AS schema_name, sc.version AS schema_version, sc.definition
+            FROM biological_networks bn
+            JOIN universal_structures us ON us.network_id = bn.network_id
+            JOIN universal_schemas sc ON sc.schema_id = us.schema_id
+            WHERE bn.network_id = %s
+        """, (network_id,))
+
+        row = cursor.fetchone()
+        if not row:
+            logger.warning(f"get_universal_structure_by_id: network_id={network_id} not found")
+            return None
+
+        schema = Schema.from_dict(row['definition'])
+        stack = Stack.of(row['layers'])
+        existence = stack.layers[schema.layout[("ex",)]]
+        assigned = {entity: next(iter(existence[column]))
+                    for column, entity in enumerate(row['entity_names'])}
+        structure = SchemaEncoder(schema, RegisterCoordinates(assigned, frozen=True)).decode(stack)
+
+        logger.info(f"get_universal_structure_by_id: Found network '{row['name']}'")
+        return UniversalStructureRecord(
+            network_id=row['network_id'],
+            name=row['name'],
+            network_type=row['network_type'],
+            organism=row['organism'],
+            description=row['description'],
+            schema_name=row['schema_name'],
+            schema_version=row['schema_version'],
+            node_count=row['node_count'],
+            edge_count=row['edge_count'],
+            length=row['length'],
+            entity_names=list(row['entity_names']),
+            structure=structure,
+            signature_hash=row.get('signature_hash'),
+            created_at=str(row.get('created_at')) if row.get('created_at') else None
+        )
+
+
+def search_universal(
+    schema_name: str,
+    entities: Union[Mapping[str, Iterable[str]], Iterable[str]],
+    relations: Optional[Mapping[str, Any]] = None,
+    mode: str = 'coherent',
+    layers: Optional[Sequence[Union[int, str]]] = None,
+    include_existence: bool = False,
+    schema_version: Optional[int] = None
+) -> List[UniversalSearchMatch]:
+    """
+    Sucht Strukturen desselben Schemas, die die Query enthalten (Indexsuche)
+
+    Die Query wird mit dem Koordinatensystem des Schemas kodiert. Je aktiver Schicht werden
+    die Listen der zyklischen Paare zu den linearen Paaren der Query gelesen (Länge der
+    gespeicherten Struktur >= Länge der Query) und über alle aktiven Schichten geschnitten.
+    Das ist im Modus 'independent' bereits das Ergebnis, ohne Einzelvergleich über die
+    Datenbank; es werden nur die Treffer geladen. Im Modus 'coherent' werden diese Kandidaten
+    zusätzlich kohärent verifiziert. Eine Vorauswahl nach Knoten- oder Kantenzahl gibt es nicht
+    (kein Kantenfilter für diese Relation, siehe Kapitel Universelle Kodierung).
+
+    Args:
+        schema_name: Name des registrierten Schemas
+        entities: Entitäten der Query (Entität -> Merkmale oder Folge von Entitäten)
+        relations: Relationen der Query (Relationstyp -> Tupel/Gewichte)
+        mode: 'coherent' (alle aktiven Schichten an derselben Position) oder 'independent'
+        layers: aktive Schichten (Indizes oder Namen aus Schema.layer_labels); Standard: alle
+            nichtleeren Schichten der Query außer der Existenzschicht
+        include_existence: Existenzschicht ohne explizite Auswahl zu den aktiven zählen
+        schema_version: Version des Schemas (Standard: die neueste)
+
+    Returns:
+        Liste von UniversalSearchMatch Domain Models, sortiert nach Entitätenzahl und ID
+
+    Raises:
+        ValueError: Unbekannter Modus oder Schema, ungültige Query oder Schichtauswahl
+        Exception: Bei Datenbankfehler
+    """
+    if mode not in UNIVERSAL_MODES:
+        raise ValueError(f"unknown mode {mode!r}, expected one of {UNIVERSAL_MODES}")
+    logger.info(f"search_universal: Starting search schema={schema_name} mode={mode}")
+
+    with get_db_connection() as conn:
+        cursor = get_db_cursor(conn)
+
+        schema_id, schema = _load_schema(cursor, schema_name, schema_version)
+        structure = Structure.build(schema, entities, relations)
+        query = _encoder(cursor, schema, structure, write=False).encode(structure)
+        indices = resolve_active_layers(schema, query, layers, include_existence)
+
+        digests = [component_hash(component) for index in indices
+                   for component in query.layers[index]]
+        ids = _component_ids(cursor, schema_id, digests)
+
+        candidate_sets: List[Set[int]] = []
+        for layer_index in indices:
+            sequence = [ids.get((layer_index, component_hash(component)))
+                        for component in query.layers[layer_index]]
+            pairs = sorted(pair for pair in linear_pairs(sequence) if None not in pair)
+            reached: Set[int] = set()
+            if pairs:
+                cursor.execute("""
+                    SELECT DISTINCT network_id FROM universal_pairs
+                    WHERE schema_id = %s AND layer_index = %s AND kind = 'cyc'
+                      AND length >= %s AND (first_id, second_id) IN %s
+                """, (schema_id, layer_index, query.length, tuple(pairs)))
+                reached = {row['network_id'] for row in cursor.fetchall()}
+            candidate_sets.append(reached)
+        candidates = set.intersection(*candidate_sets)
+        logger.info(
+            f"search_universal: {len(candidates)} candidates for query "
+            f"(length={query.length}, layers={len(indices)})"
+        )
+        if not candidates:
+            return []
+
+        cursor.execute("""
+            SELECT bn.network_id, bn.name, bn.network_type, bn.organism,
+                   bn.node_count, bn.edge_count, us.layers
+            FROM biological_networks bn
+            JOIN universal_structures us ON us.network_id = bn.network_id
+            WHERE bn.network_id = ANY(%s)
+            ORDER BY bn.node_count ASC, bn.network_id ASC
+        """, (sorted(candidates),))
+
+        layer_names = [schema.layer_labels[index] for index in indices]
+        matches = []
+        for row in cursor.fetchall():
+            result = compare_stacks(query, Stack.of(row['layers']), mode, indices)
+            if result in UNIVERSAL_MATCH_RESULTS:
+                subgraph_result = UNIVERSAL_MATCH_RESULTS[result]
+                matches.append(UniversalSearchMatch(
+                    network_id=row['network_id'],
+                    name=row['name'],
+                    network_type=row['network_type'],
+                    organism=row['organism'],
+                    node_count=row['node_count'],
+                    edge_count=row['edge_count'],
+                    schema_name=schema.name,
+                    schema_version=schema.version,
+                    layers=layer_names,
+                    mode=mode,
+                    match_type='exact' if subgraph_result.startswith('equal_') else 'subgraph',
+                    subgraph_result=subgraph_result
+                ))
+
+        logger.info(f"search_universal: Found {len(matches)} matches")
         return matches
