@@ -14,10 +14,10 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [Abhängigkeiten](#abhängigkeiten)
 - [SQL-Struktur](#sql-strutkur)
 - [1.000.000 Netzwerke](#1000000-netzwerke)
-- [Starten](#starten)
-- [Suchen](#suchen)
+- [Server starten](#server-starten)
+- [Netzwerke suchen](#netzwerke-suchen)
 - [Multi-Omics-API](#multi-omics-api)
-- [Testen](#testen)
+- [Automatisch testen](#automatisch-testen)
 - [Erwerb](#erwerb)
 
 ## Voraussetzungen
@@ -286,7 +286,7 @@ Befehl:
 python .\db-populate.py
 ```
 
-## Starten
+## Server starten
 
 Der lokale Server wird mit einem kurzen Uvicorn-Befehl gestartet und anschließend über die Standard-URL erreichbar gemacht:
 
@@ -324,7 +324,7 @@ INFO:     127.0.0.1:51928 - "GET /api/networks?limit=33&random=true HTTP/1.1" 20
 INFO:     127.0.0.1:57531 - "GET /favicon.ico HTTP/1.1" 204 No Content
 ```
 
-## Suchen
+## Netzwerke suchen
 
 Die Suche läuft über das Web-Frontend und ermöglicht den Vergleich biologischer Netzwerke über die Subgraph-Suche direkt im Browser.
 
@@ -690,7 +690,7 @@ requests.delete(f"{BASE}/api/networks/{network_id}")
 - **Suchdauer:** Sie wächst mit der Zahl der Kandidaten. Mit `CSUBGRAPH_LIB_PATH` läuft der Vergleich in C++ und deutlich schneller als in Python (Messungen siehe [Multi-Omics-Experiment](#multi-omics-experiment)).
 - **Bestehende Datenbank:** Die Tabellen `omics_networks` und `omics_layers` samt Index stehen in `init-db.sql` und lassen sich dort nachträglich ausführen.
 
-## Testen
+## Automatisch testen
 
 Die automatisierten Tests laufen gegen eine separate Test-Datenbank, damit die Validierung der Funktionalität ohne Einfluss auf die lokale Entwicklungsumgebung erfolgt.
 
