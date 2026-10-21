@@ -18,6 +18,7 @@ charset="utf-8"
 "backend.app" -> "backend.models" [arrowhead="open", arrowtail="none"];
 "backend.app" -> "backend.schemas" [arrowhead="open", arrowtail="none"];
 "backend.app" -> "backend.subgraph_executor" [arrowhead="open", arrowtail="none"];
+"backend.app" -> "backend.universal_schema" [arrowhead="open", arrowtail="none"];
 "backend.crud" -> "backend.database" [arrowhead="open", arrowtail="none"];
 "backend.crud" -> "backend.models" [arrowhead="open", arrowtail="none"];
 "backend.crud" -> "backend.subgraph_executor" [arrowhead="open", arrowtail="none"];

@@ -13,7 +13,7 @@ Verwendet: pydantic.BaseModel
 """
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 
 # ============================================================================
@@ -335,6 +335,55 @@ class MultiOmicsSearch(BaseModel):
     )
 
 
+class UniversalRelationTypeInput(BaseModel):
+    """Definition eines Relationstyps in einem universellen Schema."""
+    name: str = Field(..., min_length=1)
+    arity: int = Field(default=2, ge=1)
+    levels: int = Field(default=1, ge=1)
+
+
+class UniversalSchemaCreate(BaseModel):
+    """Schema für POST /api/universal/schemas."""
+    name: str = Field(..., min_length=1)
+    version: int = Field(default=1, ge=1)
+    coordinates: Literal["register", "local"] = "register"
+    features: List[str] = Field(default_factory=list)
+    relations: List[UniversalRelationTypeInput] = Field(default_factory=list)
+
+
+class UniversalRelationInput(BaseModel):
+    """Ein typisiertes Relationstupel."""
+    entities: List[str] = Field(..., min_length=1)
+    weight: int = Field(default=1, ge=1)
+
+
+class UniversalStructureInput(BaseModel):
+    """Gemeinsame Nutzdaten für Erstellung und Suche universeller Strukturen."""
+    entities: Union[List[str], Dict[str, List[str]]] = Field(
+        ..., min_length=1, description="Entitäten oder Entität-zu-Merkmal-Abbildung"
+    )
+    relations: Dict[str, List[UniversalRelationInput]] = Field(default_factory=dict)
+
+
+class UniversalStructureCreate(UniversalStructureInput):
+    """Schema für POST /api/universal."""
+    schema_name: str = Field(..., min_length=1)
+    schema_version: Optional[int] = Field(default=None, ge=1)
+    name: str = Field(..., min_length=1, max_length=255)
+    network_type: str = Field(default="universal", min_length=1)
+    organism: str = Field(..., min_length=1)
+    description: Optional[str] = Field(default="", max_length=1000)
+
+
+class UniversalSearch(UniversalStructureInput):
+    """Schema für POST /api/universal/search."""
+    schema_name: str = Field(..., min_length=1)
+    schema_version: Optional[int] = Field(default=None, ge=1)
+    mode: Literal["coherent", "independent"] = "coherent"
+    layers: Optional[List[Union[int, str]]] = None
+    include_existence: bool = False
+
+
 class OmicsLayerResponse(BaseModel):
     """Eine Schicht eines Multi-Omics-Netzwerks (Response)."""
     layer_name: str = Field(..., description="Name der Schicht")
@@ -401,3 +450,92 @@ class MultiOmicsSearchResponse(BaseModel):
     """Wrapper für Multi-Omics-Suchergebnisse."""
     success: bool = Field(True, description="Erfolgs-Status")
     data: List[MultiOmicsSearchMatchResponse] = Field(..., description="Gefundene Matches")
+
+
+class UniversalRelationTypeResponse(BaseModel):
+    """Relationstyp eines universellen Schemas."""
+    name: str
+    arity: int
+    levels: int
+
+
+class UniversalSchemaResponse(BaseModel):
+    """Registriertes universelles Schema einschließlich Schichtnamen."""
+    schema_id: Optional[int] = None
+    name: str
+    version: int
+    coordinates: str
+    features: List[str]
+    relations: List[UniversalRelationTypeResponse]
+    layer_labels: List[str]
+
+
+class UniversalSchemaWrapper(BaseModel):
+    success: bool = True
+    data: UniversalSchemaResponse
+
+
+class UniversalRelationResponse(BaseModel):
+    entities: List[str]
+    weight: int
+
+
+class UniversalStructureResponse(BaseModel):
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    schema_name: str
+    schema_version: int
+    node_count: int
+    edge_count: int
+    length: int
+    entity_names: List[str]
+    entities: Dict[str, List[str]]
+    relations: Dict[str, List[UniversalRelationResponse]]
+    signature_hash: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class UniversalStructureWrapper(BaseModel):
+    success: bool = True
+    data: UniversalStructureResponse
+
+
+class UniversalStructureCreationResponse(BaseModel):
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    description: str
+    schema_name: str
+    schema_version: int
+    node_count: int
+    edge_count: int
+    length: int
+    signature_hash: str
+
+
+class UniversalStructureCreationWrapper(BaseModel):
+    success: bool = True
+    data: UniversalStructureCreationResponse
+
+
+class UniversalSearchMatchResponse(BaseModel):
+    network_id: int
+    name: str
+    network_type: str
+    organism: str
+    node_count: int
+    edge_count: int
+    schema_name: str
+    schema_version: int
+    layers: List[str]
+    mode: str
+    match_type: str
+
+
+class UniversalSearchResponse(BaseModel):
+    success: bool = True
+    data: List[UniversalSearchMatchResponse]

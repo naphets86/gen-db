@@ -1,9 +1,9 @@
 ﻿# gen-db
 
-Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke mittels Subgraph Algorithmus.
+Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Frontend zur Analyse biologischer Netzwerke. Neben der klassischen Subgraph-Suche unterstützt das Projekt Multi-Omics-Daten und eine schemaabhängige universelle Kodierung mit SQL-Paarindex.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-727%20passed-4c1)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-743%20passed-4c1)](tests/)
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-97%25-brightgreen)](doc/coverage/index.html)
 [![scicov](https://img.shields.io/badge/scicov-10-ff69b4)](doc/coverage/index.html)
 
@@ -12,16 +12,27 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
 - [Voraussetzungen](#voraussetzungen)
 - [Installation](#installation)
 - [Abhängigkeiten](#abhängigkeiten)
-- [SQL-Struktur](#sql-strutkur)
+  - [Optional: C++-Implementierung (csubgraph)](#optional-c-implementierung-csubgraph)
+    - [Aufbau der Brücke](#aufbau-der-brücke)
+    - [Voraussetzungen](#voraussetzungen-1)
+    - [Wo die Bibliothek gesucht wird](#wo-die-bibliothek-gesucht-wird)
+    - [Bibliotheksdatei je Plattform](#bibliotheksdatei-je-plattform)
+    - [Zwischenspeicher und Neuaufbau](#zwischenspeicher-und-neuaufbau)
+    - [Umgebungsvariablen und Optionen](#umgebungsvariablen-und-optionen)
+    - [Verhalten bei Fehlern](#verhalten-bei-fehlern)
+    - [Fehlersuche](#fehlersuche)
+    - [Ausblick: plattformneutrales Laden](#ausblick-plattformneutrales-laden)
+  - [Multi-Omics](#multi-omics)
+- [Universelle Kodierung](#universelle-kodierung-universal-coding)
+  - [Universal-API](#universal-api)
+- [SQL-Struktur](#sql-struktur)
 - [1.000.000 Netzwerke](#1000000-netzwerke)
 - [Server starten](#server-starten)
 - [Netzwerke suchen](#netzwerke-suchen)
 - [Multi-Omics-API](#multi-omics-api)
-- [Universelle Kodierung](#universelle-kodierung-universal-coding)
-  - [Universal-Experiment](#universal-experiment-indexsuche-gegen-einzelvergleiche)
 - [Automatisch testen](#automatisch-testen)
-- [Wahrheit: Pyreverse](#wahrheit-pyreverse)
-- [Erwerb Gen-DB](#erwerb-gen-db)
+- [UML mit Pyreverse](#uml-mit-pyreverse)
+- [Erwerb](#erwerb)
 
 ## Voraussetzungen
 
@@ -68,21 +79,92 @@ Es wird die API des Subgraph Algorithmus genutzt mit `Subgraph().compare_graphs(
 
 ### Optional: C++-Implementierung (csubgraph)
 
-Die Suche nutzt die C++-Implementierung aus dem Repository `csubgraph` als Bibliothek, wenn in der `.env` der Pfad zu `libsubgraphlib.a` gesetzt ist. Ist `CSUBGRAPH_LIB_PATH` nicht gesetzt (leer oder auskommentiert), wird die Python-Implementierung verwendet.
+Die Suche kann die C++-Implementierung aus dem Repository `csubgraph` als Bibliothek nutzen. Aktiviert wird sie über die `.env`; ohne Einstellung läuft die Python-Implementierung.
 
 ```env
 # Datei libsubgraphlib.a oder Projekt-/Build-Ordner von csubgraph; leer = Python
-CSUBGRAPH_LIB_PATH=C:/Users/<name>/Git/csubgraph/build/libsubgraphlib.a
+CSUBGRAPH_LIB_PATH=C:/Users/<name>/Git/csubgraph/build/libsubgraphlib.a   # Windows
+# CSUBGRAPH_LIB_PATH=/home/<name>/git/csubgraph/build/libsubgraphlib.a     # Linux, macOS
 ```
 
-Der Pfad darf direkt auf `libsubgraphlib.a` zeigen oder auf einen Ordner, in dem sie liegt (Projektordner, `build/`, `build/Release`). Eine statische Bibliothek kann Python nicht direkt laden. Beim ersten Gebrauch linkt Gen-DB sie deshalb mit einem kleinen C-Wrapper (`src/backend/native/csubgraph_shim.cpp`) zu einer DLL/`.so` und ruft sie per `ctypes` direkt im Worker-Prozess auf, ohne Prozessstart und ohne JSON je Vergleich. Voraussetzungen:
+#### Aufbau der Brücke
 
-- ein C++-Compiler im `PATH` (oder über die Umgebungsvariable `CXX`), unter Windows derselbe MinGW-w64 `g++`, mit dem `libsubgraphlib.a` gebaut wurde
-- die Bibliothek muss mit diesem Compiler gebaut sein; der Header `SubgraphAlgorithm.h` wird neben der Bibliothek (Projektordner) gesucht, sonst wird die mitgelieferte Kopie in `src/backend/native/` verwendet
+```
+Suche (crud.py) → subgraph_executor → csubgraph_native.py (ctypes) → C-Wrapper (DLL/.so/.dylib) → libsubgraphlib.a (C++)
+                                                                      csubgraph_shim.cpp / csubgraph_omics_shim.cpp
+```
 
-Die gelinkte Wrapper-Bibliothek liegt im Cache-Ordner `<temp>/gen-db-csubgraph` (änderbar mit `GENDB_NATIVE_CACHE`) und wird nur neu gebaut, wenn sich `libsubgraphlib.a`, der Wrapper oder der Header ändern. Der Build läuft einmalig beim Start, bevor die Worker-Prozesse erzeugt werden. Ist die Bibliothek nicht auffindbar oder nicht nutzbar (kein Compiler, Link- oder Ladefehler), steht der Grund als Warnung im Log und es wird die Python-Implementierung verwendet. Beim Start steht im Log, welcher Algorithmus verwendet wird. Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` → `keep_B`, `IDENTICAL` → `equal_keep_A`/`equal_keep_B`), sodass die Suche in `crud.py` unverändert bleibt. Im Docker-Image ist csubgraph nicht enthalten; dort läuft die Python-Implementierung.
+| Schicht | Aufgabe |
+|---------|---------|
+| `csubgraph_native.py` | Findet die Bibliothek, baut und lädt den Wrapper per `ctypes`, prüft die Schnittstellenversion und bildet die Ergebnisse auf die Python-Werte ab |
+| `native/csubgraph_shim.cpp` | C-Schnittstelle für den Einzelvergleich (`csub_compare`, `csub_abi_version`) |
+| `native/csubgraph_omics_shim.cpp` | C-Schnittstelle für Multi-Omics (`csub_omics_compare`, `csub_omics_abi_version`) |
+| `libsubgraphlib.a` | Statische C++-Bibliothek aus dem Repository `csubgraph` |
 
-Hinweis: Das CMake-Projekt von csubgraph baut die Bibliothek mit `--coverage` (gcov). Das wird beim Linken erkannt und berücksichtigt, die Bibliothek schreibt dann beim Prozessende `.gcda`-Dateien. Für den Produktivbetrieb und für Messungen ist eine Bibliothek ohne Coverage-Instrumentierung etwas schneller.
+Eine statische Bibliothek kann Python nicht direkt laden: `ctypes` öffnet nur dynamische Bibliotheken mit C-Funktionen. Beim ersten Gebrauch linkt Gen-DB deshalb `libsubgraphlib.a` mit dem passenden C-Wrapper zu einer dynamischen Bibliothek und ruft sie per `ctypes` direkt im Worker-Prozess auf, ohne Prozessstart und ohne JSON je Vergleich.
+
+Dass Gen-DB diesen Schritt **automatisch** ausführt, ist eine bewusste Entscheidung: Gen-DB ist eine Anwendung mit einem klar definierten Start. Der Build läuft einmalig dort, bevor die Worker-Prozesse erzeugt werden, und das Ergebnis wird zwischengespeichert. Das Python-Paket [`subgraph-sat-solver-econ`](https://github.com/naphez86/subgraph-sat-solver-econ) geht den entgegengesetzten Weg und baut seine Bibliothek ausdrücklich vorab, weil es als Bibliothek und für reproduzierbare Messungen gedacht ist.
+
+#### Voraussetzungen
+
+- ein C++-Compiler im `PATH` (oder über die Umgebungsvariable `CXX`). Gesucht wird in der Reihenfolge `$CXX`, `g++`, `c++`, `clang++`. Unter Windows derselbe MinGW-w64 `g++`, mit dem `libsubgraphlib.a` gebaut wurde
+- die Bibliothek muss mit diesem Compiler gebaut sein und als `libsubgraphlib.a` vorliegen (Format von GCC/MinGW/Clang); eine MSVC-`.lib` wird nicht gefunden
+- der Header `SubgraphAlgorithm.h` (für Multi-Omics zusätzlich `MultiOmics.h`) wird neben der Bibliothek gesucht (Projektordner, Ordner darüber, `include/`), sonst wird die mitgelieferte Kopie in `src/backend/native/` verwendet
+
+#### Wo die Bibliothek gesucht wird
+
+`CSUBGRAPH_LIB_PATH` darf direkt auf `libsubgraphlib.a` zeigen oder auf einen Ordner. Im Ordner wird in dieser Reihenfolge gesucht: der Ordner selbst, `build/`, `build/Release`, `Release`. Ist die Einstellung leer oder die Datei nicht auffindbar, wird die Python-Implementierung verwendet.
+
+#### Bibliotheksdatei je Plattform
+
+Die eingelesene Bibliothek heißt auf allen Plattformen `libsubgraphlib.a`. Der daraus gelinkte Wrapper erhält den Dateityp des Betriebssystems und liegt im Cache-Ordner:
+
+| Plattform | Wrapper-Datei im Cache | Besonderheiten beim Linken |
+|-----------|------------------------|----------------------------|
+| Windows (MinGW) | `csubgraph_shim_<hash>.dll` | C++-Laufzeit statisch gelinkt (`-static`), damit keine `libstdc++-6.dll` nachgeladen werden muss |
+| Linux | `csubgraph_shim_<hash>.so` | `-fPIC`, gesamter Archivinhalt über `--whole-archive` |
+| macOS | `csubgraph_shim_<hash>.dylib` | gesamter Archivinhalt über `-force_load` |
+
+Für Multi-Omics entsteht zusätzlich `csubgraph_omics_shim_<hash>.<Endung>`. Das sind drei Binärformate mit eigenen Lademechanismen des Betriebssystems; alle plattformabhängigen Teile (Dateiendung, Linker-Optionen, Export-Markierung im Wrapper) sind in `csubgraph_native.py` und `src/backend/native/` gebündelt.
+
+#### Zwischenspeicher und Neuaufbau
+
+Der gelinkte Wrapper liegt im Cache-Ordner `<temp>/gen-db-csubgraph` (änderbar mit `GENDB_NATIVE_CACHE`). Der Dateiname enthält einen Hash über `libsubgraphlib.a`, den Wrapper, die Header und die Schnittstellenversion. Er wird nur neu gebaut, wenn sich eines davon ändert. Der Build schreibt zuerst in eine temporäre Datei und benennt sie atomar um, damit parallel startende Worker keine halbfertige Datei laden. Nach dem Aktualisieren von csubgraph muss `libsubgraphlib.a` neu gebaut werden; Gen-DB erkennt die Änderung am Hash.
+
+#### Umgebungsvariablen und Optionen
+
+| Einstellung | Wirkung | Standard |
+|-------------|---------|----------|
+| `CSUBGRAPH_LIB_PATH` (`.env`) | `libsubgraphlib.a` oder Ordner, der sie enthält | leer = Python |
+| `CXX` | Zu verwendender C++-Compiler | `g++`, `c++`, `clang++` im `PATH` |
+| `GENDB_NATIVE_CACHE` | Cache-Ordner für die gelinkten Wrapper | `<temp>/gen-db-csubgraph` |
+| `--csubgraph-lib-path` | Überschreibt `CSUBGRAPH_LIB_PATH` in den Experimenten (z. B. `experiment_search_universal.py`) | Wert aus der `.env` |
+
+#### Verhalten bei Fehlern
+
+Ist die Bibliothek nicht auffindbar oder nicht nutzbar (kein Compiler, Link- oder Ladefehler), steht der Grund als Warnung im Log und es wird die Python-Implementierung verwendet. Beim Start steht im Log, welcher Algorithmus verwendet wird. Eine ältere `libsubgraphlib.a` ohne `MultiOmics` betrifft nur Multi-Omics: der Einzelvergleich bleibt bei C++, Multi-Omics nutzt Python. Die Experimente dagegen prüfen, dass kein stiller Rückfall stattfindet. Im Docker-Image ist csubgraph nicht enthalten; dort läuft die Python-Implementierung.
+
+Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` → `keep_B`, `IDENTICAL` → `equal_keep_A`/`equal_keep_B`), sodass die Suche in `crud.py` unverändert bleibt.
+
+#### Fehlersuche
+
+| Meldung im Log | Wahrscheinliche Ursache | Abhilfe |
+|----------------|-------------------------|---------|
+| `libsubgraphlib.a nicht gefunden (CSUBGRAPH_LIB_PATH=…)` | Pfad falsch, Bibliothek nicht gebaut oder MSVC-Format | Pfad prüfen, csubgraph mit GCC/MinGW bauen |
+| `kein C++-Compiler gefunden (g++ in den PATH legen oder Umgebungsvariable CXX setzen)` | Compiler fehlt oder liegt nicht im `PATH` | Compiler installieren, `PATH` oder `CXX` setzen |
+| `Build der Wrapper-Bibliothek fehlgeschlagen (…)` | Compiler und der Compiler der Bibliothek passen nicht zusammen, Header fehlen | Mit demselben Compiler wie csubgraph bauen; Ausgabe in der Meldung lesen |
+| `Build der Wrapper-Bibliothek nicht möglich` | Compiler nicht startbar oder Zeitlimit des Builds überschritten | Compiler direkt aufrufen und prüfen |
+| `Wrapper-Bibliothek nicht ladbar` | Architektur passt nicht (32 gegen 64 Bit), Cache-Datei beschädigt | Cache-Ordner löschen, Python und Compiler mit gleicher Architektur nutzen |
+| `Wrapper-Version … statt …` | Cache stammt aus einem anderen Stand | Cache-Ordner löschen |
+| `… enthält keine MultiOmics-Klasse (csubgraph mit MultiOmics.cpp neu bauen)` | Ältere `libsubgraphlib.a` | csubgraph neu bauen |
+
+Hinweis: Das CMake-Projekt von csubgraph baut die Bibliothek mit `--coverage` (gcov). Das wird beim Linken erkannt und berücksichtigt (`-lgcov`), die Bibliothek schreibt dann beim Prozessende `.gcda`-Dateien. Für den Produktivbetrieb und für Messungen ist eine Bibliothek ohne Coverage-Instrumentierung etwas schneller.
+
+#### Ausblick: plattformneutrales Laden
+
+Die oben beschriebenen Plattformunterschiede (Dateiendung, Linker-Optionen, Export-Markierung, Laufzeitbibliotheken, Fehlermeldungen) betreffen nicht dieses Projekt allein. Der Vorschlag [A Unified Shared Library Format (`.sl`) with a Standardized Loading Procedure](https://github.com/naphez86/blog/blob/main/unified-shared-library-proposal.md) beschreibt, wie ein einheitliches Format und vor allem ein standardisiertes, betriebssystemunabhängiges Ladeverfahren (eine Suchreihenfolge, ein Fehlermodell, ein Lebenszyklus) diese Teile aus jedem Projekt entfernen könnten.
+
+Das ist ein Diskussionsvorschlag. In diesem Repository ist er **nicht umgesetzt**; es gilt der in diesem Abschnitt beschriebene Stand mit `.dll`, `.so` und `.dylib`.
 
 #### Backend-Experiment
 
@@ -106,6 +188,32 @@ python src/experiment_search_backends.py --plot-from src/results/search_backends
 
 Mit `--queries 2` kann vor einer längeren Messung ein kleiner Vorabtest ausgeführt werden. Während des Experiments sollte der API-Server beendet sein, damit er nicht mit den Worker-Prozessen um Ressourcen konkurriert.
 
+#### Parallelisierungsexperiment
+
+`src/experiment_search_workers.py` vergleicht dieselben Datenbankanfragen mit unterschiedlich vielen Prozess-Workern. Der Messwert umfasst die vollständige Suche einschließlich Laden der Kandidaten und Aufbau der Trefferliste; Warm-up-Läufe werden verworfen.
+
+```powershell
+python src/experiment_search_workers.py --queries 6 --workers 1 2 3 --seed 42
+```
+
+Im abgeschlossenen Lauf vom 5. Oktober 2026 wurden sechs mit Seed `42` aus der Datenbank ausgewählte Anfragen mit mindestens 15 Knoten verwendet. Auf dem Messsystem (Linux, Python 3.13.16, zwei logische CPUs) ergaben sich:
+
+| Worker | Gesamtzeit | Mittlere Zeit je Anfrage | Speedup gegenüber 1 Worker |
+|---:|---:|---:|---:|
+| 1 | 1.604,17 s | 267,4 s | 1,00× |
+| 2 | 843,09 s | 140,5 s | 1,90× |
+| 3 | 907,64 s | 151,3 s | 1,77× |
+
+Zwei Worker senkten die Gesamtzeit in diesem Lauf um rund 47 %; drei Worker waren rund 7,7 % langsamer als zwei. Das ist mit den zwei logischen CPUs und dem zusätzlichen Prozess- und Koordinationsaufwand vereinbar, belegt aber keine allgemeine optimale Worker-Zahl. Der Test umfasst nur sechs Anfragen und einen Messlauf; die Werte sind daher ein systemspezifischer Anhaltspunkt, keine Leistungsgarantie. Die Ergebnisse und Einzelmessungen liegen in [`search_workers_20261005_071729.json`](src/results/search_workers_20261005_071729.json); der Textbericht steht in [`experiment_log.txt`](src/results/experiment_log.txt).
+
+In der Arbeit werden die sechs Queries einzeln gepaart ausgewertet: Mit zwei Workern liegt ihr Speedup jeweils zwischen `1,87×` und `1,93×`; mit drei Workern zwischen `1,70×` und `1,84×`. Die Kandidatenzahlen reichen von `62.064` bis `325.964` (insgesamt `1.249.054`). Für diese Stichprobe korreliert die Suchzeit mit mindestens `0,99` mit der Kandidatenzahl. Das stützt die lineare Abhängigkeit von der Zahl tatsächlich verglichener Kandidaten, nicht aber eine von der Datenbankgröße unabhängige Laufzeit: Ohne Kandidatenlimit wächst die Kandidatenmenge bei gleichbleibender Selektivität mit der Datenbank und damit auch die Suchzeit. Die Messreihe durchsuchte alle Kandidaten; die längste Query benötigte `403,2 s` mit einem und `212,0 s` mit zwei Workern.
+
+Nur die Kandidatenvergleiche laufen parallel. SQL-Laden, Übergabe/Serialisierung und Aufbau der Trefferliste bleiben im Hauptprozess. Aus dem Speedup von `1,90×` lässt sich für diesen Lauf ein serieller Anteil von ungefähr `5 %` abschätzen; da keine Phasenzeiten geloggt wurden, ist das keine direkte Phasenmessung und keine feste Systemeigenschaft. Die Arbeit beweist unter der angenommenen Reinheit der Vergleichsfunktion, dass die parallele Suche unabhängig von Worker-Zahl, Chunk-Größe und Fertigstellungsreihenfolge dieselbe sortierte Trefferliste wie die sequentielle Suche liefert. Die Zuordnung der Resultate zur ursprünglichen Kandidatenreihenfolge ist dafür wesentlich.
+
+Die drei Worker waren langsamer als zwei. Zur Hardware gibt es allerdings eine Abweichung zwischen den Quellen: Das Kapitel `science/gen-db.tex` verortet diese Messreihe auf einem Rechner mit vier logischen Prozessoren, die Metadaten der zugehörigen JSON-Datei nennen Linux und `logical_cpus=2`. Diese Diskrepanz sollte vor einer weitergehenden Interpretation geklärt werden. Unabhängig davon belegen sechs Queries und ein Lauf je Konfiguration weder eine allgemeine Obergrenze noch eine feste optimale Worker-Zahl. Worker-Zahl und Suchlast sollten auf dem Zielsystem gemessen werden; Parallelisierung senkt die Antwortzeit, ersetzt aber keinen selektiveren Vorfilter oder ein Kandidatenlimit.
+
+Die universelle Suche besitzt zusätzlich eigene Teilexperimente für Worker-Skalierung und Chunk-Größe. Für den derzeit gespeicherten Universal-Lauf liegen dazu noch keine abgeschlossenen Ergebnisse vor; siehe [Universal-Experiment](#universal-experiment-indexsuche-gegen-einzelvergleiche).
+
 ### Multi-Omics
 
 Ein Multi-Omics-Netzwerk besteht aus mehreren Schichten (z. B. Transkriptom, Proteom, Metabolom) über denselben Knoten. Jede Schicht ist eine eigene Adjazenzmatrix, alle Schichten teilen sich die `node_labels`. Gespeichert wird es in den Tabellen `omics_networks` und `omics_layers`; die Metadaten stehen wie bei jedem Netzwerk in `biological_networks` (`edge_count` ist die Summe über alle Schichten, Löschen entfernt per `CASCADE` auch die Schichten). Die Zeilenkomponenten je Schicht liegen als `BIGINT[]` vor und passen bis 63 Knoten hinein.
@@ -118,7 +226,7 @@ Ein Multi-Omics-Netzwerk besteht aus mehreren Schichten (z. B. Transkriptom, Pro
 
 Die Suche kennt zwei Modi (`mode`): `coherent` (Standard) verlangt, dass alle Schichten der Query an derselben Position des Kandidaten übereinstimmen, `independent` erlaubt je Schicht eine eigene Position. `coherent` ist strenger; jeder kohärente Treffer ist auch ein unabhängiger Treffer. Ungültige Eingaben (doppelte Schichtnamen, nicht quadratische oder nicht binäre Matrizen, mehr als 63 Knoten, falsche Zahl an Labels) liefern `422`.
 
-Der Algorithmus wird **genauso wie der Subgraph Algorithmus über die `.env`** ausgewählt, es gibt keine neue Einstellung: Zeigt `CSUBGRAPH_LIB_PATH` auf eine `libsubgraphlib.a`, die `MultiOmics` enthält (csubgraph mit `MultiOmics.cpp`), läuft die Suche über die C++-Klasse `MultiOmics`. Dafür wird ein zweiter C-Wrapper (`src/backend/native/csubgraph_omics_shim.cpp`) mit derselben Bibliothek gelinkt und per `ctypes` im Worker-Prozess aufgerufen, gebaut und gecacht wie der Wrapper für den Einzelvergleich. Ist der Pfad nicht gesetzt oder die Bibliothek nicht nutzbar, steht der Grund als Warnung im Log und es läuft die Python-Implementierung (`src/backend/multiomics_python.py`). Eine ältere `libsubgraphlib.a` ohne `MultiOmics` betrifft nur Multi-Omics: der Einzelvergleich bleibt bei C++, Multi-Omics nutzt Python. Nach dem Aktualisieren von csubgraph muss die Bibliothek neu gebaut werden. Beim Start steht im Log, welcher Algorithmus für Multi-Omics gewählt wurde.
+Der Algorithmus wird **genauso wie der Subgraph Algorithmus über die `.env`** ausgewählt, es gibt keine neue Einstellung: Zeigt `CSUBGRAPH_LIB_PATH` auf eine `libsubgraphlib.a`, die `MultiOmics` enthält (csubgraph mit `MultiOmics.cpp`), läuft die Suche über die C++-Klasse `MultiOmics`. Dafür wird ein zweiter C-Wrapper (`src/backend/native/csubgraph_omics_shim.cpp`) mit derselben Bibliothek gelinkt und per `ctypes` im Worker-Prozess aufgerufen, gebaut und gecacht wie der Wrapper für den Einzelvergleich (Details unter [Optional: C++-Implementierung](#optional-c-implementierung-csubgraph)). Ist der Pfad nicht gesetzt oder die Bibliothek nicht nutzbar, steht der Grund als Warnung im Log und es läuft die Python-Implementierung (`src/backend/multiomics_python.py`). Eine ältere `libsubgraphlib.a` ohne `MultiOmics` betrifft nur Multi-Omics: der Einzelvergleich bleibt bei C++, Multi-Omics nutzt Python. Nach dem Aktualisieren von csubgraph muss die Bibliothek neu gebaut werden. Beim Start steht im Log, welcher Algorithmus für Multi-Omics gewählt wurde.
 
 #### Multi-Omics-Experiment
 
@@ -133,6 +241,35 @@ python src/experiment_search_multiomics.py --cleanup-only
 ```
 
 Das Experiment legt synthetische Netzwerke mit dem Typ `multi_omics_experiment` in der Datenbank an (Zufallsnetzwerke und je eingebetteter Anfrage Netzwerke mit bekannter Lösung); andere Netzwerke bleiben unverändert. `--cleanup` entfernt die Experiment-Netzwerke am Ende, `--rebuild-data` erzeugt sie neu. Die Ergebnisse (JSON, PDF, Textbericht, LaTeX-Tabellen, `plot11_…` bis `plot26_…`) liegen unter `src/results/`. Das Skript ist in `pyproject.toml` unter `omit` eingetragen und zählt nicht zur Testabdeckung.
+
+##### Ergebnisse der Parallelisierungs- und Chunk-Reihen
+
+Die Arbeit wertet die abgeschlossenen Worker- und Chunk-Reihen des Multi-Omics-Experiments getrennt für Python und C++ aus. Die Messungen stammen von einem Rechner mit vier physischen/logischen Prozessoren (Intel Core i3-8100T), Windows 11, Python 3.14.8 und 7,87 GB RAM. Je Reihe wurden dieselben sechs Queries zweimal gemessen.
+
+| Worker | Python Gesamtzeit | Python Speedup | C++ Gesamtzeit | C++ Speedup |
+|---:|---:|---:|---:|---:|
+| 1 | 74,73 s | 1,00× | 24,08 s | 1,00× |
+| 2 | 50,31 s | 1,49× | 19,69 s | 1,22× |
+| 3 | 39,14 s | 1,91× | 20,08 s | 1,20× |
+| 4 | 35,55 s | 2,10× | 18,68 s | 1,29× |
+
+Python profitiert in dieser Reihe mit wachsender Worker-Zahl bis vier; C++ skaliert deutlich schwächer und der Unterschied zwischen zwei und vier Workern bleibt klein. Die Arbeit ordnet dies als Effekt der nach Beschleunigung des Vergleichskerns relativ stärker ins Gewicht fallenden Lade- und Übergabekosten ein. Bei vier Workern wird der serielle Anteil mit etwa `19,7 %` für Python und `58,9 %` für C++ abgeschätzt. Der schnellere Kern senkt also nicht nur die Gesamtzeit, sondern verschiebt den Engpass: Weitere Worker oder eine noch schnellere Vergleichsfunktion können die seriellen Phasen nicht im gleichen Verhältnis beschleunigen.
+
+Bei zwei Workern ergab sich für die Chunk-Größe folgende aufsummierte Laufzeit der sechs Queries in zwei Wiederholungen:
+
+| Chunk-Größe | Python | C++ |
+|---:|---:|---:|
+| 1 | 58,39 s | 33,71 s |
+| 8 | 48,13 s | 18,58 s |
+| 32 | 42,50 s | 18,03 s |
+| 128 | 41,14 s | 18,33 s |
+| 256 (Standard) | 45,54 s | 18,80 s |
+| 1.024 | 51,46 s | 20,25 s |
+| 4.096 | 64,26 s | 23,74 s |
+
+Die beste beobachtete Chunk-Größe war `128` für Python und `32` für C++; gegenüber dem Standard `256` waren die Gesamtlaufzeiten um rund `9,7 %` beziehungsweise `4,1 %` niedriger. Sehr kleine Chunks erhöhen den Aufgaben- und Übergabeaufwand, sehr große Chunks können die Lastverteilung verschlechtern. Mit sechs Queries und zwei Wiederholungen sind dies jedoch keine universellen optimalen Einstellungen: Sie hängen vom Backend, der Hardware und der Arbeitslast ab und sollten auf dem Zielsystem kalibriert werden. Die Datenbankgrößenreihe des Experiments wurde abgebrochen; daraus wird keine Skalierungsaussage abgeleitet.
+
+Die detaillierte formale Einordnung, darunter die Schranke für dynamische Blockplanung und ihre Annahmen, steht in [science/gen-db.tex](science/gen-db.tex). Die Rohdaten der Multi-Omics-Messreihe sind in [`search_multiomics_20261008_115430.json`](src/results/search_multiomics_20261008_115430.json) und [`search_multiomics_20261008_115430.txt`](src/results/search_multiomics_20261008_115430.txt) abgelegt.
 
 Die Kandidaten werden nur nach der Knotenzahl (`node_count >= n_Query`) und dem Vorhandensein aller Query-Schichten vorgefiltert. Eine Vorauswahl nach der Kantenzahl gibt es hier bewusst nicht: Mit der Relation des Algorithmus kann ein Graph mit mehr Kanten in einem Graphen mit weniger Kanten enthalten sein (Beispiel in `tests/test_multiomics_python.py::test_edge_count_is_not_monotone`).
 
@@ -168,17 +305,51 @@ Beim Einfügen erzeugt `crud.create_universal_structure` die Metadaten, den Stap
 
 Für reine Mehrschicht-Adjazenzmatrizen gibt es `matrix_schema`, `encode_matrices` und `matrix_search_layers`. Jede Matrixschicht wird dabei als eigener zweistelliger Relationstyp kodiert. Das kann Multi-Omics-Strukturen im universellen Modell abbilden; es ist jedoch nicht mit der bestehenden Multi-Omics-Speicherung in `omics_networks` und `omics_layers` gleichzusetzen.
 
+### Universal-API
+
+Die universelle Kodierung kann über die REST-API verwendet werden:
+
+- `POST /api/universal/schemas` registriert ein versioniertes Schema mit `name`, `version`,
+  `coordinates` (`register` oder `local`), `features` und `relations` (jeweils `name`, `arity`,
+  `levels`). `GET /api/universal/schemas/{schema_name}?version=...` liest das Schema zurück.
+- `POST /api/universal` legt eine Struktur für ein registriertes Schema an. `entities` ist
+  entweder eine Liste von Entitätsnamen oder eine Zuordnung von Entitätsnamen zu Merkmalen.
+  `relations` ordnet Relationstypen Listen von `{ "entities": [...], "weight": 1 }`-Tupeln zu.
+- `GET /api/universal/{network_id}` liefert die dekodierte Struktur einschließlich Merkmalen
+  und gewichteten Relationen.
+- `POST /api/universal/search` verwendet dieselbe Query-Form wie das Anlegen und unterstützt
+  `schema_version`, `mode` (`coherent` oder `independent`), aktive `layers` als Namen oder
+  Indizes sowie `include_existence`.
+
+Beispiel für ein Matrixschema mit zwei lokalen Relationsschichten:
+
+```json
+{
+  "name": "expression-layers",
+  "version": 1,
+  "coordinates": "local",
+  "relations": [
+    {"name": "transcriptome", "arity": 2, "levels": 1},
+    {"name": "proteome", "arity": 2, "levels": 1}
+  ]
+}
+```
+
+Die API-Endpunkte sind unabhängig von den bestehenden `/api/networks`- und
+`/api/multiomics`-Speicherpfaden. Die Datenbank muss zuvor mit den universellen Tabellen aus
+`init-db.sql` initialisiert worden sein.
+
 ### Aktueller Integrationsstand
 
-Die universelle Kodierung ist derzeit auf Kern-, Schema- und CRUD-Ebene implementiert und wird durch die Universal-Tests geprüft. Die normalen HTTP- und Frontend-Suchwege verwenden sie noch nicht:
+Die universelle Kodierung ist auf Kern-, Schema-, CRUD- und HTTP-API-Ebene implementiert und wird durch Universal-Tests geprüft. Die API stellt einen eigenständigen HTTP-Suchweg bereit:
 
 - `/api/networks/search` ruft `crud.search_subgraph` auf und sucht in `network_matrices` mit dem bisherigen Subgraph-Algorithmus.
 - `/api/multiomics/search` ruft `crud.search_multiomics` auf und sucht in `omics_networks` und `omics_layers` mit dem Multi-Omics-Algorithmus.
-- `crud.search_universal` ist vorhanden, aber `app.py` stellt dafür derzeit keinen HTTP-Endpunkt bereit. Das Frontend kann diesen Suchpfad daher ebenfalls nicht aufrufen.
+- `/api/universal/search` ruft `crud.search_universal` auf und sucht im SQL-Paarindex. Die Universal-API ist noch nicht in das Web-Frontend eingebunden.
 - `db-populate.py` erzeugt standardmäßig 1.000.000 klassische Einzelnetzwerke und 1.000 Multi-Omics-Datensätze. Die Befüllung schreibt jeweils sowohl in die bisherigen Tabellen als auch in `universal_structures`, `universal_components` und `universal_pairs`; sie verwendet dafür die versionierten Schemata `gen-db-populated-graph` und `gen-db-populated-multiomics`. Die Universal-Stapel und Paarlisten werden batchweise in derselben Transaktion wie die jeweiligen klassischen Zeilen geschrieben. Das Skript setzt voraus, dass `init-db.sql` einschließlich der universellen Tabellen ausgeführt wurde. Im Repository heißt das Skript `db-populate.py`; eine Datei `db-populate.sql` gibt es nicht.
-- Der Populate-Dual-Write erzwingt Universal Coding für diese erzeugten Datensätze, stellt aber keine automatische Migration vorhandener Netzwerke dar. Auch die normalen HTTP-Erstellungsrouten schreiben bislang nur ihre klassischen Tabellen; die HTTP-Suchrouten nutzen weiterhin die oben beschriebenen klassischen Pfade.
+- Der Populate-Dual-Write erzwingt Universal Coding für diese erzeugten Datensätze, stellt aber keine automatische Migration vorhandener Netzwerke dar. Die normalen HTTP-Erstellungsrouten schreiben weiterhin nur ihre klassischen Tabellen; die Universal-API erstellt unabhängig davon universelle Strukturen.
 
-Der Populate-Pfad schreibt bewusst in beide Repräsentationen, sodass die bestehenden Endpoints ihre bisherigen Daten weiterhin finden. Für eine vollständige Laufzeitintegration fehlen weiterhin passende HTTP-Schemas und Endpunkte, Universal-Suchaufrufe in den bestehenden Routen und eine Entscheidung, welche bereits vorhandenen Netzwerk- und Multi-Omics-Datensätze automatisch konvertiert werden.
+Der Populate-Pfad schreibt bewusst in beide Repräsentationen, sodass die bestehenden Endpoints ihre bisherigen Daten weiterhin finden. Eine automatische Migration vorhandener Datensätze und die Integration der Universal-Suche in die bestehenden Routen sind nicht Teil dieser API.
 
 ### Universal-Experiment: Indexsuche gegen Einzelvergleiche
 
@@ -241,11 +412,28 @@ Aus einer vorhandenen JSON-Datei lassen sich PDF, Diagramme, Tabellen und Berich
 python src/experiment_search_universal.py --plot-from src/results/search_universal_<zeit>.json
 ```
 
-Für die Diagramme wird `matplotlib` benötigt, für die Variante `cpp` eine `libsubgraphlib.a` mit `MultiOmics`. Das Skript ist in `pyproject.toml` unter `omit` eingetragen und zählt nicht zur Testabdeckung. Bisher liegt noch kein Messlauf dieses Experiments unter `src/results/`; die Aussagen der Sätze im Kapitel „Universelle Kodierung“ sind damit noch nicht durch Messwerte belegt.
+#### Ergebnisse des gespeicherten Laufs
+
+Der Lauf vom 10. Oktober 2026 verwendete Seed `42`, 20.000 synthetische Zufallsnetzwerke sowie eingebettete Testnetzwerke und fünf benannte Schichten (zusätzlich zur Existenzschicht des kodierten Stapels). Das JSON enthält Messungen unter Windows 11, Python 3.15.0 und PostgreSQL 18.6. Es wurde mit zwei Workern und drei geplanten Wiederholungen konfiguriert.
+
+| Teilmessung | Ergebnis |
+|---|---|
+| Korrektheit des Vergleichs | 5.000 Paare, verglichen in beiden Modi: 10.000 Übereinstimmungen mit `multiomics_python` und 10.000 mit C++; keine Abweichungen oder Fehler. Zusätzlich 10.000 Projektionsprüfungen ohne Abweichung oder Monotonieverletzung. |
+| Korrektheit des `PairIndex` | Auf 150 Strukturen und fünf Schichten wurden 240 Queries und 1.840 Prüfungen ausgeführt; keine Abweichungen bei Suche oder Klassifikation. Der Index enthielt 8.516 Paareinträge. |
+| In-Memory-Skalierung | Fünf Größenstufen von 425 bis 5.175 gespeicherten Strukturen (5.000 Zufallsstrukturen plus 175 bekannte Treffer im größten Lauf). Bei 5.175 Strukturen war das Medianverhältnis aus linearer Suche zu Indexsuche über acht Queries `215×` im Modus `independent` und `293×` im Modus `coherent`; die Trefferlisten stimmten jeweils überein. Diese Messung isoliert den In-Memory-Index und schließt Datenbankzugriff und Laden aus. |
+| Vorläufiger Ende-zu-Ende-Vergleich | Für alle 56 Queries und beide Modi liegen je eine Messung für `index` und `python` vor. Die Ergebnis-IDs stimmten in allen 112 Query-Modus-Paaren überein. Mittlere Zeit: `index` 0,150 s (`independent`) und 0,226 s (`coherent`); `python` 14,324 s bzw. 15,838 s. Das entspricht in diesem einzelnen Durchlauf etwa `95,5×` bzw. `70,1×`. |
+
+**Wichtige Einschränkung:** Dieser Messlauf ist ausdrücklich unvollständig (`complete=false`). Obwohl drei Wiederholungen konfiguriert waren, enthält der gespeicherte Ende-zu-Ende-Vergleich nur `rep=0` für `index` und `python`. Die Ende-zu-Ende-Messungen für `mo_python` und `cpp` sowie die Teilexperimente `workers`, `chunksize` und `dbsize` wurden nicht abgeschlossen. Beim Eintritt in die Worker-Messung erkannte das Skript `csubgraph` statt des erwarteten `python`-Backends und brach ab. Die Ende-zu-Ende-Zahlen sind deshalb vorläufig und nicht als abgeschlossener Vier-Varianten-Vergleich zu verstehen.
+
+Die Messwerte gelten nur für den genannten synthetischen Versuchsaufbau. Insbesondere ist der In-Memory-Speedup nicht mit dem Ende-zu-Ende-Speedup gleichzusetzen; der SQL-Zugriff, die Kandidatenmenge, Prozesskommunikation und das Ergebnisbauen beeinflussen die tatsächliche Suchzeit. Eine vollständige Wiederholung mit den vorgesehenen Backends, Wiederholungen und Worker-/Chunk-Größen ist erforderlich, bevor belastbare Aussagen über deren Skalierung getroffen werden können.
+
+Der JSON-Rohdatensatz ist [`search_universal_20261010_103804.json`](src/results/search_universal_20261010_103804.json); der Laufbericht ist [`search_universal_20261010_103804.txt`](src/results/search_universal_20261010_103804.txt). Das Skript speichert die Rohdaten auch für unvollständige Läufe, wodurch die tatsächlich beendeten Teilmessungen nachvollziehbar bleiben.
+
+Für die Diagramme wird `matplotlib` benötigt, für die Variante `cpp` eine `libsubgraphlib.a` mit `MultiOmics`. Das Skript ist in `pyproject.toml` unter `omit` eingetragen und zählt nicht zur Testabdeckung.
 
 Die Experimente messen die Suche auf Funktionsebene (`crud.search_universal`). Die HTTP- und Frontend-Suchwege nutzen die universelle Suche weiterhin nicht (siehe [Aktueller Integrationsstand](#aktueller-integrationsstand)); vorrangig bleiben ein durchgängiger Schreib- und Suchpfad über die API sowie Korrektheitstests, die dieselben Strukturen über direkte Universal-CRUD-Aufrufe und die API abgleichen.
 
-## SQL-Strutkur
+## SQL-Struktur
 
 Die Datenbankstruktur wird durch `init-db.sql` definiert und ist bewusst einfach, aber für die Suche nach biologischen Netzwerken effizient aufgebaut. Das Schema besteht aus zwei zentralen Tabellen, die zusammen den eigentlichen Netzwerkinhalt und die zugehörigen Metadaten modellieren.
 
@@ -480,11 +668,11 @@ Biologische Prozesse spielen sich selten auf nur einer Ebene ab: Ein Gen wird tr
 - **Knoten** sind für alle Schichten gleich. `node_labels` gibt ihnen Namen, die Reihenfolge entspricht den Zeilen und Spalten jeder Matrix.
 - **Jede Schicht** ist eine quadratische Adjazenzmatrix (`n × n`) mit den Werten `0` und `1`. Der Eintrag in Zeile `i`, Spalte `j` beschreibt die Kante zwischen Knoten `i` und `j`.
 - **Schichten werden über ihren Namen identifiziert.** Ein Netzwerk darf jeden Namen nur einmal verwenden.
-- **Gespeichert** wird in `biological_networks` (Metadaten), `omics_networks` (Knoten-Labels) und `omics_layers` (eine Zeile je Schicht, siehe [SQL-Struktur](#sql-strutkur) und `init-db.sql`). `edge_count` ist die Summe über alle Schichten.
+- **Gespeichert** wird in `biological_networks` (Metadaten), `omics_networks` (Knoten-Labels) und `omics_layers` (eine Zeile je Schicht, siehe [SQL-Struktur](#sql-struktur) und `init-db.sql`). `edge_count` ist die Summe über alle Schichten.
 
 ### Schnellstart in drei Schritten
 
-Server starten (siehe [Starten](#starten)) und dann in PowerShell:
+Server starten (siehe [Starten](#server-starten)) und dann in PowerShell:
 
 **1. Netzwerk anlegen**
 
@@ -789,23 +977,22 @@ pytest
 ```
 Der Coverage-Report wird automatisch generiert nach `doc/coverage/index.html`.
 
-## Wahrheit: Pyreverse
+## UML mit Pyreverse
 
 Die Wahrheit steht immer im Code.
 
 ```bash
 (venv) PS C:\Users\Internet\Git\gen-db> pyreverse -o dot -p gen .\src\backend\
-Analysed 13 modules with a total of 14 imports
+Analysed 13 modules with a total of 15 imports
 (venv) PS C:\Users\Internet\Git\gen-db> (Get-Content classes_gen.dot) -replace 'rankdir=LR', 'rankdir=TB' -replace 'charset="utf-8"', 'charset="utf-8"; rankdir=TB; nodesep=0.2; ranksep=0.4;' | Set-Content classes_gen_fixed.dot
 (venv) PS C:\Users\Internet\Git\gen-db> dot -Tpdf classes_gen_fixed.dot -o classes_gen_compact.pdf
 (venv) PS C:\Users\Internet\Git\gen-db> (Get-Content packages_gen.dot) -replace 'rankdir=LR', 'rankdir=TB' -replace 'charset="utf-8"', 'charset="utf-8"; rankdir=TB; nodesep=0.3; ranksep=0.5;' | Set-Content packages_gen_fixed.dot
 (venv) PS C:\Users\Internet\Git\gen-db> dot -Tpdf packages_gen_fixed.dot -o packages_gen_compact.pdf
-(venv) PS C:\Users\Internet\Git\gen-db> 
 ```
 
-## Erwerb Gen-DB
+## Erwerb
 
-Der Preis für diese Software beträgt 5.745.000,00 EUR.
+Der Preis für diese Software beträgt 6.445.000,00 EUR.
 
 ### Zahlungsinformationen
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "biological-network-database"
-version = "6.1.0"
+version = "7.0.0"
 description = "Biological Network Database mit PostgreSQL-Backend, FastAPI-basierter REST-API, Web-Frontend, Multi-Omics-Suche und universeller Kodierung mit SQL-Paarindex"
 authors = [
     {name = "Stephan Epp"}
@@ -16,7 +16,7 @@ dependencies = [
     "psycopg2-binary>=2.9.9",
     "numpy>=1.26.4",
     "matplotlib>=3.11.0",
-    "subgraph @ git+https://github.com/naphets86/subgraph.git@main",
+    "subgraph @ git+https://github.com/naphez86/subgraph.git@main",
     "python-multipart>=0.0.6",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",

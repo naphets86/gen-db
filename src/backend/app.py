@@ -13,12 +13,11 @@ Verantwortlichkeiten:
 - CRUD aufrufen mit primitiven Werten
 - Domain Models zu Response-Schemas mappen
 - Response-Schemas validieren und zu JSON serialisieren (automatisch)
-
-Diese Datei hat KEINE Business Logic!
 """
 
 import logging
 from contextlib import asynccontextmanager
+from typing import List
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -30,7 +29,9 @@ from .config import get_config
 from .models import (
     Network, NetworkSummary, SearchMatch, NetworkCreationResult,
     MultiOmicsNetwork, MultiOmicsCreationResult, MultiOmicsSearchMatch,
+    UniversalStructureCreationResult, UniversalStructureRecord, UniversalSearchMatch,
 )
+from .universal_schema import RelationType, Schema
 
 # API Schemas
 from .schemas import (
@@ -42,7 +43,12 @@ from .schemas import (
     MultiOmicsCreate, MultiOmicsSearch,
     OmicsLayerResponse, MultiOmicsResponse, MultiOmicsCreationResponse,
     MultiOmicsSearchMatchResponse, MultiOmicsSingleResponse,
-    MultiOmicsCreationWrapper, MultiOmicsSearchResponse
+    MultiOmicsCreationWrapper, MultiOmicsSearchResponse,
+    UniversalSchemaCreate, UniversalSchemaResponse, UniversalSchemaWrapper,
+    UniversalStructureCreate, UniversalStructureResponse, UniversalStructureWrapper,
+    UniversalStructureCreationResponse, UniversalStructureCreationWrapper,
+    UniversalRelationInput, UniversalRelationResponse, UniversalSearch, UniversalSearchMatchResponse,
+    UniversalSearchResponse,
 )
 
 # CRUD Operations
@@ -104,7 +110,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Gen - Biological Network Analysis API",
     description="REST API for searching biological networks using subgraph matching",
-    version="6.0.0",
+    version="7.0.0",
     lifespan=lifespan
 )
 
@@ -231,6 +237,83 @@ def multiomics_match_to_response(match: MultiOmicsSearchMatch) -> MultiOmicsSear
         mode=match.mode,
         match_type=match.match_type
     )
+
+
+def universal_schema_to_response(schema: Schema, schema_id: int | None = None) -> UniversalSchemaResponse:
+    return UniversalSchemaResponse(
+        schema_id=schema_id,
+        name=schema.name,
+        version=schema.version,
+        coordinates=schema.coordinates,
+        features=list(schema.features),
+        relations=[
+            {"name": relation.name, "arity": relation.arity, "levels": relation.levels}
+            for relation in schema.relations
+        ],
+        layer_labels=list(schema.layer_labels),
+    )
+
+
+def universal_structure_to_response(record: UniversalStructureRecord) -> UniversalStructureResponse:
+    return UniversalStructureResponse(
+        network_id=record.network_id,
+        name=record.name,
+        network_type=record.network_type,
+        organism=record.organism,
+        description=record.description,
+        schema_name=record.schema_name,
+        schema_version=record.schema_version,
+        node_count=record.node_count,
+        edge_count=record.edge_count,
+        length=record.length,
+        entity_names=record.entity_names,
+        entities={
+            entity: sorted(features)
+            for entity, features in record.structure.entities.items()
+        },
+        relations={
+            relation_name: [
+                UniversalRelationResponse(entities=list(entities), weight=weight)
+                for entities, weight in sorted(rows.items())
+            ]
+            for relation_name, rows in record.structure.relations.items()
+        },
+        signature_hash=record.signature_hash,
+        created_at=record.created_at,
+    )
+
+
+def universal_search_match_to_response(
+    match: UniversalSearchMatch,
+) -> UniversalSearchMatchResponse:
+    return UniversalSearchMatchResponse(
+        network_id=match.network_id,
+        name=match.name,
+        network_type=match.network_type,
+        organism=match.organism,
+        node_count=match.node_count,
+        edge_count=match.edge_count,
+        schema_name=match.schema_name,
+        schema_version=match.schema_version,
+        layers=match.layers,
+        mode=match.mode,
+        match_type=match.match_type,
+    )
+
+
+def _universal_relations_to_mapping(
+    relations: dict[str, List[UniversalRelationInput]],
+) -> dict[str, dict[tuple[str, ...], int]]:
+    result = {}
+    for name, rows in relations.items():
+        typed_rows = {}
+        for row in rows:
+            entities = tuple(row.entities)
+            if entities in typed_rows:
+                raise ValueError(f"relation {name!r} contains duplicate tuple {entities}")
+            typed_rows[entities] = row.weight
+        result[name] = typed_rows
+    return result
 
 
 # ============================================================================
@@ -448,6 +531,160 @@ async def delete_network(network_id: int) -> DeleteResponse:
     except Exception as e:
         logger.error(f"DELETE /api/networks/{network_id} - Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ----------------------------------------------------------------------------
+# Universal Structure Endpoints
+# ----------------------------------------------------------------------------
+
+@app.post(
+    "/api/universal/schemas",
+    tags=["Universal"],
+    response_model=UniversalSchemaWrapper,
+    summary="Register Universal Schema",
+    description="Registers a versioned schema for universal structures",
+)
+async def register_universal_schema(schema_input: UniversalSchemaCreate) -> UniversalSchemaWrapper:
+    try:
+        schema = Schema(
+            name=schema_input.name,
+            version=schema_input.version,
+            coordinates=schema_input.coordinates,
+            features=tuple(schema_input.features),
+            relations=tuple(
+                RelationType(relation.name, relation.arity, relation.levels)
+                for relation in schema_input.relations
+            ),
+        )
+        schema_id = crud.register_universal_schema(schema)
+        return UniversalSchemaWrapper(
+            success=True, data=universal_schema_to_response(schema, schema_id)
+        )
+    except ValueError as error:
+        logger.warning("POST /api/universal/schemas - Invalid schema: %s", error)
+        raise HTTPException(status_code=422, detail=str(error))
+    except Exception as error:
+        logger.error("POST /api/universal/schemas - Error: %s", error, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.get(
+    "/api/universal/schemas/{schema_name}",
+    tags=["Universal"],
+    response_model=UniversalSchemaWrapper,
+    summary="Get Universal Schema",
+    description="Retrieves a registered schema by name and optional version",
+)
+async def get_universal_schema(
+    schema_name: str, version: int | None = None
+) -> UniversalSchemaWrapper:
+    try:
+        schema = crud.get_universal_schema(schema_name, version)
+        if schema is None:
+            raise HTTPException(status_code=404, detail="Universal schema not found")
+        return UniversalSchemaWrapper(
+            success=True, data=universal_schema_to_response(schema)
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error("GET /api/universal/schemas/%s - Error: %s", schema_name, error, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.post(
+    "/api/universal",
+    tags=["Universal"],
+    response_model=UniversalStructureCreationWrapper,
+    summary="Create Universal Structure",
+    description="Encodes and stores a structure using a registered schema",
+)
+async def create_universal_structure(
+    structure_input: UniversalStructureCreate,
+) -> UniversalStructureCreationWrapper:
+    try:
+        result: UniversalStructureCreationResult = crud.create_universal_structure(
+            schema_name=structure_input.schema_name,
+            schema_version=structure_input.schema_version,
+            name=structure_input.name,
+            network_type=structure_input.network_type,
+            organism=structure_input.organism,
+            description=structure_input.description or "",
+            entities=structure_input.entities,
+            relations=_universal_relations_to_mapping(structure_input.relations),
+        )
+        response_data = UniversalStructureCreationResponse(
+            network_id=result.network_id,
+            name=result.name,
+            network_type=result.network_type,
+            organism=result.organism,
+            description=result.description,
+            schema_name=result.schema_name,
+            schema_version=result.schema_version,
+            node_count=result.node_count,
+            edge_count=result.edge_count,
+            length=result.length,
+            signature_hash=result.signature_hash,
+        )
+        return UniversalStructureCreationWrapper(success=True, data=response_data)
+    except ValueError as error:
+        logger.warning("POST /api/universal - Invalid structure: %s", error)
+        raise HTTPException(status_code=422, detail=str(error))
+    except Exception as error:
+        logger.error("POST /api/universal - Error: %s", error, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.post(
+    "/api/universal/search",
+    tags=["Universal"],
+    response_model=UniversalSearchResponse,
+    summary="Search Universal Structures",
+    description="Searches the universal pair index for structures containing the query",
+)
+async def search_universal(search: UniversalSearch) -> UniversalSearchResponse:
+    try:
+        matches: List[UniversalSearchMatch] = crud.search_universal(
+            schema_name=search.schema_name,
+            schema_version=search.schema_version,
+            entities=search.entities,
+            relations=_universal_relations_to_mapping(search.relations),
+            mode=search.mode,
+            layers=search.layers,
+            include_existence=search.include_existence,
+        )
+        return UniversalSearchResponse(
+            success=True,
+            data=[universal_search_match_to_response(match) for match in matches],
+        )
+    except ValueError as error:
+        logger.warning("POST /api/universal/search - Invalid query: %s", error)
+        raise HTTPException(status_code=422, detail=str(error))
+    except Exception as error:
+        logger.error("POST /api/universal/search - Error: %s", error, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.get(
+    "/api/universal/{network_id}",
+    tags=["Universal"],
+    response_model=UniversalStructureWrapper,
+    summary="Get Universal Structure",
+    description="Retrieves and decodes a stored universal structure",
+)
+async def get_universal_structure(network_id: int) -> UniversalStructureWrapper:
+    try:
+        record: UniversalStructureRecord | None = crud.get_universal_structure_by_id(network_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Universal structure not found")
+        return UniversalStructureWrapper(
+            success=True, data=universal_structure_to_response(record)
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error("GET /api/universal/%s - Error: %s", network_id, error, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(error))
 
 
 # ----------------------------------------------------------------------------
