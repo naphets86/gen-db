@@ -21,7 +21,7 @@ Biological Network Database mit PostgreSQL-Backend, FastAPI-REST-API und Web-Fro
     - [Umgebungsvariablen und Optionen](#umgebungsvariablen-und-optionen)
     - [Verhalten bei Fehlern](#verhalten-bei-fehlern)
     - [Fehlersuche](#fehlersuche)
-    - [Ausblick: plattformneutrales Laden](#ausblick-plattformneutrales-laden)
+    - [Ausblick: Plattformneutrales Laden](#ausblick-plattformneutrales-laden)
   - [Multi-Omics](#multi-omics)
 - [Universelle Kodierung](#universelle-kodierung-universal-coding)
   - [Universal-API](#universal-api)
@@ -70,7 +70,7 @@ C:\Users\Internet\Downloads\postgresql-18.6-5-windows-x64-binaries\pgsql\bin\psq
 
 ## Abhängigkeiten
 
-Für die Netzwerkanalyse wird zusätzlich der Subgraph-Algorithmus installiert, der über die Projektabhängigkeiten eingebunden wird:
+Für die Netzwerkanalyse wird zusätzlich der Subgraph Algorithmus installiert, der über die Projektabhängigkeiten eingebunden wird:
 
 ```bash
 pip install -e ".[dev]"
@@ -103,7 +103,7 @@ Suche (crud.py) → subgraph_executor → csubgraph_native.py (ctypes) → C-Wra
 
 Eine statische Bibliothek kann Python nicht direkt laden: `ctypes` öffnet nur dynamische Bibliotheken mit C-Funktionen. Beim ersten Gebrauch linkt Gen-DB deshalb `libsubgraphlib.a` mit dem passenden C-Wrapper zu einer dynamischen Bibliothek und ruft sie per `ctypes` direkt im Worker-Prozess auf, ohne Prozessstart und ohne JSON je Vergleich.
 
-Dass Gen-DB diesen Schritt **automatisch** ausführt, ist eine bewusste Entscheidung: Gen-DB ist eine Anwendung mit einem klar definierten Start. Der Build läuft einmalig dort, bevor die Worker-Prozesse erzeugt werden, und das Ergebnis wird zwischengespeichert. Das Python-Paket [`subgraph-sat-solver-econ`](https://github.com/naphez86/subgraph-sat-solver-econ) geht den entgegengesetzten Weg und baut seine Bibliothek ausdrücklich vorab, weil es als Bibliothek und für reproduzierbare Messungen gedacht ist.
+Dass Gen-DB diesen Schritt **automatisch** ausführt, ist eine bewusste Entscheidung: Gen-DB ist eine Anwendung mit einem klar definierten Start. Der Build läuft einmalig dort, bevor die Worker-Prozesse erzeugt werden, und das Ergebnis wird zwischengespeichert. Das Python-Paket [`subgraph-sat-solver-econ`](https://github.com/naphets86/subgraph-sat-solver-econ) geht den entgegengesetzten Weg und baut seine Bibliothek ausdrücklich vorab, weil es als Bibliothek und für reproduzierbare Messungen gedacht ist.
 
 #### Voraussetzungen
 
@@ -160,9 +160,9 @@ Die Ergebnisse der C++-Version werden auf die Python-Werte abgebildet (`KEEP_B` 
 
 Hinweis: Das CMake-Projekt von csubgraph baut die Bibliothek mit `--coverage` (gcov). Das wird beim Linken erkannt und berücksichtigt (`-lgcov`), die Bibliothek schreibt dann beim Prozessende `.gcda`-Dateien. Für den Produktivbetrieb und für Messungen ist eine Bibliothek ohne Coverage-Instrumentierung etwas schneller.
 
-#### Ausblick: plattformneutrales Laden
+#### Ausblick: Plattformneutrales Laden
 
-Die oben beschriebenen Plattformunterschiede (Dateiendung, Linker-Optionen, Export-Markierung, Laufzeitbibliotheken, Fehlermeldungen) betreffen nicht dieses Projekt allein. Der Vorschlag [A Unified Shared Library Format (`.sl`) with a Standardized Loading Procedure](https://github.com/naphez86/blog/blob/main/unified-shared-library-proposal.md) beschreibt, wie ein einheitliches Format und vor allem ein standardisiertes, betriebssystemunabhängiges Ladeverfahren (eine Suchreihenfolge, ein Fehlermodell, ein Lebenszyklus) diese Teile aus jedem Projekt entfernen könnten.
+Die oben beschriebenen Plattformunterschiede (Dateiendung, Linker-Optionen, Export-Markierung, Laufzeitbibliotheken, Fehlermeldungen) betreffen nicht dieses Projekt allein. Der Vorschlag [A Unified Shared Library Format (`.sl`) with a Standardized Loading Procedure](https://github.com/naphets86/blog/blob/main/unified-shared-library-proposal.md) beschreibt, wie ein einheitliches Format und vor allem ein standardisiertes, betriebssystemunabhängiges Ladeverfahren (eine Suchreihenfolge, ein Fehlermodell, ein Lebenszyklus) diese Teile aus jedem Projekt entfernen könnten.
 
 Das ist ein Diskussionsvorschlag. In diesem Repository ist er **nicht umgesetzt**; es gilt der in diesem Abschnitt beschriebene Stand mit `.dll`, `.so` und `.dylib`.
 
@@ -343,7 +343,7 @@ Die API-Endpunkte sind unabhängig von den bestehenden `/api/networks`- und
 
 Die universelle Kodierung ist auf Kern-, Schema-, CRUD- und HTTP-API-Ebene implementiert und wird durch Universal-Tests geprüft. Die API stellt einen eigenständigen HTTP-Suchweg bereit:
 
-- `/api/networks/search` ruft `crud.search_subgraph` auf und sucht in `network_matrices` mit dem bisherigen Subgraph-Algorithmus.
+- `/api/networks/search` ruft `crud.search_subgraph` auf und sucht in `network_matrices` mit dem bisherigen Subgraph Algorithmus.
 - `/api/multiomics/search` ruft `crud.search_multiomics` auf und sucht in `omics_networks` und `omics_layers` mit dem Multi-Omics-Algorithmus.
 - `/api/universal/search` ruft `crud.search_universal` auf und sucht im SQL-Paarindex. Die Universal-API ist noch nicht in das Web-Frontend eingebunden.
 - `db-populate.py` erzeugt standardmäßig 1.000.000 klassische Einzelnetzwerke und 1.000 Multi-Omics-Datensätze. Die Befüllung schreibt jeweils sowohl in die bisherigen Tabellen als auch in `universal_structures`, `universal_components` und `universal_pairs`; sie verwendet dafür die versionierten Schemata `gen-db-populated-graph` und `gen-db-populated-multiomics`. Die Universal-Stapel und Paarlisten werden batchweise in derselben Transaktion wie die jeweiligen klassischen Zeilen geschrieben. Das Skript setzt voraus, dass `init-db.sql` einschließlich der universellen Tabellen ausgeführt wurde. Im Repository heißt das Skript `db-populate.py`; eine Datei `db-populate.sql` gibt es nicht.
@@ -992,7 +992,7 @@ Analysed 13 modules with a total of 15 imports
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 6.445.000,00 EUR.
+Der Preis für diese Software beträgt 11.445.000,00 EUR.
 
 ### Zahlungsinformationen
 

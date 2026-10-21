@@ -9,7 +9,7 @@
 
 /**
  * @class MultiOmics
- * @brief Mehrschichtige (Multi-Omics-)Erweiterung des Subgraph-Algorithmus
+ * @brief Mehrschichtige (Multi-Omics-)Erweiterung des Subgraph Algorithmus
  *
  * Ein Multi-Omics-Netzwerk besteht aus L >= 1 Schichten (Transkriptom, Proteom,
  * Metabolom, ...), die alle über dieselbe, geordnete Knotenmenge der Größe n
