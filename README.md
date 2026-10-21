@@ -162,7 +162,7 @@ Hinweis: Das CMake-Projekt von csubgraph baut die Bibliothek mit `--coverage` (g
 
 #### Ausblick: Plattformneutrales Laden
 
-Die oben beschriebenen Plattformunterschiede (Dateiendung, Linker-Optionen, Export-Markierung, Laufzeitbibliotheken, Fehlermeldungen) betreffen nicht dieses Projekt allein. Der Vorschlag [A Unified Shared Library Format (`.sl`) with a Standardized Loading Procedure](https://github.com/naphets86/blog/blob/main/unified-shared-library-proposal.md) beschreibt, wie ein einheitliches Format und vor allem ein standardisiertes, betriebssystemunabhängiges Ladeverfahren (eine Suchreihenfolge, ein Fehlermodell, ein Lebenszyklus) diese Teile aus jedem Projekt entfernen könnten.
+Die oben beschriebenen Plattformunterschiede (Dateiendung, Linker-Optionen, Export-Markierung, Laufzeitbibliotheken, Fehlermeldungen) betreffen nicht dieses Projekt allein. Der Vorschlag [A Unified Shared Library Format (`.sl`) with a Standardized Loading Procedure](https://github.com/naphets86/sharedlib) beschreibt, wie ein einheitliches Format und vor allem ein standardisiertes, betriebssystemunabhängiges Ladeverfahren (eine Suchreihenfolge, ein Fehlermodell, ein Lebenszyklus) diese Teile aus jedem Projekt entfernen könnten.
 
 Das ist ein Diskussionsvorschlag. In diesem Repository ist er **nicht umgesetzt**; es gilt der in diesem Abschnitt beschriebene Stand mit `.dll`, `.so` und `.dylib`.
 
